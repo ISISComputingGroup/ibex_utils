@@ -9,6 +9,6 @@ setup(name='GitHubRepositoryManipulation',
       author_email='',
       url='',
       scripts=['scripts/change_repos.py'],
-      requires=["github3.py", 'pytz'],
-      provides=["repository_manipulator"]
+      install_requires=["github3.py", 'pytz'],
+      packages=["repository_manipulator"]
       )
