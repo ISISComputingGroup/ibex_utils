@@ -92,10 +92,13 @@ def _get_labels_from(filename):
     :return: label names and colours
     """
     try:
+        has_comment = False
         labels = []
         for line in file(filename):
             label_line = line.strip()
-            if label_line != "" and not label_line.startswith("#"):
+            is_comment = label_line.startswith("#")
+            has_comment = has_comment or is_comment
+            if label_line != "" and not is_comment:
                 split_line = line.split(",", 1)
                 if len(split_line) != 2:
                     raise UserError("Label lines must be <colour code>, <label name>. Line: {0}".format(label_line))
@@ -108,7 +111,11 @@ def _get_labels_from(filename):
 
                 labels.append((label_name, label_colour))
         if len(labels) == 0:
-            raise UserError("Labels file has no entries in")
+            if has_comment:
+                raise UserError("Labels file has no entries in. "
+                                "NB Lines with a # are comment, colours should not start with a hash")
+            else:
+                raise UserError("Labels file has no entries in")
     except IOError as ex:
         raise UserError("Can not open labels file, {0}".format(ex))
     return labels
@@ -138,7 +145,8 @@ def _parse_command_line():
     parser.add_argument('--ms-to', required=False, dest="date_to", help="Date to which the sprint runs.")
 
     # milestone close
-    parser.add_argument('--ms-close', dest="ms_close", action="store_true", help="Close all sprint milestones which are passed with closed tickets.")
+    parser.add_argument('--ms-close', dest="ms_close", action="store_true",
+                        help="Close all sprint milestones which are passed with closed tickets.")
 
     # label creation
     parser.add_argument('--label-name', required=False, default=None, dest="ensure_label",
