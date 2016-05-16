@@ -15,6 +15,9 @@ OR CONDITIONS OF ANY KIND.  See the Eclipse Public License v1.0 for more details
 
 import argparse
 from getpass import getpass
+
+import sys
+
 from repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
 
 
@@ -34,7 +37,7 @@ def main(settings, token):
             repository_names = _get_repository_name_from_file(settings.repo_file)
             isis_repo_access.add_repository_from(settings.owner, repository_names)
         else:
-            isis_repo_access.add_all_repos_for_org(settings.organisation)
+            isis_repo_access.add_all_repos_for_owner(settings.owner)
 
         # milestones
         action = False
@@ -118,7 +121,7 @@ def _parse_command_line():
     """
     parser = argparse.ArgumentParser(
         description='Manipulate a set of repositories, you can add milestones, close milestones, add labels. '
-                    'E.g. -u John-Holt-Tessella -o John-Holt-Tessella --from 2010-04-02 --to 2011-05-02 '
+                    'E.g. -u John-Holt-Tessella -o John-Holt-Tessella --ms-from 2010-04-02 --ms-to 2011-05-02 '
                     '--dry_run --repo repo_name')
     parser.add_argument('--dry-run', action="store_true", help="Don't change anything just tell me what you would do.")
     parser.add_argument('-u', '--username', required=True, help="GitHub username")
@@ -146,6 +149,10 @@ def _parse_command_line():
     parser.add_argument('--label-file', required=False, default=None, dest="ensure_label_file",
                         help="Ensure that the repository has the following labels read from this file. "
                              "File is lines of '<colour code>, <label name>'")
+
+    if len(sys.argv) == 1:
+        sys.stderr.write('You need to use commandline arguments and you passed none. If in windows make sure your *.py '
+                         'is linked to \"...\python.exe "%1" %*\" or use python change_repos.py <args> \n')
 
     settings = parser.parse_args()
 
