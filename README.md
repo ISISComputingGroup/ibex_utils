@@ -18,7 +18,8 @@ Python scripts to manipulate the ibex repositories.
                        [--label-colour ENSURE_LABEL_COLOUR]
                        [--label-file ENSURE_LABEL_FILE]
 
-    Manipulate a set of repositories, you can add milestones, close milestones, add labels. E.g. -u John-Holt-Tessella -o John-Holt-Tessella --from 2010-04-02 --to 2011-05-02 --dry_run --repo repo_name
+    Manipulate a set of repositories, you can add milestones, close milestones, add labels.
+      E.g. -u John-Holt-Tessella -o ISISComputingGroup --ms-from 2010-04-02 --ms-to 2011-05-02 --dry_run --repo repo_name
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -26,7 +27,8 @@ Python scripts to manipulate the ibex repositories.
       -u USERNAME, --username USERNAME                       GitHub username
       -o OWNER, --owner OWNER                        Owner of the repositories
       --repo-file REPO_FILE
-                            Apply the changes to repositories in the file
+                            Apply the changes to repositories in this file. File is list of repository names,
+                            comments (lines starting with a #) and blank lines are ignored
       --repo REPO           Apply the changes to this repository
       --ms-from DATE_FROM   Date from which the sprint starts.
       --ms-to DATE_TO       Date to which the sprint runs.
@@ -40,5 +42,5 @@ Python scripts to manipulate the ibex repositories.
                             626262
       --label-file ENSURE_LABEL_FILE
                             Ensure that the repository has the following labels
-                            read from this file. File is lines of '<colour code>,
-                            <label name>'
+                            read from this file. File is lines of '<colour code>, <label name>'
+                            Comment lines (lines starting with a #) and blank lines are ignored.

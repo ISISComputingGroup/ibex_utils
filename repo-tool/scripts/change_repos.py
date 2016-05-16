@@ -136,7 +136,8 @@ def _parse_command_line():
     # specify repositories
     parser.add_argument('-o', '--owner', required=True, default="ISISComputingGroup", help="Owner of the repositories")
     parser.add_argument('--repo-file', required=False, default=None, dest="repo_file",
-                        help="Apply the changes to repositories in the file")
+                        help="Apply the changes to repositories in this file. File is list of repository names,"
+                             "comments (lines starting with a #) and blank lines are ignored")
     parser.add_argument('--repo', required=False, default=None, dest="repo",
                         help="Apply the changes to this repository")
 
