@@ -1,0 +1,15 @@
+# A List of standard Labels
+#
+# File format is:
+#   # - coment
+#   <label colour>, <label text>
+
+fc2929, bug
+cccccc, duplicate
+84b6eb, enhancement
+159818, help wanted
+0052cc, ICP
+e6e6e6, invalid
+cc317c, question
+5319e7, ticket
+ffffff, wontfix

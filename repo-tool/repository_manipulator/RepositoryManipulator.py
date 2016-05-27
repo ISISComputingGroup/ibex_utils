@@ -73,21 +73,28 @@ class RepositoryManipulator(object):
         except (ValueError, TypeError):
             raise UserError("Invalid date")
 
-    def add_all_repos_for_org(self, organisation_name="ISISComputingGroup"):
+    def add_all_repos_for_owner(self, owner_name="ISISComputingGroup"):
         """
-        Add all the repositories for an organisation to the list of repositories to manipulate
-        :param organisation_name: name of the organisation
+        Add all the repositories for an owner to the list of repositories to manipulate;
+        assume owner is an organisation but default to user if organisation doesn't exist
+        :param owner_name: name of the owner; organisation/user
         :return:
+        :raises UserError: when repository can not be found
         """
         try:
-            organisation = self.github_api.organization(organisation_name)
+            organisation = self.github_api.organization(owner_name)
         except GitHubError as ex:
-            raise UserError("Failed to get organisation. {0}".format(str(ex)))
+            raise UserError("Failed to get owner as organisation. {0}".format(str(ex)))
 
         try:
-            self._add_to_repositories_to_use(organisation.iter_repos())
+            if organisation is None:
+                print ("Owner {0} not found as organisation, defaulting to user".format(owner_name))
+                iter_repos = self.github_api.iter_user_repos(owner_name)
+            else:
+                iter_repos = organisation.iter_repos()
+            self._add_to_repositories_to_use(iter_repos)
         except GitHubError as ex:
-            raise UserError("Failed to get organisation repositories. {0}".format(str(ex)))
+            raise UserError("Failed to get owner's repositories. {0}".format(str(ex)))
 
     def _add_to_repositories_to_use(self, iter_repos):
         """
@@ -109,6 +116,7 @@ class RepositoryManipulator(object):
     def use_repos_for_user(self, owner):
         """
         Add all repositories from the currently logged in user to the list of repositories to manipulate
+        :param owner: owner of the repos
         :return:
         """
         try:
@@ -145,13 +153,13 @@ class RepositoryManipulator(object):
         print("")
         if date_from is not None:
             from_date = RepositoryManipulator.get_checked_date(date_from)
-            new_milestone_title = SPRINT_MILESTONE_TEMPLATE.format(year=from_date.year, month=from_date.month, day=from_date.day)
+            new_milestone_title = SPRINT_MILESTONE_TEMPLATE.format(
+                year=from_date.year, month=from_date.month, day=from_date.day)
             due_on_date = RepositoryManipulator.get_checked_date(date_to)
             due_on = due_on_date.isoformat()+"Z"
         else:
             due_on = None
             new_milestone_title = None
-
 
         for repo in self._repo_list:
             print("{name}:".format(name=repo.name))
@@ -202,17 +210,19 @@ class RepositoryManipulator(object):
             day = int(match.group(3))
 
             milestone_date = datetime(year, month, day, tzinfo=pytz.utc)
-            close_issue=milestone.due_on is not None and milestone.due_on < datetime.now(pytz.utc)
+            close_issue = milestone.due_on is not None and milestone.due_on < datetime.now(pytz.utc)
             if not close_issue and milestone_date + timedelta(days=31) < datetime.now(pytz.utc):
                 close_issue = True
 
             if close_issue and milestone.open_issues > 0:
-                print ("Milestone '{0}' is past its due date but has open issues so can not be closed".format(milestone.title))
+                print ("Milestone '{0}' is past its due date but has open issues so can not be closed"
+                       .format(milestone.title))
             elif close_issue:
                 print ("Close {0}".format(milestone.title))
                 if not self.dry_run:
                     if not milestone.update(state="closed"):
-                        raise UserError("Can not close milestone '{0}' in repo '{1}'".format(milestone.title, repo_name))
+                        raise UserError("Can not close milestone '{0}' in repo '{1}'"
+                                        .format(milestone.title, repo_name))
 
     def update_labels(self, ensure_labels):
         """
@@ -243,15 +253,19 @@ class RepositoryManipulator(object):
             current_labels[label.name] = label
 
         for label_name, label_colour in ensure_labels:
-            if label_name not in current_labels.keys():
-                print("    label add {0}".format(label_name))
-                if not self.dry_run:
-                    label = repo.create_label(label_name, label_colour)
-                    if label is None:
-                        raise UserError("Unknown error creating label on repository.")
-                    current_labels[label_name] = label
-            elif current_labels[label_name].color != label_colour:
-                current_labels[label_name].update(name=label_name, color=label_colour)
+            try:
+                if label_name not in current_labels.keys():
+                    print("    label add {0}".format(label_name))
+                    if not self.dry_run:
+                        label = repo.create_label(label_name, label_colour)
+                        if label is None:
+                            raise UserError("Unknown error creating label on repository.")
+                        current_labels[label_name] = label
+                elif current_labels[label_name].color != label_colour:
+                    current_labels[label_name].update(name=label_name, color=label_colour)
+            except GitHubError as ex:
+                if ex.code == 422:
+                    raise UserError("Validation filed on create/modify label")
 
     def list_repos(self):
         """
@@ -261,5 +275,3 @@ class RepositoryManipulator(object):
         print("Repository set")
         for repo in self._repo_list:
             print("  {name}:".format(name=repo.name))
-
-

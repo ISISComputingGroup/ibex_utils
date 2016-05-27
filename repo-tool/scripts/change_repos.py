@@ -15,6 +15,9 @@ OR CONDITIONS OF ANY KIND.  See the Eclipse Public License v1.0 for more details
 
 import argparse
 from getpass import getpass
+
+import sys
+
 from repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
 
 
@@ -34,7 +37,7 @@ def main(settings, token):
             repository_names = _get_repository_name_from_file(settings.repo_file)
             isis_repo_access.add_repository_from(settings.owner, repository_names)
         else:
-            isis_repo_access.add_all_repos_for_org(settings.organisation)
+            isis_repo_access.add_all_repos_for_owner(settings.owner)
 
         # milestones
         action = False
@@ -89,10 +92,13 @@ def _get_labels_from(filename):
     :return: label names and colours
     """
     try:
+        has_comment = False
         labels = []
         for line in file(filename):
             label_line = line.strip()
-            if label_line != "" and not label_line.startswith("#"):
+            is_comment = label_line.startswith("#")
+            has_comment = has_comment or is_comment
+            if label_line != "" and not is_comment:
                 split_line = line.split(",", 1)
                 if len(split_line) != 2:
                     raise UserError("Label lines must be <colour code>, <label name>. Line: {0}".format(label_line))
@@ -105,7 +111,11 @@ def _get_labels_from(filename):
 
                 labels.append((label_name, label_colour))
         if len(labels) == 0:
-            raise UserError("Labels file has no entries in")
+            if has_comment:
+                raise UserError("Labels file has no entries in. "
+                                "NB Lines with a # are comment, colours should not start with a hash")
+            else:
+                raise UserError("Labels file has no entries in")
     except IOError as ex:
         raise UserError("Can not open labels file, {0}".format(ex))
     return labels
@@ -118,7 +128,7 @@ def _parse_command_line():
     """
     parser = argparse.ArgumentParser(
         description='Manipulate a set of repositories, you can add milestones, close milestones, add labels. '
-                    'E.g. -u John-Holt-Tessella -o John-Holt-Tessella --from 2010-04-02 --to 2011-05-02 '
+                    'E.g. -u John-Holt-Tessella -o John-Holt-Tessella --ms-from 2010-04-02 --ms-to 2011-05-02 '
                     '--dry_run --repo repo_name')
     parser.add_argument('--dry-run', action="store_true", help="Don't change anything just tell me what you would do.")
     parser.add_argument('-u', '--username', required=True, help="GitHub username")
@@ -126,7 +136,8 @@ def _parse_command_line():
     # specify repositories
     parser.add_argument('-o', '--owner', required=True, default="ISISComputingGroup", help="Owner of the repositories")
     parser.add_argument('--repo-file', required=False, default=None, dest="repo_file",
-                        help="Apply the changes to repositories in the file")
+                        help="Apply the changes to repositories in this file. File is list of repository names,"
+                             "comments (lines starting with a #) and blank lines are ignored")
     parser.add_argument('--repo', required=False, default=None, dest="repo",
                         help="Apply the changes to this repository")
 
@@ -135,7 +146,8 @@ def _parse_command_line():
     parser.add_argument('--ms-to', required=False, dest="date_to", help="Date to which the sprint runs.")
 
     # milestone close
-    parser.add_argument('--ms-close', dest="ms_close", action="store_true", help="Close all sprint milestones which are passed with closed tickets.")
+    parser.add_argument('--ms-close', dest="ms_close", action="store_true",
+                        help="Close all sprint milestones which are passed with closed tickets.")
 
     # label creation
     parser.add_argument('--label-name', required=False, default=None, dest="ensure_label",
@@ -146,6 +158,10 @@ def _parse_command_line():
     parser.add_argument('--label-file', required=False, default=None, dest="ensure_label_file",
                         help="Ensure that the repository has the following labels read from this file. "
                              "File is lines of '<colour code>, <label name>'")
+
+    if len(sys.argv) == 1:
+        sys.stderr.write('You need to use commandline arguments and you passed none. If in windows make sure your *.py '
+                         'is linked to \"...\python.exe "%1" %*\" or use python change_repos.py <args> \n')
 
     settings = parser.parse_args()
 
