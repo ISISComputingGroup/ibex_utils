@@ -1,17 +1,12 @@
 from Directory_Operations import ReadConfigFiles
 
-# search_path = "C:/temp/"
-
+# create instance of 'ReadConfigFiles' as 'filelist' and supply directory to be read
 filelist = ReadConfigFiles("C:/temp/")
-
-filenames = filelist.read_directory_contents()
-
-config_filenames = filelist.extract_config_filenames(filenames)
 
 # converts each element in list to string, concatenates with newline character, then prints whole string
 
 # print '\n'.join([str(x) for x in config_filenames])
 
-xml_data = filelist.analyse_config_files(config_filenames[1])
+xml_data = filelist.analyse_config_files()
 
-print xml_data
+# print xml_data
