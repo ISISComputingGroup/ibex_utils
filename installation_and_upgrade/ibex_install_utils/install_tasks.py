@@ -187,6 +187,9 @@ class UpgradeTasks(object):
             raise UserStop()
 
     def upgrade_instrument_configuration(self):
+        """
+        Update the configuration on the instrument using its upgrade config script.
+        """
         with Task("Upgrading instrument configuration", self._prompt) as task:
             if task.do_step:
                 RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
