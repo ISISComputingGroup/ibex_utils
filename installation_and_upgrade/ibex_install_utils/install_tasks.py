@@ -7,9 +7,8 @@ import shutil
 import socket
 import subprocess
 import git
-import sys
 
-from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
+from ibex_install_utils.exceptions import UserStop, ErrorInRun
 from ibex_install_utils.file_utils import FileUtils
 
 INSTRUMENT_BASE_DIR = os.path.join(r"c:\Instrument")
@@ -17,6 +16,7 @@ APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
 PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
+CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc\upgrade\master")
 EPICS_UTILS_PATH = os.path.join(APPS_BASE_DIR, "EPICS_UTILS")
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 SETTINGS_CONFIG_FOLDER = os.path.join("Settings", "config")
@@ -189,22 +189,7 @@ class UpgradeTasks(object):
     def upgrade_instrument_configuration(self):
         with Task("Upgrading instrument configuration", self._prompt) as task:
             if task.do_step:
-                sys.path.append('..')
-                from upgrade import Upgrade, UPGRADE_STEPS
-                from src.local_logger import LocalLogger
-                from src.file_access import FileAccess
-
-                try:
-                    config_root = os.path.abspath(os.path.join(os.environ["ICPCONFIGROOT"], os.pardir))
-                    log_dir = os.path.join(os.environ["ICPVARDIR"], "logs", "upgrade")
-                except KeyError:
-                    raise ErrorInTask("Must be run in a terminal that has done config_env")
-
-                logger = LocalLogger(log_dir)
-                file_access = FileAccess(logger, config_root)
-
-                upgrade = Upgrade(file_access=file_access, logger=logger, upgrade_steps=UPGRADE_STEPS)
-                upgrade.upgrade()
+                RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
 
     def remove_seci_shortcuts(self):
         with Task("Remove SECI shortcuts", self._prompt) as task:
@@ -269,8 +254,7 @@ class UpgradeInstrument(object):
 
     def remove_all_and_install_client_and_server(self):
         """
-        Run an upgrade of Demo
-        Returns:
+        Either install or upgrade the ibex client and server
 
         """
         self._upgrade_tasks.get_machine_name()
@@ -281,6 +265,9 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_client()
 
     def run_instrument_update(self):
+        """
+        Update an instrument (just configuration and seci shortcuts)
+        """
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.update_calibrations_repository()
@@ -320,7 +307,7 @@ class RunProcess(object):
     """
     Create a process runner to run a process.
     """
-    def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False):
+    def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None):
         """
         Create a process that needs running
 
@@ -328,11 +315,13 @@ class RunProcess(object):
             working_dir: working directory of the process
             executable_file: file of the process to run, e.g. a bat file
             executable_directory: the directory in which the executable file lives, if None, default, use working dir
-            press_any_key: if true then press a key to finish
+            press_any_key: if true then press a key to finish the run process
+            prog_args(list[string]): arguments to pass to the program
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
         self._press_any_key = press_any_key
+        self._prog_args = prog_args
         if executable_directory is None:
             self._full_path_to_process_file = os.path.join(working_dir, executable_file)
         else:
@@ -348,20 +337,23 @@ class RunProcess(object):
         try:
             print("    Running {0} ...".format(self._bat_file))
 
+            command_line = [self._full_path_to_process_file]
+            if self._prog_args is not None:
+                command_line.extend(self._prog_args)
             if self._press_any_key:
-                output = subprocess.Popen([self._full_path_to_process_file], cwd=self._working_dir,
+                output = subprocess.Popen(command_line, cwd=self._working_dir,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 output_lines, err = output.communicate(" ")
             else:
                 output_lines = subprocess.check_output(
-                    [self._full_path_to_process_file],
+                    command_line,
                     cwd=self._working_dir,
                     stderr=subprocess.STDOUT,
                     stdin=subprocess.PIPE)
 
             for line in output_lines.splitlines():
-                print("    , {line}".format(line=line))
+                print("    > {line}".format(line=line))
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
             raise ErrorInRun("Command failed with error: {0}".format(ex))
@@ -369,7 +361,7 @@ class RunProcess(object):
             if ex.errno == 2:
                 raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
                     cmd=self._bat_file, cwd=self._working_dir))
-            elif int(ex.errno) == 22:
+            elif ex.errno == 22:
                 raise ErrorInRun("Directory not found to run command '{cmd}', command is in :  '{cwd}'".format(
                     cmd=self._bat_file, cwd=self._working_dir))
             raise ex
