@@ -11,7 +11,7 @@ from ibex_install_utils.exceptions import UserStop, ErrorInTask
 from ibex_install_utils.user_prompt import UserPrompt
 
 
-def _get_latest_directory_path(build_dir, directory_above_build_num):
+def _get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
     latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
     build_num = None
     for line in open(latest_build_path):
@@ -19,7 +19,9 @@ def _get_latest_directory_path(build_dir, directory_above_build_num):
     if build_num is None or build_num == "":
         print("Latest build num unknown. Cannot read it from '{0}'".format(latest_build_path))
         sys.exit(3)
-    return os.path.join(build_dir, "BUILD-{}".format(build_num), directory_above_build_num)
+    if directory_above_build_num is None:
+        return os.path.join(build_dir, "{}{}".format(build_prefix, build_num))
+    return os.path.join(build_dir, "{}{}".format(build_prefix, build_num), directory_above_build_num)
 
 
 if __name__ == "__main__":
@@ -54,10 +56,10 @@ if __name__ == "__main__":
             print("When specifying kits_icp_dir you choose the install latest deployment type.")
             sys.exit(2)
         epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", "EPICS_win7_x64")
-        server_dir = _get_latest_directory_path(epics_build_dir, "EPICS")
+        server_dir = _get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
 
         client_build_dir = os.path.join(args.kits_icp_dir, "Client")
-        client_dir = _get_latest_directory_path(client_build_dir, "Client")
+        client_dir = _get_latest_directory_path(client_build_dir, "BUILD")
     else:
         print("You must specify either the release directory or kits_icp_dir or "
               "BOTH the server and client directories.")
