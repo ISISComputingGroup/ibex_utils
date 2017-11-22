@@ -1,0 +1,57 @@
+# Calibration file for the voltage from the galil and the gap between the barn doors on EMU
+#
+# Comment out first part of the file because it lead to a double valued function, ie two volatges for a given position
+#
+
+#voltage distance
+#0	22.7
+#0.2	21.3
+#0.4	19.8
+#0.6	18.4
+#0.8	17
+#1	15.6
+#1.2	14.1
+#1.4	12.7
+#1.6	11.3
+#1.8	9.9
+#2	8.4
+#2.2	7
+#2.4	5.6
+#2.6	4.2
+2.8	3.2
+3	3.3
+3.2	4
+3.4	5.1
+3.6	6.5
+3.8	8.3
+4	10.3
+4.2	12.7
+4.4	15.2
+4.6	18.1
+4.8	21.1
+5	24.4
+5.2	27.9
+5.4	31.5
+5.6	35.4
+5.8	39.4
+6	43.7
+6.2	48.1
+6.4	52.6
+6.6	57.3
+6.8	62.2
+7	67.3
+7.2	72.5
+7.4	77.8
+7.6	83.3
+7.8	88.9
+8	94.7
+8.2	100.6
+8.4	106.6
+8.6	112.8
+8.8	119.1
+9	125.5
+9.2	132.1
+9.4	132.9
+9.6	132.9
+9.8	132.9
+10	132.9
