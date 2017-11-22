@@ -172,14 +172,14 @@ class UpgradeTasks(object):
         #    RunProcess(EPICS_PATH, "start_ibex_server.bat").run()
         pass
 
-    def check_upgrade_testing_machine(self):
+    def check_upgrade_testing_machine(self, machine_type):
         """
         Print information about the current upgrade and prompt the user
         Returns:
         Raises UserStop: when the user doesn't want to continue
 
         """
-        print("Upgrade {0} as a Training Machine".format(self._machine_name))
+        print("Upgrade {0} as a {1}".format(self._machine_name, machine_type))
         print("    Server source: {0}".format(self._server_source_dir))
         print("    Client source: {0}".format(self._client_source_dir))
         answer = self._prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
@@ -257,7 +257,7 @@ class UpgradeInstrument(object):
 
         """
         self._upgrade_tasks.get_machine_name()
-        self._upgrade_tasks.check_upgrade_testing_machine()
+        self._upgrade_tasks.check_upgrade_testing_machine('Training Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
@@ -267,19 +267,18 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
 
-    def run_demo_upgrade(self):
+    def remove_all_and_install_client_and_server(self):
         """
         Run an upgrade of Demo
         Returns:
 
         """
         self._upgrade_tasks.get_machine_name()
-        self._upgrade_tasks.check_upgrade_testing_machine()
+        self._upgrade_tasks.check_upgrade_testing_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(True)
         self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.upgrade_notepad_pp()
 
     def run_instrument_update(self):
         self._upgrade_tasks.stop_ibex_server()
@@ -369,5 +368,8 @@ class RunProcess(object):
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
+                    cmd=self._bat_file, cwd=self._working_dir))
+            elif int(ex.errno) == 22:
+                raise ErrorInRun("Directory not found to run command '{cmd}', command is in :  '{cwd}'".format(
                     cmd=self._bat_file, cwd=self._working_dir))
             raise ex
