@@ -361,7 +361,7 @@ class RunProcess(object):
         except subprocess.CalledProcessError as ex:
             raise ErrorInRun("Command failed with error: {0}".format(ex))
         except WindowsError as ex:
-            if int(ex.errno) == 2:
+            if ex.errno == 2:
                 raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
                     cmd=self._bat_file, cwd=self._working_dir))
             elif ex.errno == 22:
