@@ -5,6 +5,6 @@ set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 IF EXIST "C:\Instrument\Apps\EPICS" (start /wait cmd /c "%STOP_IBEX%")
 
 C:\Instrument\Apps\Python\python.exe IBEX_upgrade.py --release_dir "%SOURCE%" --confirm_step instrument_update
-IF ERRORLEVEL 1 GOTO :EOF
+IF ERRORLEVEL 1 exit /b %errorlevel%
 
 start /wait cmd /c "%START_IBEX%"
