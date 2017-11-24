@@ -8,11 +8,12 @@ import socket
 import subprocess
 import git
 import sys
+from datetime import date
 
 from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
 from ibex_install_utils.file_utils import FileUtils
 
-INSTRUMENT_BASE_DIR = os.path.join(r"c:\Instrument")
+INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
@@ -45,16 +46,34 @@ class UpgradeTasks(object):
         self._client_source_dir = client_source_dir
         self._file_utils = file_utils
 
-        self._machine_name = None
+        self._machine_name = self._get_machine_name()
 
-    def get_machine_name(self):
+    @staticmethod
+    def _get_machine_name():
         """
-        Finds the machine name
-
         Returns:
+            The current machine name
 
         """
-        self._machine_name = socket.gethostname()
+        return socket.gethostname()
+
+    @staticmethod
+    def _get_instrument_name():
+        """
+        Returns:
+            The name of the current instrument
+        """
+        return UpgradeTasks._get_machine_name().replace("NDX", "")
+
+    @staticmethod
+    def _get_config_path():
+
+        """
+        Returns:
+            The path to the instrument's configurations directory
+
+        """
+        return os.path.join(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER, UpgradeTasks._get_machine_name())
 
     def stop_ibex_server(self):
         """
@@ -77,7 +96,7 @@ class UpgradeTasks(object):
         with Task("Removing old version of IBEX", self._prompt) as task:
             if task.do_step:
                 for path in (EPICS_PATH, PYTHON_PATH, GUI_PATH, EPICS_UTILS_PATH):
-                    self._file_utils.delete_if_exists(path)
+                    self._file_utils.remove_tree(path)
 
     def clean_up_desktop_ibex_training_folder(self):
         """
@@ -87,7 +106,7 @@ class UpgradeTasks(object):
         """
         with Task("Removing training folder on desktop ...", self._prompt) as task:
             if task.do_step:
-                self._file_utils.delete_if_exists(DESKTOP_TRAINING_FOLDER_PATH)
+                self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH)
 
     def remove_settings(self):
         """
@@ -97,7 +116,7 @@ class UpgradeTasks(object):
         """
         with Task("Removing old settings file", self._prompt) as task:
             if task.do_step:
-                self._file_utils.delete_if_exists(SETTINGS_CONFIG_PATH)
+                self._file_utils.remove_tree(SETTINGS_CONFIG_PATH)
 
     def install_settings(self):
         """
@@ -172,6 +191,14 @@ class UpgradeTasks(object):
         #    RunProcess(EPICS_PATH, "start_ibex_server.bat").run()
         pass
 
+    def _start_ibex_gui(self):
+        """
+        Start the IBEX GUI
+        :return:
+        """
+        subprocess.Popen([os.path.join(GUI_PATH, "ibex-client.exe")])
+
+
     def check_upgrade_testing_machine(self):
         """
         Print information about the current upgrade and prompt the user
@@ -234,6 +261,218 @@ class UpgradeTasks(object):
                     self._prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
                                                              "Manually pull it. Path='{}'".format(path))
 
+    def install_java(self):
+        with Task("Install java", self._prompt) as task:
+            if task.do_step:
+                java_url = "http://www.java.com/en/"
+                java_installed = subprocess.call(["java","-version"]) == 0
+                if java_installed:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Confirm that the java version above is the desired version or that you have "
+                        "upgraded to the desired 64-bit version from {}".format(java_url))
+                else:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Java is not installed. Please go to {}, then download and install "
+                        "the desired 64-bit version".format(java_url))
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Is auto-update turned off? This can be checked from the Java control panel in "
+                    "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
+
+    def take_screenshots(self):
+        with Task("Take screenshots", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Take screenshots of the current IBEX setup for future reference. These should include:\n"
+                    "- Client and server versions\n"
+                    "- Blocks\n"
+                    "- Major perspectives\n"
+                    "- Current configuration tabs\n"
+                    "- Running IOCs\n"
+                    "- Available configs\n"
+                    "- Any open LabView VIs")
+
+    @staticmethod
+    def _get_backup_dir():
+        new_backup_dir = os.path.join("C:\\", "data", "old", "ibex_backup_{}".format(date.today().strftime("%Y_%m_%d")))
+        if not os.path.exists(new_backup_dir):
+            os.mkdir(new_backup_dir)
+        return new_backup_dir
+
+    def _backup_dir(self, src, copy=True):
+        backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
+        if src in os.getcwd():
+            self._prompt.prompt_and_raise_if_not_yes(
+                "You appear to be trying to delete the folder, {}, containing the current working directory {}. "
+                "Please do this manually to be on the safe side".format(src, os.getcwd()))
+        elif os.path.exists(backup_dir):
+            self._prompt.prompt_and_raise_if_not_yes(
+                "Backup dir {} already exist. Please backup this app manually".format(backup_dir))
+        elif os.path.exists(src):
+            if copy:
+                print("Copying {} to {}".format(src, backup_dir))
+                shutil.copytree(src, backup_dir)
+            else:
+                print("Moving {} to {}".format(src, backup_dir))
+                self._file_utils.move_dir(src, backup_dir)
+
+    def backup_old_directories(self):
+        with Task("Backup old directories", self._prompt) as task:
+            if task.do_step:
+                data = os.path.join("C:\\", "data")
+                if os.path.exists(data):
+                    old_data = os.path.join("C:\\", "data", "old")
+                    if not os.path.exists(old_data):
+                        os.mkdir(old_data)
+
+                    # Delete all but the oldest backup
+                    current_backups = [os.path.join(old_data, d) for d in os.listdir(old_data)
+                                       if os.path.isdir(os.path.join(old_data, d)) and d.startswith("ibex_backup")]
+                    if len(current_backups) > 0:
+                        all_but_newest_backup = sorted(current_backups, key=os.path.getmtime)[:-1]
+                        backups_to_delete = all_but_newest_backup
+                    else:
+                        backups_to_delete = []
+
+                    for d in backups_to_delete:
+                        print("Removing backup {}".format(d))
+                        self._file_utils.remove_tree(os.path.join(old_data, d))
+
+                    # Move the folders
+                    for app_path in [EPICS_PATH, EPICS_UTILS_PATH, GUI_PATH, PYTHON_PATH]:
+                        self._backup_dir(app_path, copy=False)
+
+                    # Backup settings and autosave
+                    self._backup_dir(os.path.join("C:\\", "Instrument", "Settings"))
+                    self._backup_dir(os.path.join("C:\\", "Instrument", "var", "Autosave"))
+                else:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Unable to find data directory C:\\data. Please backup the current installation of IBEX "
+                        "manually")
+
+    def _get_mysql_dir(self):
+        mysql_base_dir = os.path.join("C:\\", "Program Files", "MySQL")
+        if not os.path.exists(mysql_base_dir):
+            raise OSError
+        else:
+            mysql_versions = [d for d in os.listdir(mysql_base_dir) if os.path.isdir(os.path.join(mysql_base_dir,d))]
+            if len(mysql_versions) == 0:
+                raise OSError
+            else:
+                if len(mysql_versions) > 1:
+                    print("Warning, more than 1 version of MySQL detected. Using {}".format(mysql_versions[0]))
+                mysql_dir = os.path.join(mysql_base_dir, mysql_versions[0], "bin")
+
+        return mysql_dir
+
+    def backup_database(self):
+        with Task("Backup database", self._prompt) as task:
+            if task.do_step:
+                try:
+                    mysql_bin_dir = self._get_mysql_dir()
+                    mysql_path = os.path.join(mysql_bin_dir, "mysql.exe")
+                    mysql_admin_path = os.path.join(mysql_bin_dir, "mysqladmin.exe")
+                    if not all([os.path.exists(p) for p in [mysql_path, mysql_admin_path]]):
+                        raise OSError
+                    if subprocess.call([mysql_path, "-u", "root", "-p", "--execute",
+                                        "SET GLOBAL innodb_fast_shutdown=0",]) != 0 or \
+                                    subprocess.call([mysql_admin_path, "-u", "root", "-p", "shutdown"]) != 0:
+                        self._prompt.prompt_and_raise_if_not_yes(
+                            "Stopping the MySQL service failed. Please do it manually")
+                except OSError:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Unable to find mysql location. Please shut down the service manually")
+                finally:
+                    self._backup_dir(os.path.join("C:\\", "Instrument", "var", "mysql"))
+                    self._prompt.prompt_and_raise_if_not_yes("Data backup complete. Please restart the MYSQL service")
+
+    def update_release_notes(self):
+        with Task("Update release notes", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
+
+    def upgrade_mysql(self):
+        with Task("Upgrade MySQL", self._prompt) as task:
+            if task.do_step:
+                install_mysql_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
+                                   "Installing-and-Upgrading-MySQL"
+                try:
+                    mysql_path = os.path.join(self._get_mysql_dir(), "mysql.exe")
+                    if not os.path.exists(mysql_path):
+                        raise OSError()
+                    subprocess.call([mysql_path, "--version"])
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "If required, upgrade MySQL as per {}".format(install_mysql_url))
+                except OSError:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "MySQL not detected on system. Please verify and install if necessary via the instructions at "
+                        "{}".format(install_mysql_url))
+                finally:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Confirm that the MySQL catalog auto-update has been switched off as described at {}"
+                        .format(install_mysql_url))
+
+    def reapply_hotfixes(self):
+        with Task("Reapply Hotfixes", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Have you applied any hotfixes listed that are not fixed by the release, as on the instrument "
+                    "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
+
+    def restart_vis(self):
+        with Task("Restart VIs", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Please restart any VIs that were running at the start of the upgrade")
+
+    def perform_client_tests(self):
+        with Task("Client release tests", self._prompt) as task:
+            if task.do_step:
+                self._start_ibex_server()
+                self._start_ibex_gui()
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Check that the version displayed in the client is as expected after the deployment")
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Confirm that genie_python works from within the client and via genie_python.bat (this includes"
+                    "verifying that the 'g.' and 'inst.' prefixes work as expected)")
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Verify that the current configuration is consistent with the system prior to upgrade")
+
+    def perform_server_tests(self):
+        with Task("Server release tests", self._prompt) as task:
+            if task.do_step:
+                self._start_ibex_server()
+                server_release_tests_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
+                                           "Server-Release-Tests"
+
+                print("For further details, see {}".format(server_release_tests_url))
+                self._prompt.prompt_and_raise_if_not_yes("Check that blocks are logging as expected")
+
+                print("Checking that configurations are being pushed to the appropriate repository")
+                repo = git.Repo(self._get_config_path())
+                repo.git.fetch()
+                status = repo.git.status()
+                print("Current repository status is: {}".format(status))
+                if "up-to-date with 'origin/{}".format(self._get_machine_name()) in status:
+                    print("Configurations updating correctly")
+                else:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Unexpected git status. Please confirm that configurations are being pushed to the appropriate "
+                        "remote repository")
+
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Check that the web dashboard for this instrument is updating "
+                    "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}"
+                        .format(self._get_instrument_name()))
+
+    def inform_instrument_scientists(self):
+        with Task("Inform instrument scientists", self._prompt) as task:
+            if task.do_step:
+                # For future reference, genie_python can send emails!
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Inform the instrument scientists that the upgrade has been completed")
+
+
 
 class UpgradeInstrument(object):
     """
@@ -256,7 +495,6 @@ class UpgradeInstrument(object):
         Returns:
 
         """
-        self._upgrade_tasks.get_machine_name()
         self._upgrade_tasks.check_upgrade_testing_machine()
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
@@ -273,7 +511,6 @@ class UpgradeInstrument(object):
         Returns:
 
         """
-        self._upgrade_tasks.get_machine_name()
         self._upgrade_tasks.check_upgrade_testing_machine()
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
@@ -286,6 +523,25 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.remove_seci_shortcuts()
+
+    def run_instrument_upgrade(self):
+        self._upgrade_tasks.stop_ibex_server()
+        self._upgrade_tasks.install_java()
+        self._upgrade_tasks.take_screenshots()
+        self._upgrade_tasks.backup_old_directories()
+        self._upgrade_tasks.backup_database()
+        self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.remove_seci_shortcuts()
+        self._upgrade_tasks.install_ibex_server(True)
+        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.update_release_notes()
+        self._upgrade_tasks.upgrade_mysql()
+        self._upgrade_tasks.reapply_hotfixes()
+        self._upgrade_tasks.restart_vis()
+        self._upgrade_tasks.perform_client_tests()
+        self._upgrade_tasks.perform_server_tests()
+        self._upgrade_tasks.inform_instrument_scientists()
 
 
 class Task(object):

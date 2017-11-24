@@ -15,7 +15,8 @@ class FileUtils(object):
     Various utilities for interacting with the file system
     """
 
-    def delete_if_exists(self, path):
+    @staticmethod
+    def remove_tree(path):
         """
         Delete a file path if it exists
         Args:
@@ -74,3 +75,15 @@ class FileUtils(object):
             self.mkdir_recursive(sub_path)
         if not os.path.exists(path):
             os.mkdir(path)
+
+    @staticmethod
+    def move_dir(src, dst):
+        """
+        Moves a dir. Better to copy remove so we can handle permissions issues
+
+        Args:
+            src: Source directory
+            dst: Destination directory
+        """
+        shutil.copytree(src, dst)
+        FileUtils.remove_tree(src)
