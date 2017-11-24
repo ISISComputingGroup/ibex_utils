@@ -7,10 +7,9 @@ import shutil
 import socket
 import subprocess
 import git
-import sys
 from datetime import date
 
-from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
+from ibex_install_utils.exceptions import UserStop, ErrorInRun
 from ibex_install_utils.file_utils import FileUtils
 
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
@@ -18,13 +17,21 @@ APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
 PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
+CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc\upgrade\master")
 EPICS_UTILS_PATH = os.path.join(APPS_BASE_DIR, "EPICS_UTILS")
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 SETTINGS_CONFIG_FOLDER = os.path.join("Settings", "config")
 SETTINGS_CONFIG_PATH = os.path.join(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER)
+CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
+
+USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
+PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
+SECI = "SECI User interface.lnk"
+AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
+                       os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
 
 
 class UpgradeTasks(object):
@@ -198,15 +205,14 @@ class UpgradeTasks(object):
         """
         subprocess.Popen([os.path.join(GUI_PATH, "ibex-client.exe")])
 
-
-    def check_upgrade_testing_machine(self):
+    def user_confirm_upgrade_type_on_machine(self, machine_type):
         """
         Print information about the current upgrade and prompt the user
         Returns:
         Raises UserStop: when the user doesn't want to continue
 
         """
-        print("Upgrade {0} as a Training Machine".format(self._machine_name))
+        print("Upgrade {0} as a {1}".format(self._machine_name, machine_type))
         print("    Server source: {0}".format(self._server_source_dir))
         print("    Client source: {0}".format(self._client_source_dir))
         answer = self._prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
@@ -214,58 +220,49 @@ class UpgradeTasks(object):
             raise UserStop()
 
     def upgrade_instrument_configuration(self):
+        """
+        Update the configuration on the instrument using its upgrade config script.
+        """
         with Task("Upgrading instrument configuration", self._prompt) as task:
             if task.do_step:
-                sys.path.append('..')
-                from upgrade import Upgrade, UPGRADE_STEPS
-                from src.local_logger import LocalLogger
-                from src.file_access import FileAccess
-
-                try:
-                    config_root = os.path.abspath(os.path.join(os.environ["ICPCONFIGROOT"], os.pardir))
-                    log_dir = os.path.join(os.environ["ICPVARDIR"], "logs", "upgrade")
-                except KeyError:
-                    raise ErrorInTask("Must be run in a terminal that has done config_env")
-
-                logger = LocalLogger(log_dir)
-                file_access = FileAccess(logger, config_root)
-
-                upgrade = Upgrade(file_access=file_access, logger=logger, upgrade_steps=UPGRADE_STEPS)
-                upgrade.upgrade()
+                RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
 
     def remove_seci_shortcuts(self):
+        """
+        Remove (or at least ask the user to remove) all Seci shortcuts
+        """
         with Task("Remove SECI shortcuts", self._prompt) as task:
             if task.do_step:
-                USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
-                PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
-                SECI = "SECI User interface.lnk"
-                AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
-                                       os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
-
                 for path in AUTOSTART_LOCATIONS:
                     if os.path.exists(path):
-                        self._prompt.prompt_and_raise_if_not_yes("SECI autostart found in {}, delete this.".format(path))
+                        self._prompt.prompt_and_raise_if_not_yes(
+                            "SECI autostart found in {}, delete this.".format(path))
 
                 self._prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
                 self._prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
                 self._prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
     def update_calibrations_repository(self):
+        """
+        Update the calibration repository
+        """
         with Task("Updating calibrations repository", self._prompt) as task:
             if task.do_step:
-                path = os.path.join("C:\\", "Instrument", "Settings", "Config", "common")
                 try:
-                    repo = git.Repo(path)
+                    repo = git.Repo(CALIBRATION_PATH)
                     repo.git.pull()
                 except git.GitCommandError:
                     self._prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
-                                                             "Manually pull it. Path='{}'".format(path))
+                                                             "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
 
     def install_java(self):
+        """
+        Install Java
+        """
         with Task("Install java", self._prompt) as task:
             if task.do_step:
                 java_url = "http://www.java.com/en/"
-                java_installed = subprocess.call(["java","-version"]) == 0
+                java_installed = subprocess.call(["java", "-version"]) == 0
                 if java_installed:
                     self._prompt.prompt_and_raise_if_not_yes(
                         "Confirm that the java version above is the desired version or that you have "
@@ -279,6 +276,9 @@ class UpgradeTasks(object):
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
 
     def take_screenshots(self):
+        """
+        take screen shots of initial system
+        """
         with Task("Take screenshots", self._prompt) as task:
             if task.do_step:
                 self._prompt.prompt_and_raise_if_not_yes(
@@ -316,6 +316,9 @@ class UpgradeTasks(object):
                 self._file_utils.move_dir(src, backup_dir)
 
     def backup_old_directories(self):
+        """
+        Backup old directories
+        """
         with Task("Backup old directories", self._prompt) as task:
             if task.do_step:
                 data = os.path.join("C:\\", "data")
@@ -354,7 +357,7 @@ class UpgradeTasks(object):
         if not os.path.exists(mysql_base_dir):
             raise OSError
         else:
-            mysql_versions = [d for d in os.listdir(mysql_base_dir) if os.path.isdir(os.path.join(mysql_base_dir,d))]
+            mysql_versions = [d for d in os.listdir(mysql_base_dir) if os.path.isdir(os.path.join(mysql_base_dir, d))]
             if len(mysql_versions) == 0:
                 raise OSError
             else:
@@ -365,6 +368,9 @@ class UpgradeTasks(object):
         return mysql_dir
 
     def backup_database(self):
+        """
+        Backup the database
+        """
         with Task("Backup database", self._prompt) as task:
             if task.do_step:
                 try:
@@ -374,8 +380,8 @@ class UpgradeTasks(object):
                     if not all([os.path.exists(p) for p in [mysql_path, mysql_admin_path]]):
                         raise OSError
                     if subprocess.call([mysql_path, "-u", "root", "-p", "--execute",
-                                        "SET GLOBAL innodb_fast_shutdown=0",]) != 0 or \
-                                    subprocess.call([mysql_admin_path, "-u", "root", "-p", "shutdown"]) != 0:
+                                        "SET GLOBAL innodb_fast_shutdown=0"]) != 0 or \
+                            subprocess.call([mysql_admin_path, "-u", "root", "-p", "shutdown"]) != 0:
                         self._prompt.prompt_and_raise_if_not_yes(
                             "Stopping the MySQL service failed. Please do it manually")
                 except OSError:
@@ -386,12 +392,18 @@ class UpgradeTasks(object):
                     self._prompt.prompt_and_raise_if_not_yes("Data backup complete. Please restart the MYSQL service")
 
     def update_release_notes(self):
+        """
+        Update the release notes.
+        """
         with Task("Update release notes", self._prompt) as task:
             if task.do_step:
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
     def upgrade_mysql(self):
+        """
+        Upgrade mysql step
+        """
         with Task("Upgrade MySQL", self._prompt) as task:
             if task.do_step:
                 install_mysql_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
@@ -413,6 +425,9 @@ class UpgradeTasks(object):
                         .format(install_mysql_url))
 
     def reapply_hotfixes(self):
+        """
+        Reapply any hotfixes to the build.
+        """
         with Task("Reapply Hotfixes", self._prompt) as task:
             if task.do_step:
                 self._prompt.prompt_and_raise_if_not_yes(
@@ -420,12 +435,18 @@ class UpgradeTasks(object):
                     "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
     def restart_vis(self):
+        """
+        Restart Vis which were running on upgrade start.
+        """
         with Task("Restart VIs", self._prompt) as task:
             if task.do_step:
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Please restart any VIs that were running at the start of the upgrade")
 
     def perform_client_tests(self):
+        """
+        Test that the client works
+        """
         with Task("Client release tests", self._prompt) as task:
             if task.do_step:
                 self._start_ibex_server()
@@ -439,6 +460,9 @@ class UpgradeTasks(object):
                     "Verify that the current configuration is consistent with the system prior to upgrade")
 
     def perform_server_tests(self):
+        """
+        Test that the server works
+        """
         with Task("Server release tests", self._prompt) as task:
             if task.do_step:
                 self._start_ibex_server()
@@ -462,16 +486,18 @@ class UpgradeTasks(object):
 
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Check that the web dashboard for this instrument is updating "
-                    "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}"
-                        .format(self._get_instrument_name()))
+                    "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}".format(
+                        self._get_instrument_name()))
 
     def inform_instrument_scientists(self):
+        """
+        Inform instrument scientists that the machine is about to go down.
+        """
         with Task("Inform instrument scientists", self._prompt) as task:
             if task.do_step:
                 # For future reference, genie_python can send emails!
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Inform the instrument scientists that the upgrade has been completed")
-
 
 
 class UpgradeInstrument(object):
@@ -495,7 +521,7 @@ class UpgradeInstrument(object):
         Returns:
 
         """
-        self._upgrade_tasks.check_upgrade_testing_machine()
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
@@ -505,26 +531,31 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
 
-    def run_demo_upgrade(self):
+    def remove_all_and_install_client_and_server(self):
         """
-        Run an upgrade of Demo
-        Returns:
+        Either install or upgrade the ibex client and server
 
         """
-        self._upgrade_tasks.check_upgrade_testing_machine()
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(True)
         self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.upgrade_notepad_pp()
 
     def run_instrument_update(self):
+        """
+        Update an instrument (just configuration and seci shortcuts)
+        """
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.remove_seci_shortcuts()
 
     def run_instrument_upgrade(self):
+        """
+        Upgrade an instrument. A complete deployment upgrade.
+        """
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.install_java()
         self._upgrade_tasks.take_screenshots()
@@ -577,7 +608,7 @@ class RunProcess(object):
     """
     Create a process runner to run a process.
     """
-    def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False):
+    def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None):
         """
         Create a process that needs running
 
@@ -585,11 +616,13 @@ class RunProcess(object):
             working_dir: working directory of the process
             executable_file: file of the process to run, e.g. a bat file
             executable_directory: the directory in which the executable file lives, if None, default, use working dir
-            press_any_key: if true then press a key to finish
+            press_any_key: if true then press a key to finish the run process
+            prog_args(list[string]): arguments to pass to the program
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
         self._press_any_key = press_any_key
+        self._prog_args = prog_args
         if executable_directory is None:
             self._full_path_to_process_file = os.path.join(working_dir, executable_file)
         else:
@@ -605,25 +638,31 @@ class RunProcess(object):
         try:
             print("    Running {0} ...".format(self._bat_file))
 
+            command_line = [self._full_path_to_process_file]
+            if self._prog_args is not None:
+                command_line.extend(self._prog_args)
             if self._press_any_key:
-                output = subprocess.Popen([self._full_path_to_process_file], cwd=self._working_dir,
+                output = subprocess.Popen(command_line, cwd=self._working_dir,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 output_lines, err = output.communicate(" ")
             else:
                 output_lines = subprocess.check_output(
-                    [self._full_path_to_process_file],
+                    command_line,
                     cwd=self._working_dir,
                     stderr=subprocess.STDOUT,
                     stdin=subprocess.PIPE)
 
             for line in output_lines.splitlines():
-                print("    , {line}".format(line=line))
+                print("    > {line}".format(line=line))
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
             raise ErrorInRun("Command failed with error: {0}".format(ex))
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
+                    cmd=self._bat_file, cwd=self._working_dir))
+            elif ex.errno == 22:
+                raise ErrorInRun("Directory not found to run command '{cmd}', command is in :  '{cwd}'".format(
                     cmd=self._bat_file, cwd=self._working_dir))
             raise ex
