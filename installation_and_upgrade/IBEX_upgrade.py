@@ -41,9 +41,10 @@ if __name__ == "__main__":
     parser.add_argument('deployment_type', choices=upgrade_types,
                         help="What upgrade should be performed. ("
                              "training_update: update a training machine', "
-                             "install_latest: install just the latest server, client and genie_python, "
+                             "install_latest: install just the latest build of the server, client and genie_python, "
                              "instrument_update: quick update of instrument, "
-                             "instrument_deploy: deploy server to an instrument")
+                             "instrument_deploy: upgrade server, client and genie_python on an instrument "
+                             "(Includes updating configuration)")
 
     args = parser.parse_args()
 
