@@ -37,8 +37,14 @@ if __name__ == "__main__":
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
 
-    parser.add_argument('deployment_type', choices=['training_update', 'instrument_update', 'install_latest'],
-                        help="What upgrade should be performed")
+    upgrade_types = ['training_update', 'install_latest', 'instrument_update', 'instrument_deploy']
+    parser.add_argument('deployment_type', choices=upgrade_types,
+                        help="What upgrade should be performed. ("
+                             "training_update: update a training machine', "
+                             "install_latest: install just the latest build of the server, client and genie_python, "
+                             "instrument_update: quick update of instrument, "
+                             "instrument_deploy: upgrade server, client and genie_python on an instrument "
+                             "(Includes updating configuration)")
 
     args = parser.parse_args()
 
@@ -75,6 +81,8 @@ if __name__ == "__main__":
             upgrade_instrument.remove_all_and_install_client_and_server()
         elif args.deployment_type == "instrument_update":
             upgrade_instrument.run_instrument_update()
+        elif args.deployment_type == "instrument_deploy":
+            upgrade_instrument.run_instrument_upgrade()
 
     except UserStop:
         print ("Stopping upgrade")
