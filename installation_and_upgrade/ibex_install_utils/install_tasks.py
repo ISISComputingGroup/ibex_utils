@@ -504,7 +504,8 @@ class UpgradeTasks(object):
     def create_journal_sql_schema(self):
         with Task("Create journal table SQL schema if it doesn't exist", self._prompt) as task:
             if task.do_step:
-                sql_password = self._prompt.prompt("Enter the MySQL root password.", UserPrompt.ANY, "")
+                sql_password = self._prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
+                                                   os.getenv("MYSQL_PASSWORD", "environment variable not set"))
                 RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
 
 
