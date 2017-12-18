@@ -37,11 +37,10 @@ class UserPrompt(object):
         if self._automatic:
             print("{prompt} : {default}".format(prompt=prompt_text, default=default))
             return default
-
-        if possibles is UserPrompt.ANY:
+        elif possibles is UserPrompt.ANY:
             return raw_input(prompt_text).strip()
-
-        return self._get_user_answer(prompt_text, possibles, case_sensitive)
+        else:
+            return self._get_user_answer(prompt_text, possibles, case_sensitive)
 
     def _get_user_answer(self, prompt_text, possibles, case_sensitive=False):
         while True:
