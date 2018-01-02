@@ -1,3 +1,8 @@
+"""
+Script to extract information from motors to be consumed by the motion controls team. Exports data as CSV. To run,
+load the script into a genie_python console and run as a standard user script.
+"""
+
 import os
 import csv
 
