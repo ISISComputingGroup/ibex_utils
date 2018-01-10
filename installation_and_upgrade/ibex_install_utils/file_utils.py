@@ -40,17 +40,9 @@ class FileUtils(object):
             """
             if exc_info[0] is WindowsError:
                 try:
-                    try:
-                        # try remove second time (doesn't always work first time)
-                        if func == os.rmdir:
-                            sleep(0.1)
-                            os.rmdir(current_path)
-                            return
-                    except WindowsError:
-                        pass
-
+                    sleep(0.1)
                     os.chmod(current_path, stat.S_IRWXU)
-                    os.remove(current_path)
+                    shutil.rmtree(current_path)
                     return
                 except Exception:
                     pass
