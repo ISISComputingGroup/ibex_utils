@@ -8,6 +8,10 @@ class UserPrompt(object):
     """
     A user prompt object to ask the user questions.
     """
+
+    # Sentinel value for allowing any answer to a prompt
+    ANY = object()
+
     def __init__(self, automatic, confirm_steps):
         """
         Initializer.
@@ -33,8 +37,10 @@ class UserPrompt(object):
         if self._automatic:
             print("{prompt} : {default}".format(prompt=prompt_text, default=default))
             return default
-
-        return self._get_user_answer(prompt_text, possibles, case_sensitive)
+        elif possibles is UserPrompt.ANY:
+            return raw_input(prompt_text).strip()
+        else:
+            return self._get_user_answer(prompt_text, possibles, case_sensitive)
 
     def _get_user_answer(self, prompt_text, possibles, case_sensitive=False):
         while True:

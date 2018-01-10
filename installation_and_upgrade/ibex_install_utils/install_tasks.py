@@ -11,13 +11,15 @@ from datetime import date
 
 from ibex_install_utils.exceptions import UserStop, ErrorInRun
 from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.user_prompt import UserPrompt
 
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
+SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
 PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
-CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc\upgrade\master")
+CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 EPICS_UTILS_PATH = os.path.join(APPS_BASE_DIR, "EPICS_UTILS")
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 SETTINGS_CONFIG_FOLDER = os.path.join("Settings", "config")
@@ -499,6 +501,13 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Inform the instrument scientists that the upgrade has been completed")
 
+    def create_journal_sql_schema(self):
+        with Task("Create journal table SQL schema if it doesn't exist", self._prompt) as task:
+            if task.do_step:
+                sql_password = self._prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
+                                                   os.getenv("MYSQL_PASSWORD", "environment variable not set"))
+                RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
+
 
 class UpgradeInstrument(object):
     """
@@ -548,6 +557,7 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.remove_seci_shortcuts()
 
@@ -565,6 +575,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_server(True)
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.upgrade_mysql()
