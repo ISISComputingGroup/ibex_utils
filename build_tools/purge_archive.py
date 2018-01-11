@@ -61,18 +61,7 @@ def deletion_directories(project_areas):
     return dirs
 
 
-def check_drive(drive_letter):
-    """
-    The script assumes that P:\ has been mapped to \isis\inst$. Check to verify that is true
-    """
-    dirs = os.listdir("{}:\\".format(drive_letter))
-    return "Instruments$" in dirs and "Kits$" in dirs
-
-
 def purge(dry_run=False):
-    if not check_drive("P"):
-        print("P:\ does not appear to point to \isis\inst$")
-        return
     print("Beginning archive purge...")
     project_areas = [os.path.join(build_area, proj) for proj in ("Client", "genie_python")] + \
         [os.path.join(build_area, "EPICS", proj) for proj in os.listdir(os.path.join(build_area, "EPICS"))
