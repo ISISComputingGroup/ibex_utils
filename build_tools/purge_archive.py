@@ -5,11 +5,12 @@ from datetime import datetime, timedelta
 
 max_build_age_in_days = 30
 minimum_number_of_builds_to_keep = 10
+build_area = r"\\isis\inst$\kits$\CompGroup\ICP"
 
 
 def robocopy_delete(path):
     # Last fall back option when system delete fails. Typically when paths are too long
-    empty_dir = os.path.join("P:\\", "Kits$", "CompGroup", "ICP", "empty_dir_for_robocopy")
+    empty_dir = os.path.join(build_area, "empty_dir_for_robocopy")
     os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:0 /LOG:NUL".format(empty_dir, path))
 
 
@@ -73,7 +74,6 @@ def purge(dry_run=False):
         print("P:\ does not appear to point to \isis\inst$")
         return
     print("Beginning archive purge...")
-    build_area = os.path.join("P:\\", "Kits$", "CompGroup", "ICP")
     project_areas = [os.path.join(build_area, proj) for proj in ("Client", "genie_python")] + \
         [os.path.join(build_area, "EPICS", proj) for proj in os.listdir(os.path.join(build_area, "EPICS"))
          if proj.startswith("EPICS")]
