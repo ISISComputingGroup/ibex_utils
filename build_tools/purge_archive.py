@@ -8,35 +8,31 @@ minimum_number_of_builds_to_keep = 10
 build_area = r"\\isis\inst$\kits$\CompGroup\ICP"
 
 
-def robocopy_delete(path):
-    # Last fall back option when system delete fails. Typically when paths are too long
-    empty_dir = os.path.join(build_area, "empty_dir_for_robocopy")
-    os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:0 /LOG:NUL".format(empty_dir, path))
+def winapi_path(dos_path):
+    path = os.path.abspath(dos_path)
+    long_path_identifier  = u"\\\\?\\"
+    if path.startswith(long_path_identifier):
+        win_path = path
+    elif path.startswith(u"\\\\"):
+        win_path = long_path_identifier + u"UNC\\" + path[2:]
+    else:
+        win_path = long_path_identifier + path
+    return win_path
 
 
 def rmtree_error(func, path, exc_info):
-    """
-    Error handler for ``shutil.rmtree``.
-    If the error is due to an access error (read only file)
-    it attempts to add write permission and then retries.
-    If the error is for another reason it re-raises the error.
-    Usage : ``shutil.rmtree(path, onerror=onerror)``
-    """
     try:
         if not os.access(path, os.W_OK):
-            # Is the error an access error ?
             os.chmod(path, stat.S_IWUSR)
-            func(path)
+        func(winapi_path(path))
     except Exception as e:
-        print("Could not delete file, falling back to robocopy. Exception: \n{}".format(e))
-        robocopy_delete(path)
+        print("Unable to delete file: {}".format(e))
 
 
 def delete_dir(directory):
     print("Deleting directory: {}".format(directory))
     try:
-        # Use prefix \\? with abspath to work for long file names
-        shutil.rmtree(os.path.join(r"\\?", directory), onerror=rmtree_error)
+        shutil.rmtree(winapi_path(directory), onerror=rmtree_error)
     except Exception as e:
         print("Unable to delete directory {}: {}".format(directory, e))
 
