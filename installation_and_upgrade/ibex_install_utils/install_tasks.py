@@ -550,6 +550,8 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(True)
         self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.create_journal_sql_schema()
 
     def run_instrument_update(self):
         """
