@@ -29,6 +29,8 @@ SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resou
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
+LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
+
 USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
 PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
 SECI = "SECI User interface.lnk"
@@ -524,6 +526,15 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks = UpgradeTasks(user_prompt, server_source_dir, client_source_dir, file_utils)
 
+    @staticmethod
+    def _should_install_utils():
+        """
+        Condition on which to install ibex utils (ICP_Binaries)
+
+        :return: True if utils should be installed, False otherwise
+        """
+        return not os.path.exists(LABVIEW_DAE_DIR)
+
     def run_test_update(self):
         """
         Run a complete test upgrade on the current system
@@ -536,7 +547,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
         self._upgrade_tasks.remove_settings()
         self._upgrade_tasks.install_settings()
-        self._upgrade_tasks.install_ibex_server(True)
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
 
@@ -548,7 +559,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
-        self._upgrade_tasks.install_ibex_server(True)
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
 
     def run_instrument_update(self):
@@ -572,7 +583,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.remove_seci_shortcuts()
-        self._upgrade_tasks.install_ibex_server(True)
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
