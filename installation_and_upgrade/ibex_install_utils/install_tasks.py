@@ -229,6 +229,29 @@ class UpgradeTasks(object):
         """
         with Task("Upgrading instrument configuration", self._prompt) as task:
             if task.do_step:
+                manual_prompt = "Merge the master configurations branch into the instrument configuration. "\
+                                "From C:\Instrument\Settings\config\[machine name] run:\n"\
+                                "    0. Clean up any in progress merge (e.g. git merge --abort)\n"\
+                                "    1. git checkout master\n"\
+                                "    2. git pull\n"\
+                                "    3. git checkout [machine name]\n"\
+                                "    4. git merge master\n"\
+                                "    5. Resolve any merge conflicts\n"\
+                                "    6. git push\n"
+                automatic_prompt = "Attempt automatic configuration merge?"
+                if self._prompt.confirm_step(automatic_prompt):
+                    try:
+                        repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, self._machine_name))
+                        repo.git.checkout("master")
+                        repo.git.pull()
+                        repo.git.checkout(self._machine_name.upper())
+                        repo.git.merge("master")
+                        repo.git.push()
+                    except git.GitCommandError as e:
+                        print("Error doing automatic merge, please perform the merge manually: {}".format(e))
+                        self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
+                else:
+                    self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
                 RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
 
     def remove_seci_shortcuts(self):
