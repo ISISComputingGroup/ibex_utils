@@ -192,7 +192,7 @@ class UpgradeTasks(object):
                 self._file_utils.mkdir_recursive(APPS_BASE_DIR)
                 RunProcess(self._client_source_dir, "install_client.bat", press_any_key=True).run()
 
-    def _start_ibex_server(self):
+    def start_ibex_server(self):
         """
         Start the ibex server. Can not do this because it would kill the current python process.
         Returns:
@@ -202,12 +202,14 @@ class UpgradeTasks(object):
         #    RunProcess(EPICS_PATH, "start_ibex_server.bat").run()
         pass
 
-    def _start_ibex_gui(self):
+    def start_ibex_gui(self):
         """
         Start the IBEX GUI
         :return:
         """
-        subprocess.Popen([os.path.join(GUI_PATH, "ibex-client.exe")])
+        with Task("Starting IBEX gui", self._prompt) as task:
+            if task.do_step:
+                subprocess.Popen([os.path.join(GUI_PATH, "ibex-client.exe")])
 
     def user_confirm_upgrade_type_on_machine(self, machine_type):
         """
@@ -476,8 +478,6 @@ class UpgradeTasks(object):
         """
         with Task("Client release tests", self._prompt) as task:
             if task.do_step:
-                self._start_ibex_server()
-                self._start_ibex_gui()
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Check that the version displayed in the client is as expected after the deployment")
                 self._prompt.prompt_and_raise_if_not_yes(
@@ -492,7 +492,6 @@ class UpgradeTasks(object):
         """
         with Task("Server release tests", self._prompt) as task:
             if task.do_step:
-                self._start_ibex_server()
                 server_release_tests_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
                                            "Server-Release-Tests"
 
@@ -597,14 +596,34 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.remove_seci_shortcuts()
 
-    def run_instrument_upgrade(self):
+    def run_instrument_deploy(self):
         """
         Upgrade an instrument. A complete deployment upgrade.
         """
-        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
-        self._upgrade_tasks.stop_ibex_server()
+        self.run_instrument_deploy_pre_stop()
+        self.run_instrument_deploy_main()
+        self.run_instrument_deploy_post_start()
+
+    def run_instrument_deploy_post_start(self):
+        """
+            Upgrade an instrument. Steps to do after ibex has been started.
+
+            Current the server can not be started in this python script.
+        """
+        self._upgrade_tasks.start_ibex_server()
+        self._upgrade_tasks.start_ibex_gui()
+        self._upgrade_tasks.restart_vis()
+        self._upgrade_tasks.perform_client_tests()
+        self._upgrade_tasks.perform_server_tests()
+        self._upgrade_tasks.inform_instrument_scientists()
+
+    def run_instrument_deploy_main(self):
+        """
+            Upgrade an instrument. Steps to do after ibex has been stopped but before it is restarted.
+
+            Current the server can not be started or stopped in this python script.
+        """
         self._upgrade_tasks.install_java()
-        self._upgrade_tasks.take_screenshots()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.remove_seci_shortcuts()
@@ -616,10 +635,16 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.upgrade_mysql()
         self._upgrade_tasks.reapply_hotfixes()
-        self._upgrade_tasks.restart_vis()
-        self._upgrade_tasks.perform_client_tests()
-        self._upgrade_tasks.perform_server_tests()
-        self._upgrade_tasks.inform_instrument_scientists()
+
+    def run_instrument_deploy_pre_stop(self):
+        """
+            Upgrade an instrument. Steps to do before ibex is stopped.
+
+            Current the server can not be started or stopped in this python script.
+        """
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
+        self._upgrade_tasks.take_screenshots()
+        self._upgrade_tasks.stop_ibex_server()
 
 
 class Task(object):
