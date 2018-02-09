@@ -4,10 +4,6 @@ Filesystem utility classes
 
 import os
 import shutil
-import stat
-from time import sleep
-
-from ibex_install_utils.exceptions import ErrorWithFile
 
 
 class FileUtils(object):
@@ -24,7 +20,8 @@ class FileUtils(object):
         """
         empty_dir = r"\\isis\inst$\Kits$\CompGroup\ICP\empty_dir_for_robocopy"
         if os.path.isdir(path):
-            os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".format(empty_dir, path))
+            os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".
+                      format(empty_dir, path))
 
     def mkdir_recursive(self, path):
         """
@@ -52,6 +49,3 @@ class FileUtils(object):
         """
         shutil.copytree(src, dst)
         FileUtils.remove_tree(src)
-
-
-

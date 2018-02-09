@@ -1,16 +1,20 @@
 """
 Tasks associated with install
 """
+from time import sleep
 
 import os
 import shutil
 import socket
 import subprocess
-import git
 from datetime import date
+
+import git
 
 from ibex_install_utils.exceptions import UserStop, ErrorInRun
 from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.run_process import RunProcess
+from ibex_install_utils.task import Task
 from ibex_install_utils.user_prompt import UserPrompt
 
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
@@ -28,6 +32,7 @@ CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
+MYSQL_FILES_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var", "mysql")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -404,21 +409,34 @@ class UpgradeTasks(object):
             if task.do_step:
                 try:
                     mysql_bin_dir = self._get_mysql_dir()
-                    mysql_path = os.path.join(mysql_bin_dir, "mysql.exe")
-                    mysql_admin_path = os.path.join(mysql_bin_dir, "mysqladmin.exe")
-                    if not all([os.path.exists(p) for p in [mysql_path, mysql_admin_path]]):
-                        raise OSError
-                    if subprocess.call([mysql_path, "-u", "root", "-p", "--execute",
-                                        "SET GLOBAL innodb_fast_shutdown=0"]) != 0 or \
-                            subprocess.call([mysql_admin_path, "-u", "root", "-p", "shutdown"]) != 0:
-                        self._prompt.prompt_and_raise_if_not_yes(
-                            "Stopping the MySQL service failed. Please do it manually")
-                except OSError:
+                    RunProcess(SYSTEM_SETUP_PATH, "mysql.exe", executable_directory=mysql_bin_dir,
+                               prog_args=["-u", "root", "-p", "--execute", "SET GLOBAL innodb_fast_shutdown=0"],
+                               capture_pipes=False).run()
+
+                    RunProcess(SYSTEM_SETUP_PATH, "mysqladmin.exe", executable_directory=mysql_bin_dir,
+                               prog_args=["-u", "root", "-p", "shutdown"], capture_pipes=False).run()
+
+                    #  Must wait for the database to properly stop otherwise when we copy it the copy fails because the
+                    #   file disappears
+                    mysql_pid_file = os.path.join(MYSQL_FILES_DIR, "Data", "{}.pid".format(self._machine_name))
+                    for i in range(1, 60):
+                        if os.path.exists(mysql_pid_file):
+                            print("Waiting for pid file to be removed.")
+                            sleep(1)
+                        else:
+                            break
+                    if os.path.exists(mysql_pid_file):
+                        raise ErrorInRun("MySQL appears not to have stopped the pid file, '{}', is still there!".format(
+                            mysql_pid_file))
+
+                except ErrorInRun as ex:
                     self._prompt.prompt_and_raise_if_not_yes(
-                        "Unable to find mysql location. Please shut down the service manually")
-                finally:
-                    self._backup_dir(os.path.join("C:\\", "Instrument", "var", "mysql"))
-                    self._prompt.prompt_and_raise_if_not_yes("Data backup complete. Please restart the MYSQL service")
+                        "Unable to run mysql. Please shut down the service manually. Error is {}".format(ex.message))
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Stopping the MySQL service failed. Please do it manually")
+
+                self._backup_dir(MYSQL_FILES_DIR)
+                self._prompt.prompt_and_raise_if_not_yes("Data backup complete. Please restart the MYSQL service")
 
     def update_release_notes(self):
         """
@@ -526,6 +544,9 @@ class UpgradeTasks(object):
                     "Inform the instrument scientists that the upgrade has been completed")
 
     def create_journal_sql_schema(self):
+        """
+        Create the journal schema if it doesn't exist.
+        """
         with Task("Create journal table SQL schema if it doesn't exist", self._prompt) as task:
             if task.do_step:
                 sql_password = self._prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
@@ -645,96 +666,3 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.take_screenshots()
         self._upgrade_tasks.stop_ibex_server()
-
-
-class Task(object):
-    """
-    Task to be performed for install.
-
-    Confirms a step is to be run (if needed) and places the answer in do_step.
-    Wraps the task in print statements so users can see when a task starts and ends.
-    """
-
-    def __init__(self, task_name, user_prompt):
-        """
-        Initialised.
-        Args:
-            task_name: the name of the task
-            user_prompt: object allowing the user to be prompted for an answer
-        """
-        self._task = task_name
-        self._user_prompt = user_prompt
-        self.do_step = True
-
-    def __enter__(self):
-        self.do_step = self._user_prompt.confirm_step(self._task)
-        print("{task} ...".format(task=self._task))
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_val is None:
-            print("... Done".format(task=self._task))
-
-
-class RunProcess(object):
-    """
-    Create a process runner to run a process.
-    """
-    def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None):
-        """
-        Create a process that needs running
-
-        Args:
-            working_dir: working directory of the process
-            executable_file: file of the process to run, e.g. a bat file
-            executable_directory: the directory in which the executable file lives, if None, default, use working dir
-            press_any_key: if true then press a key to finish the run process
-            prog_args(list[string]): arguments to pass to the program
-        """
-        self._working_dir = working_dir
-        self._bat_file = executable_file
-        self._press_any_key = press_any_key
-        self._prog_args = prog_args
-        if executable_directory is None:
-            self._full_path_to_process_file = os.path.join(working_dir, executable_file)
-        else:
-            self._full_path_to_process_file = os.path.join(executable_directory, executable_file)
-
-    def run(self):
-        """
-        Run the process
-
-        Returns:
-        Raises ErrorInRun: if there is a known problem with the run
-        """
-        try:
-            print("    Running {0} ...".format(self._bat_file))
-
-            command_line = [self._full_path_to_process_file]
-            if self._prog_args is not None:
-                command_line.extend(self._prog_args)
-            if self._press_any_key:
-                output = subprocess.Popen(command_line, cwd=self._working_dir,
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
-                output_lines, err = output.communicate(" ")
-            else:
-                output_lines = subprocess.check_output(
-                    command_line,
-                    cwd=self._working_dir,
-                    stderr=subprocess.STDOUT,
-                    stdin=subprocess.PIPE)
-
-            for line in output_lines.splitlines():
-                print("    > {line}".format(line=line))
-            print("    ... finished")
-        except subprocess.CalledProcessError as ex:
-            raise ErrorInRun("Command failed with error: {0}".format(ex))
-        except WindowsError as ex:
-            if ex.errno == 2:
-                raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
-                    cmd=self._bat_file, cwd=self._working_dir))
-            elif ex.errno == 22:
-                raise ErrorInRun("Directory not found to run command '{cmd}', command is in :  '{cwd}'".format(
-                    cmd=self._bat_file, cwd=self._working_dir))
-            raise ex
