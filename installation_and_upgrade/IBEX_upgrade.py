@@ -24,6 +24,15 @@ def _get_latest_directory_path(build_dir, build_prefix, directory_above_build_nu
     return os.path.join(build_dir, "{}{}".format(build_prefix, build_num), directory_above_build_num)
 
 
+def _get_latest_release_path(release_dir):
+    releases = [name for name in os.listdir(dir) if os.path.isdir(os.path.join(dir, name))]
+    if releases is not None:
+        current_release = ""
+        for release in releases:
+            current_release = max(current_release, release)
+    return os.path.join(release_dir, "{}".format(current_release))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Upgrade the instrument.')
 
@@ -49,8 +58,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.release_dir is not None:
-        server_dir = os.path.join(args.release_dir, "EPICS")
-        client_dir = os.path.join(args.release_dir, "Client")
+        current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
+        server_dir = os.path.join(current_release_dir, "EPICS")
+        client_dir = os.path.join(current_release_dir, "Client")
     elif args.server_dir is not None and args.client_dir is not None:
         server_dir = args.server_dir
         client_dir = args.client_dir
