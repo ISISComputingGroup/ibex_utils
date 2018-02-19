@@ -284,7 +284,7 @@ class UpgradeTasks(object):
 
     def install_java(self):
         """
-        Install Java
+        Checks Java installation
         """
         with Task("Install java", self._prompt) as task:
             if task.do_step:
@@ -301,6 +301,21 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Is auto-update turned off? This can be checked from the Java control panel in "
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
+
+    def install_git(self):
+        """
+        Checks Git installation
+        """
+        with Task("Install git", self._prompt) as task:
+            if task.do_step:
+                git_url = "https://git-scm.com/downloads"
+                git_installed = subprocess.call(["git", "--version"]) == 0
+                if git_installed:
+                    print("Git installation found ({}). Proceeding to next step.".format(git_installed))
+                else:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Git is not installed. Please go to {}, then download and install "
+                        "the latest version of Git before proceeding.".format(git_url))
 
     def take_screenshots(self):
         """
@@ -518,7 +533,7 @@ class UpgradeTasks(object):
 
     def inform_instrument_scientists(self):
         """
-        Inform instrument scientists that the machine is about to go down.
+        Inform instrument scientists that the machine has been upgraded.
         """
         with Task("Inform instrument scientists", self._prompt) as task:
             if task.do_step:
@@ -603,6 +618,7 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
+        self._upgrade_tasks.install_git()
         self._upgrade_tasks.install_java()
         self._upgrade_tasks.take_screenshots()
         self._upgrade_tasks.backup_old_directories()
