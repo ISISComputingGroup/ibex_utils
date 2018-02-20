@@ -282,7 +282,7 @@ class UpgradeTasks(object):
                     self._prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
                                                              "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
 
-    def install_java(self):
+    def check_java_installation(self):
         """
         Checks Java installation
         """
@@ -295,26 +295,58 @@ class UpgradeTasks(object):
                         "Confirm that the java version above is the desired version or that you have "
                         "upgraded to the desired 64-bit version from {}".format(java_url))
                 else:
-                    self._prompt.prompt_and_raise_if_not_yes(
-                        "Java is not installed. Please go to {}, then download and install "
-                        "the desired 64-bit version".format(java_url))
+                    self.install_java()
+
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Is auto-update turned off? This can be checked from the Java control panel in "
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
 
-    def install_git(self):
+    def install_java(self):
+        """
+        Installs the latest version of the Java Runtime Environment
+        """
+        java_url = "http://www.java.com/en/"
+        choice = self._prompt.prompt(
+            "Java is not installed. Install latest version of java? \n A for automatic \n M for manual \n C for cancel",
+            ["A", "M", "C"])
+        if choice == "A":
+            subprocess.call("msiexec.exe /qb- /l*vx %LogPath%\Java.log REBOOT=ReallySuppress UILevel=67 ALLUSERS=2 /i "
+                            "jre1.8.0_11164.msi")
+        if choice == "M":
+            self._prompt.prompt_and_raise_if_not_yes(
+                "Please go to {}, then download and install the desired 64-bit version".format(java_url))
+        else:
+            raise UserStop
+
+        self.check_java_installation()
+
+    def check_git_installation(self):
         """
         Checks Git installation
         """
-        git_url = "https://git-scm.com/downloads"
         git_installed = subprocess.call(["git", "--version"]) == 0
         if git_installed:
             self._prompt.prompt_and_raise_if_not_yes("Git installation found, see above for version.")
         else:
-            self._prompt.prompt_and_raise_if_not_yes(
-                "Git is not installed. Please go to {}, then download and install "
-                "the latest version of Git before proceeding.".format(git_url))
             self.install_git()
+
+    def install_git(self):
+        """
+        Installs the latest version of Git
+        """
+        git_url = "https://git-scm.com/downloads"
+        choice = self._prompt.prompt(
+            "Git is not installed. Install latest version of Git? \n A for automatic \n M for manual \n C for cancel",
+            ["A", "M", "C"])
+        if choice == "A":
+            subprocess.call("Git-2.8.2-64-bit.exe /VERYSILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /LOG=\"%LogPath%\Git.log\" /NORESTART /LOADINF=\"settings.inf\"")
+        if choice == "M":
+            self._prompt.prompt_and_raise_if_not_yes(
+                "Please go to {}, then download and install the desired version.".format(git_url))
+        else:
+            raise UserStop
+
+        self.check_git_installation()
 
     def take_screenshots(self):
         """
@@ -499,6 +531,7 @@ class UpgradeTasks(object):
                     "verifying that the 'g.' and 'inst.' prefixes work as expected)")
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Verify that the current configuration is consistent with the system prior to upgrade")
+                # TODO Wiring tables etc.
 
     def perform_server_tests(self):
         """
@@ -573,6 +606,7 @@ class UpgradeInstrument(object):
         return not os.path.exists(LABVIEW_DAE_DIR)
 
     def run_test_update(self):
+        # TODO what is the use case?
         """
         Run a complete test upgrade on the current system
         Returns:
@@ -593,6 +627,7 @@ class UpgradeInstrument(object):
         Either install or upgrade the ibex client and server
 
         """
+        # TODO still needed?
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
@@ -602,36 +637,73 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.create_journal_sql_schema()
 
     def run_instrument_update(self):
+        # TODO what is the use case?
         """
         Update an instrument (just configuration and seci shortcuts)
         """
+
+        self._prompt.prompt_and_raise_if_not_yes(
+            "This script updates this instrument's configurations directory only. Proceed?")
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.remove_seci_shortcuts()
 
+    def run_instrument_install(self):
+        """
+        Do a first installation of IBEX on a new instrument.
+        """
+        self._prompt.prompt_and_raise_if_not_yes("This script performs a first-time full installation of the IBEX "
+                                                 "server and client on a new instrument. Proceed?")
+
+        self._upgrade_tasks.check_git_installation()
+        self._upgrade_tasks.check_java_installation()
+        # TODO self._upgrade_tasks.check_mysql_installation()
+        self._upgrade_tasks.remove_seci_shortcuts()
+
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.upgrade_instrument_configuration()  # TODO create
+        self._upgrade_tasks.create_journal_sql_schema()
+        self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.update_release_notes()
+        self._upgrade_tasks.upgrade_mysql()  # TODO check in install
+        self._upgrade_tasks.restart_vis()
+
+        # TODO worry about web dashboard?
+
+        self._upgrade_tasks.perform_client_tests()
+        self._upgrade_tasks.perform_server_tests()
+        # TODO write to CS:INSTLIST ?
+        self._upgrade_tasks.inform_instrument_scientists()
+
     def run_instrument_upgrade(self):
         """
-        Upgrade an instrument. A complete deployment upgrade.
+        Deploy a full IBEX upgrade on an existing instrument.
         """
+        self._prompt.prompt_and_raise_if_not_yes(
+            "This script performs a full upgrade of the IBEX server and client on an existing instrument. Proceed?")
+
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
-        self._upgrade_tasks.install_git()
-        self._upgrade_tasks.install_java()
+        self._upgrade_tasks.check_git_installation()
+        self._upgrade_tasks.check_java_installation()
+        # TODO self._upgrade_tasks.check_mysql_installation()
         self._upgrade_tasks.take_screenshots()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.remove_seci_shortcuts()
+
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.upgrade_mysql()
         self._upgrade_tasks.reapply_hotfixes()
         self._upgrade_tasks.restart_vis()
+
         self._upgrade_tasks.perform_client_tests()
         self._upgrade_tasks.perform_server_tests()
         self._upgrade_tasks.inform_instrument_scientists()
