@@ -1,4 +1,4 @@
-set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases\4.0.0"
+set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 call "%~dp0\define_latest_genie_python.bat"
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"

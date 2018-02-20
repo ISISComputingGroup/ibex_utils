@@ -4,6 +4,7 @@ Script to install IBEX to various machines
 
 import argparse
 import os
+import re
 import sys
 
 from ibex_install_utils.install_tasks import UpgradeInstrument
@@ -25,8 +26,12 @@ def _get_latest_directory_path(build_dir, build_prefix, directory_above_build_nu
 
 
 def _get_latest_release_path(release_dir):
+    regex = re.compile(r'^\d\.\d\.\d$')
+
     releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
-    if releases is None or releases == []:
+    releases = filter(regex.match, releases)
+
+    if releases == []:
         print("Error: No releases found in '{0}'".format(release_dir))
         sys.exit(3)
     current_release = max(releases)
