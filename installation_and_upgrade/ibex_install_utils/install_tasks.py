@@ -306,16 +306,15 @@ class UpgradeTasks(object):
         """
         Checks Git installation
         """
-        with Task("Install git", self._prompt) as task:
-            if task.do_step:
-                git_url = "https://git-scm.com/downloads"
-                git_installed = subprocess.call(["git", "--version"]) == 0
-                if git_installed:
-                    print("Git installation found ({}). Proceeding to next step.".format(git_installed))
-                else:
-                    self._prompt.prompt_and_raise_if_not_yes(
-                        "Git is not installed. Please go to {}, then download and install "
-                        "the latest version of Git before proceeding.".format(git_url))
+        git_url = "https://git-scm.com/downloads"
+        git_installed = subprocess.call(["git", "--version"]) == 0
+        if git_installed:
+            self._prompt.prompt_and_raise_if_not_yes("Git installation found, see above for version.")
+        else:
+            self._prompt.prompt_and_raise_if_not_yes(
+                "Git is not installed. Please go to {}, then download and install "
+                "the latest version of Git before proceeding.".format(git_url))
+            self.install_git()
 
     def take_screenshots(self):
         """
