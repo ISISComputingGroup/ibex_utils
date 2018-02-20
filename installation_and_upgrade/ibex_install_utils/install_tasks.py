@@ -332,7 +332,7 @@ class UpgradeTasks(object):
         """
         git_installed = subprocess.call(["git", "--version"]) == 0
         if git_installed:
-            self._prompt.prompt_and_raise_if_not_yes("Git installation found, see above for version.")
+            self._prompt.prompt_and_raise_if_not_yes("Git installation found. Check above that version is correct.")
         else:
             self.install_git()
 
@@ -648,7 +648,7 @@ class UpgradeInstrument(object):
         Update an instrument (just configuration and seci shortcuts)
         """
 
-        self._upgrade.confirm("This script updates this instrument's configurations directory only. Proceed?")
+        self._upgrade_tasks.confirm("This script updates this instrument's configurations directory only. Proceed?")
 
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.upgrade_instrument_configuration()
@@ -660,7 +660,7 @@ class UpgradeInstrument(object):
         """
         Do a first installation of IBEX on a new instrument.
         """
-        self._upgrade.confirm("This script performs a first-time full installation of the IBEX server and client on a "
+        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client on a "
                               "new instrument. Proceed?")
 
         self._upgrade_tasks.check_git_installation()
