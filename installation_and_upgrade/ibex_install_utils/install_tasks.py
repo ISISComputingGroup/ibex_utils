@@ -86,6 +86,12 @@ class UpgradeTasks(object):
         """
         return os.path.join(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER, UpgradeTasks._get_machine_name())
 
+    def confirm(self, message):
+        """
+        Ask user to confirm correct script was chosen.
+        """
+        self._prompt.prompt_and_raise_if_not_yes(message)
+
     def stop_ibex_server(self):
         """
         Stop the current IBEX server running. Current this can not be run because it kills any python
@@ -642,8 +648,8 @@ class UpgradeInstrument(object):
         Update an instrument (just configuration and seci shortcuts)
         """
 
-        self._prompt.prompt_and_raise_if_not_yes(
-            "This script updates this instrument's configurations directory only. Proceed?")
+        self._upgrade.confirm("This script updates this instrument's configurations directory only. Proceed?")
+
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
@@ -654,8 +660,8 @@ class UpgradeInstrument(object):
         """
         Do a first installation of IBEX on a new instrument.
         """
-        self._prompt.prompt_and_raise_if_not_yes("This script performs a first-time full installation of the IBEX "
-                                                 "server and client on a new instrument. Proceed?")
+        self._upgrade.confirm("This script performs a first-time full installation of the IBEX server and client on a "
+                              "new instrument. Proceed?")
 
         self._upgrade_tasks.check_git_installation()
         self._upgrade_tasks.check_java_installation()
@@ -682,7 +688,7 @@ class UpgradeInstrument(object):
         """
         Deploy a full IBEX upgrade on an existing instrument.
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self._upgrade_tasks.confirm(
             "This script performs a full upgrade of the IBEX server and client on an existing instrument. Proceed?")
 
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
