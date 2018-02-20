@@ -25,7 +25,7 @@ def _get_latest_directory_path(build_dir, build_prefix, directory_above_build_nu
 
 
 def _get_latest_release_path(release_dir):
-    releases = [name for name in os.listdir(dir) if os.path.isdir(os.path.join(dir, name))]
+    releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
     if releases is None or releases == []:
         print("Error: No releases found in '{0}'".format(release_dir))
         sys.exit(3)
