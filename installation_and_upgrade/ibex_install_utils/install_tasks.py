@@ -312,18 +312,13 @@ class UpgradeTasks(object):
         Installs the latest version of the Java Runtime Environment
         """
         java_url = "http://www.java.com/en/"
-        choice = self._prompt.prompt(
-            "Java is not installed. Install latest version of java? \n A for automatic \n M for manual \n C for cancel",
-            ["A", "M", "C"])
-        if choice == "A":
-            subprocess.call("msiexec.exe /qb- /l*vx %LogPath%\Java.log REBOOT=ReallySuppress UILevel=67 ALLUSERS=2 /i "
-                            "jre1.8.0_11164.msi")
-        if choice == "M":
-            self._prompt.prompt_and_raise_if_not_yes(
-                "Please go to {}, then download and install the desired 64-bit version".format(java_url))
-        else:
-            raise UserStop
 
+        if self._prompt.confirm_step("Java is not installed. Attempt automatic install?"):
+                subprocess.call("msiexec.exe /qb- /l*vx %LogPath%\Java.log REBOOT=ReallySuppress UILevel=67 ALLUSERS=2 "
+                                "/i jre1.8.0_11164.msi")
+        else:
+            self._prompt.prompt_and_raise_if_not_yes(
+                "Manual install: Please go to {} to download and install the desired 64-bit version".format(java_url))
         self.check_java_installation()
 
     def check_git_installation(self):
@@ -332,7 +327,7 @@ class UpgradeTasks(object):
         """
         git_installed = subprocess.call(["git", "--version"]) == 0
         if git_installed:
-            self._prompt.prompt_and_raise_if_not_yes("Git installation found. Check above that version is correct.")
+            self._prompt.prompt_and_raise_if_not_yes("Git installation found. Check above that the version is correct.")
         else:
             self.install_git()
 
@@ -341,17 +336,12 @@ class UpgradeTasks(object):
         Installs the latest version of Git
         """
         git_url = "https://git-scm.com/downloads"
-        choice = self._prompt.prompt(
-            "Git is not installed. Install latest version of Git? \n A for automatic \n M for manual \n C for cancel",
-            ["A", "M", "C"])
-        if choice == "A":
-            subprocess.call("Git-2.8.2-64-bit.exe /VERYSILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /LOG=\"%LogPath%\Git.log\" /NORESTART /LOADINF=\"settings.inf\"")
-        if choice == "M":
-            self._prompt.prompt_and_raise_if_not_yes(
-                "Please go to {}, then download and install the desired version.".format(git_url))
+        if self._prompt.confirm_step("Git is not installed. Attempt automatic install?"):
+                subprocess.call("Git-2.8.2-64-bit.exe /VERYSILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS "
+                                "/LOG=\"%LogPath%\Git.log\" /NORESTART /LOADINF=\"settings.inf\"")
         else:
-            raise UserStop
-
+            self._prompt.prompt_and_raise_if_not_yes(
+                "Manual install: Please go to {} to download and install the desired version.".format(git_url))
         self.check_git_installation()
 
     def take_screenshots(self):
