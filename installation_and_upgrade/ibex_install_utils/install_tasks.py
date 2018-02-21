@@ -229,6 +229,25 @@ class UpgradeTasks(object):
         if answer != "Y":
             raise UserStop()
 
+    def create_config_repository(self):
+        inst_name = self._machine_name
+
+        subprocess.call("git config --global core.autocrlf true")
+        subprocess.call("git config --global credential.helper wincred")
+        subprocess.call("git config --global user.name spudulike")
+        subprocess.call("git config --global user.email spudulike@{}.isis.cclrc.ac.uk".format(inst_name.lower()))
+
+        subprocess.call(
+            "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+                inst_name), cwd=SETTINGS_CONFIG_PATH)
+
+        inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
+        subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)  # TODO check if exists
+        subprocess.call("git add Python\init_{}.py".format(inst_name), cwd=inst_config_path)
+        subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
+        subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+        # TODO create and checkout branch
+
     def upgrade_instrument_configuration(self):
         """
         Update the configuration on the instrument using its upgrade config script.
@@ -359,6 +378,19 @@ class UpgradeTasks(object):
                     "- Running IOCs\n"
                     "- Available configs\n"
                     "- Any open LabView VIs")
+
+    def configure_com_ports(self):
+        """
+        Configure the COM ports
+        """
+        with Task("Configure COM ports", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Using NPort, check that the COM ports on this machine are configured to standard, i.e.:\n"
+                    "Moxa 1 starts at COM5\n"
+                    "Moxa 2 starts at COM21\n"
+                    "etc.")
+                # TODO where to get it from?
 
     @staticmethod
     def _get_backup_dir():
@@ -559,6 +591,29 @@ class UpgradeTasks(object):
                     "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}".format(
                         self._get_instrument_name()))
 
+    def update_web_dashboard(self):
+        """
+        Add the instrument to the web dashboard
+        """
+        with Task("Update web dashboard", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Add the host name of the instrument to NDX_INSTS or ALL_INSTS in webserver.py in the JSON_bourne "
+                    "repository.")
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "On NDAEXTWEB1, pull the updated code and add a link to the instrument dashboard on the main "
+                    "dataweb page under C:\\inetpub\\wwwroot\\DataWeb\\Dashboards\\redirect.html")
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Restart JSON_bourne on NDAEXTWEB1 when appropriate. (THIS WILL KILL ALL EXISTING SESSIONS)")
+
+    def install_wiring_tables(self):
+        """
+        Add the instrument to the web dashboard
+        """
+        with Task("Install wiring tables", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes("")
+
     def inform_instrument_scientists(self):
         """
         Inform instrument scientists that the machine has been upgraded.
@@ -660,18 +715,20 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.create_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()  # TODO create
         self._upgrade_tasks.create_journal_sql_schema()
+        self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.upgrade_mysql()  # TODO check in install
         self._upgrade_tasks.restart_vis()
-
-        # TODO worry about web dashboard?
+        self._upgrade_tasks.install_wiring_tables()
 
         self._upgrade_tasks.perform_client_tests()
         self._upgrade_tasks.perform_server_tests()
         # TODO write to CS:INSTLIST ?
+        self._upgrade_tasks.update_web_dashboard
         self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_upgrade(self):
