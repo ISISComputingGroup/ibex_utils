@@ -252,11 +252,18 @@ class UpgradeTasks(object):
 
                 inst_scripts_path = os.path.join(inst_config_path, "Python")
                 if not os.path.exists(os.path.join(inst_scripts_path, "init_{}".format(inst_name.lower()))):
-                    subprocess.call("ren init_inst_name.py init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
-                    subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
-                    subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
-                    subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
-                    subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+                    try:
+                        os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
+                                  os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower())))
+                        subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
+                        subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
+                        subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
+                        subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+                    except:
+                        self._prompt.prompt_and_raise_if_not_yes(
+                            "Something went wrong setting up the configurations repository. Please resolve manually, "
+                            "instructions are in the developers manual under "
+                            "First-time-installing-and-building-(Windows)")
 
     def upgrade_instrument_configuration(self):
         """
