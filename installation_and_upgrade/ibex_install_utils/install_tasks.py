@@ -250,12 +250,13 @@ class UpgradeTasks(object):
                 if not branch_exists:
                     subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)
 
-                subprocess.call("git add Python\init_{}.py".format(inst_name), cwd=inst_config_path)
-                subprocess.call("git rm Python\init_inst_name.py", cwd=inst_config_path)
-
-                subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
-                subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
-                # TODO create and checkout branch
+                inst_scripts_path = os.path.join(inst_config_path, "Python")
+                if not os.path.exists(os.path.join(inst_scripts_path, "init_{}".format(inst_name.lower()))):
+                    subprocess.call("ren init_inst_name.py init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
+                    subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
+                    subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
+                    subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
+                    subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
 
     def upgrade_instrument_configuration(self):
         """
@@ -726,7 +727,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
-        self._upgrade_tasks.upgrade_instrument_configuration()
+        # self._upgrade_tasks.upgrade_instrument_configuration()  TODO needed ?
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.update_calibrations_repository()
