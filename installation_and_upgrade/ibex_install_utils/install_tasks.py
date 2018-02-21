@@ -229,24 +229,29 @@ class UpgradeTasks(object):
         if answer != "Y":
             raise UserStop()
 
-    def create_config_repository(self):
-        inst_name = self._machine_name
+    def setup_config_repository(self):
+        with Task("Set up configuration repository", self._prompt) as task:
+            if task.do_step:
+                inst_name = self._machine_name
 
-        subprocess.call("git config --global core.autocrlf true")
-        subprocess.call("git config --global credential.helper wincred")
-        subprocess.call("git config --global user.name spudulike")
-        subprocess.call("git config --global user.email spudulike@{}.isis.cclrc.ac.uk".format(inst_name.lower()))
+                subprocess.call("git config --global core.autocrlf true")
+                subprocess.call("git config --global credential.helper wincred")
+                subprocess.call("git config --global user.name spudulike")
+                subprocess.call("git config --global user.email spudulike@{}.isis.cclrc.ac.uk".format(inst_name.lower()))
 
-        subprocess.call(
-            "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
-                inst_name), cwd=SETTINGS_CONFIG_PATH)
+                subprocess.call(
+                    "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+                        inst_name), cwd=SETTINGS_CONFIG_PATH)
 
-        inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
-        subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)  # TODO check if exists
-        subprocess.call("git add Python\init_{}.py".format(inst_name), cwd=inst_config_path)
-        subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
-        subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
-        # TODO create and checkout branch
+                inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
+                subprocess.call("git pull", cwd=inst_config_path)
+                if not subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path):
+                    subprocess.call("git checkout {}".format(inst_name))
+
+                subprocess.call("git add Python\init_{}.py".format(inst_name), cwd=inst_config_path)
+                subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
+                subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+                # TODO create and checkout branch
 
     def upgrade_instrument_configuration(self):
         """
@@ -612,7 +617,8 @@ class UpgradeTasks(object):
         """
         with Task("Install wiring tables", self._prompt) as task:
             if task.do_step:
-                self._prompt.prompt_and_raise_if_not_yes("")
+                tables_dir = os.path.join(SETTINGS_CONFIG_PATH, self._machine_name, "configurations", "tables")
+                self._prompt.prompt_and_raise_if_not_yes("Install the wiring tables in {}.".format(tables_dir))
 
     def inform_instrument_scientists(self):
         """
@@ -715,8 +721,8 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.create_config_repository()
-        self._upgrade_tasks.upgrade_instrument_configuration()  # TODO create
+        self._upgrade_tasks.setup_config_repository()
+        self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.update_calibrations_repository()
