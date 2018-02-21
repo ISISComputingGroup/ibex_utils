@@ -245,10 +245,14 @@ class UpgradeTasks(object):
 
                 inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
                 subprocess.call("git pull", cwd=inst_config_path)
-                if not subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path):
-                    subprocess.call("git checkout {}".format(inst_name))
+
+                branch_exists = subprocess.call("git checkout {}".format(inst_name), cwd=inst_config_path) == 0
+                if not branch_exists:
+                    subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)
 
                 subprocess.call("git add Python\init_{}.py".format(inst_name), cwd=inst_config_path)
+                subprocess.call("git rm Python\init_inst_name.py", cwd=inst_config_path)
+
                 subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
                 subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
                 # TODO create and checkout branch
