@@ -366,23 +366,6 @@ class UpgradeTasks(object):
                     "Is auto-update turned off? This can be checked from the Java control panel in "
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
 
-    def check_git_installation(self):
-        """
-        Checks Git installation
-        """
-        git_url = "https://git-scm.com/downloads"
-        with Task("Install Git", self._prompt) as task:
-            if task.do_step:
-                git_installed = subprocess.call(["git", "--version"]) == 0
-                if git_installed:
-                    self._prompt.prompt_and_raise_if_not_yes(
-                        "Git installation found. Check above that you have the desired version or that you have "
-                        "upgraded to the desired version from {}".format(git_url))
-                else:
-                    self._prompt.prompt_and_raise_if_not_yes(
-                        "Please go to {} to download and install the desired version.".format(git_url))
-                    self.check_git_installation()
-
     def take_screenshots(self):
         """
         take screen shots of initial system
@@ -761,7 +744,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
                                     "on a new instrument. Proceed?")
 
-        self._upgrade_tasks.check_git_installation()
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.remove_seci_shortcuts()
