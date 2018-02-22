@@ -239,9 +239,12 @@ class UpgradeTasks(object):
                 subprocess.call("git config --global user.name spudulike")
                 subprocess.call("git config --global user.email spudulike@{}.isis.cclrc.ac.uk".format(inst_name.lower()))
 
+                if not os.path.exists(SETTINGS_CONFIG_PATH):
+                    os.makedirs(SETTINGS_CONFIG_PATH)
+
                 subprocess.call(
-                    "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
-                        inst_name), cwd=SETTINGS_CONFIG_PATH)
+                "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+                    inst_name), cwd=SETTINGS_CONFIG_PATH)
 
                 inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
                 subprocess.call("git pull", cwd=inst_config_path)
@@ -361,11 +364,14 @@ class UpgradeTasks(object):
         """
         Checks Git installation
         """
+        git_url = "https://git-scm.com/downloads"
         with Task("Install Git", self._prompt) as task:
             if task.do_step:
                 git_installed = subprocess.call(["git", "--version"]) == 0
                 if git_installed:
-                    self._prompt.prompt_and_raise_if_not_yes("Git installation found. Check above that the version is correct.")
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Git installation found. Check above that you have the desired version or that you have "
+                        "upgraded to the desired version from {}".format(git_url))
                 else:
                     self.install_git()
 
