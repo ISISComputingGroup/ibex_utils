@@ -314,6 +314,15 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
                 self._prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
+    def setup_calibrations_repository(self):
+        """
+        Set up the calibration repository
+        """
+        with Task("Set up calibrations repository", self._prompt) as task:
+            if task.do_step:
+                subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
+                                "C:\Instrument\Settings\config\common", cwd=CALIBRATION_PATH)
+
     def update_calibrations_repository(self):
         """
         Update the calibration repository
@@ -533,7 +542,7 @@ class UpgradeTasks(object):
         with Task("Configure MySQL", self._prompt) as task:
             if task.do_step:
                 self._prompt.prompt_and_raise_if_not_yes(
-                    "Run config_mysql.bat in {}. \n "
+                    "Run config_mysql.bat in {}. \n"
                     "WARNING: performing this step will wipe all existing historical data.".format(SYSTEM_SETUP_PATH))
 
     def upgrade_mysql(self):
@@ -764,7 +773,8 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
-        self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.setup_calibrations_repository()
+        # self._upgrade_tasks.update_calibrations_repository()  TODO needed ?
         self._upgrade_tasks.update_release_notes()
         # self._upgrade_tasks.upgrade_mysql()  # TODO check in install
         self._upgrade_tasks.restart_vis()
