@@ -647,7 +647,7 @@ class UpgradeTasks(object):
         with Task("Update Instrument List", self._prompt) as task:
             if task.do_step:
                 self._prompt.prompt_and_raise_if_not_yes(
-                    "Add the host name of the instrument to the list saved ")
+                    "Add the host name of the instrument to the list saved in the CS:INSTLIST PV")
 
     def update_web_dashboard(self):
         """
@@ -655,14 +655,15 @@ class UpgradeTasks(object):
         """
         with Task("Update web dashboard", self._prompt) as task:
             if task.do_step:
+                redirect_page = os.path.join("C:", "inetpub","wwwroot","DataWeb","Dashboards","redirect.html")
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Add the host name of the instrument to NDX_INSTS or ALL_INSTS in webserver.py in the JSON_bourne "
                     "repository.")
                 self._prompt.prompt_and_raise_if_not_yes(
                     "On NDAEXTWEB1, pull the updated code and add a link to the instrument dashboard on the main "
-                    "dataweb page under C:\\inetpub\\wwwroot\\DataWeb\\Dashboards\\redirect.html")
+                    "dataweb page under {}".format(redirect_page))
                 self._prompt.prompt_and_raise_if_not_yes(
-                    "Restart JSON_bourne on NDAEXTWEB1 when appropriate. (THIS WILL KILL ALL EXISTING SESSIONS)")
+                    "Restart JSON_bourne on NDAEXTWEB1 when appropriate. (WARNING: This will kill all existing sessions!)")
 
     def install_wiring_tables(self):
         """
@@ -785,11 +786,11 @@ class UpgradeInstrument(object):
         # self._upgrade_tasks.upgrade_mysql()  # TODO check in install
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.install_wiring_tables()
+        self._upgrade_tasks.update_instlist()
+        self._upgrade_tasks.update_web_dashboard()
 
         self._upgrade_tasks.perform_client_tests()
         self._upgrade_tasks.perform_server_tests()
-        self._upgrade_tasks.update_instlist()
-        self._upgrade_tasks.update_web_dashboard()
         self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_upgrade(self):
