@@ -361,11 +361,13 @@ class UpgradeTasks(object):
         """
         Checks Git installation
         """
-        git_installed = subprocess.call(["git", "--version"]) == 0
-        if git_installed:
-            self._prompt.prompt_and_raise_if_not_yes("Git installation found. Check above that the version is correct.")
-        else:
-            self.install_git()
+        with Task("Install Git", self._prompt) as task:
+            if task.do_step:
+                git_installed = subprocess.call(["git", "--version"]) == 0
+                if git_installed:
+                    self._prompt.prompt_and_raise_if_not_yes("Git installation found. Check above that the version is correct.")
+                else:
+                    self.install_git()
 
     def install_git(self):
         """
@@ -403,11 +405,11 @@ class UpgradeTasks(object):
         with Task("Configure COM ports", self._prompt) as task:
             if task.do_step:
                 self._prompt.prompt_and_raise_if_not_yes(
-                    "Using NPort, check that the COM ports on this machine are configured to standard, i.e.:\n"
-                    "Moxa 1 starts at COM5\n"
-                    "Moxa 2 starts at COM21\n"
-                    "etc.")
-                # TODO where to get it from?
+                    "Using NPort Administrator (available under /Kits$/CompGroup/Utilities/), check that the COM ports "
+                    "on this machine are configured to standard, i.e.:\n"
+                    "- Moxa 1 starts at COM5\n"
+                    "- Moxa 2 starts at COM21\n"
+                    "- etc.\n")
 
     @staticmethod
     def _get_backup_dir():
@@ -576,7 +578,6 @@ class UpgradeTasks(object):
                     "verifying that the 'g.' and 'inst.' prefixes work as expected)")
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Verify that the current configuration is consistent with the system prior to upgrade")
-                # TODO Wiring tables etc.
 
     def perform_server_tests(self):
         """
@@ -607,6 +608,15 @@ class UpgradeTasks(object):
                     "Check that the web dashboard for this instrument is updating "
                     "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}".format(
                         self._get_instrument_name()))
+
+    def update_instlist(self):
+        """
+        Add the instrument to the web dashboard
+        """
+        with Task("Update Instrument List", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Add the host name of the instrument to the list saved ")
 
     def update_web_dashboard(self):
         """
@@ -728,7 +738,7 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.check_git_installation()
         self._upgrade_tasks.check_java_installation()
-        # TODO self._upgrade_tasks.check_mysql_installation()
+        self._upgrade_tasks.check_mysql_installation()
         self._upgrade_tasks.remove_seci_shortcuts()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
@@ -739,14 +749,14 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.update_release_notes()
-        self._upgrade_tasks.upgrade_mysql()  # TODO check in install
+        # self._upgrade_tasks.upgrade_mysql()  # TODO check in install
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.install_wiring_tables()
 
         self._upgrade_tasks.perform_client_tests()
         self._upgrade_tasks.perform_server_tests()
-        # TODO write to CS:INSTLIST ?
-        self._upgrade_tasks.update_web_dashboard
+        self._upgrade_tasks.update_instlist()
+        self._upgrade_tasks.update_web_dashboard()
         self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_upgrade(self):
