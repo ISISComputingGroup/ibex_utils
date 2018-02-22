@@ -320,8 +320,14 @@ class UpgradeTasks(object):
         """
         with Task("Set up calibrations repository", self._prompt) as task:
             if task.do_step:
-                subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                                "C:\Instrument\Settings\config\common", cwd=CALIBRATION_PATH)
+                if os.path.isdir(CALIBRATION_PATH):
+                    if self._prompt("Calibrations directory already exists. Update calibrations repository?",
+                                    ["Y", "N"], "N") == "Y":
+                        self.update_calibrations_repository()
+                else:
+                    os.makedirs(CALIBRATION_PATH)
+                    subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
+                                    "C:\Instrument\Settings\config\common", cwd=CALIBRATION_PATH)
 
     def update_calibrations_repository(self):
         """
