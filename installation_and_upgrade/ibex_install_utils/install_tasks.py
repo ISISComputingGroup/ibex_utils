@@ -251,7 +251,7 @@ class UpgradeTasks(object):
                     subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)
 
                 inst_scripts_path = os.path.join(inst_config_path, "Python")
-                if not os.path.exists(os.path.join(inst_scripts_path, "init_{}".format(inst_name.lower()))):
+                if not os.path.exists(os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower()))):
                     try:
                         os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
                                   os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower())))
@@ -259,11 +259,11 @@ class UpgradeTasks(object):
                         subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
                         subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
                         subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
-                    except:
+                    except Exception as e:
                         self._prompt.prompt_and_raise_if_not_yes(
                             "Something went wrong setting up the configurations repository. Please resolve manually, "
                             "instructions are in the developers manual under "
-                            "First-time-installing-and-building-(Windows)")
+                            "First-time-installing-and-building-(Windows): \n {}".format(e.message))
 
     def upgrade_instrument_configuration(self):
         """
@@ -520,6 +520,18 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
+    def configure_mysql(self):
+        """
+        Run the MySQL configuration script
+        """
+        with Task("Configure MySQL", self._prompt) as task:
+            if task.do_step:
+                choice = self._prompt.prompt("This runs a first time configuration of MySQL on this machine. \n"
+                                             "WARNING: performing this step will wipe all existing historical data. "
+                                             "Proceed?", ["Y", "N"], "N")
+                if choice == "Y":
+                    subprocess.call("config_mysql.bat", cwd=SYSTEM_SETUP_PATH)
+
     def upgrade_mysql(self):
         """
         Upgrade mysql step
@@ -733,18 +745,19 @@ class UpgradeInstrument(object):
         """
         Do a first installation of IBEX on a new instrument.
         """
-        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client on a "
-                              "new instrument. Proceed?")
+        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
+                                    "on a new instrument. Proceed?")
 
         self._upgrade_tasks.check_git_installation()
         self._upgrade_tasks.check_java_installation()
-        self._upgrade_tasks.check_mysql_installation()
+        #TODO self._upgrade_tasks.check_mysql_installation()
         self._upgrade_tasks.remove_seci_shortcuts()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
         # self._upgrade_tasks.upgrade_instrument_configuration()  TODO needed ?
+        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.update_calibrations_repository()
