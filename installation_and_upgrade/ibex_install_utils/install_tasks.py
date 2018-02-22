@@ -358,25 +358,13 @@ class UpgradeTasks(object):
                         "Confirm that the java version above is the desired version or that you have "
                         "upgraded to the desired 64-bit version from {}".format(java_url))
                 else:
-                    self.install_java()
+                    self._prompt.prompt_and_raise_if_not_yes(
+                            "Please go to {} to download and install the desired 64-bit version".format(java_url))
+                    self.check_java_installation()
 
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Is auto-update turned off? This can be checked from the Java control panel in "
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
-
-    def install_java(self):
-        """
-        Installs the latest version of the Java Runtime Environment
-        """
-        java_url = "http://www.java.com/en/"
-
-        if self._prompt.confirm_step("Java is not installed. Attempt automatic install?"):
-                subprocess.call("msiexec.exe /qb- /l*vx %LogPath%\Java.log REBOOT=ReallySuppress UILevel=67 ALLUSERS=2 "
-                                "/i jre1.8.0_11164.msi")
-        else:
-            self._prompt.prompt_and_raise_if_not_yes(
-                "Manual install: Please go to {} to download and install the desired 64-bit version".format(java_url))
-        self.check_java_installation()
 
     def check_git_installation(self):
         """
@@ -391,20 +379,9 @@ class UpgradeTasks(object):
                         "Git installation found. Check above that you have the desired version or that you have "
                         "upgraded to the desired version from {}".format(git_url))
                 else:
-                    self.install_git()
-
-    def install_git(self):
-        """
-        Installs the latest version of Git
-        """
-        git_url = "https://git-scm.com/downloads"
-        if self._prompt.confirm_step("Git is not installed. Attempt automatic install?"):
-                subprocess.call("Git-2.8.2-64-bit.exe /VERYSILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS "
-                                "/LOG=\"%LogPath%\Git.log\" /NORESTART /LOADINF=\"settings.inf\"")
-        else:
-            self._prompt.prompt_and_raise_if_not_yes(
-                "Manual install: Please go to {} to download and install the desired version.".format(git_url))
-        self.check_git_installation()
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Please go to {} to download and install the desired version.".format(git_url))
+                    self.check_git_installation()
 
     def take_screenshots(self):
         """
@@ -553,8 +530,9 @@ class UpgradeTasks(object):
             if task.do_step:
                 url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Installing-and-Upgrading-MySQL"
                 if self._prompt.prompt("Please install MySQL following the instructions on the developer wiki. "
-                                       "Open instructions in browser now?", ["Y","N"], "N") == "Y":
+                                       "Open instructions in browser now?", ["Y", "N"], "N") == "Y":
                     subprocess.call("explorer {}".format(url))
+                self._prompt.prompt_and_raise_if_not_yes("Confirm MySQL has been successfully installed.")
 
     def configure_mysql(self):
         """
