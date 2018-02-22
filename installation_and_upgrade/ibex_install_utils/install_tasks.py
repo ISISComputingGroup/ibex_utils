@@ -352,15 +352,14 @@ class UpgradeTasks(object):
         with Task("Install java", self._prompt) as task:
             if task.do_step:
                 java_url = "http://www.java.com/en/"
-                java_installed = subprocess.call(["java", "-version"]) == 0
-                if java_installed:
+                try:
+                    subprocess.call(["java -version"])
                     self._prompt.prompt_and_raise_if_not_yes(
                         "Confirm that the java version above is the desired version or that you have "
                         "upgraded to the desired 64-bit version from {}".format(java_url))
-                else:
+                except:
                     self._prompt.prompt_and_raise_if_not_yes(
                             "Please go to {} to download and install the desired 64-bit version".format(java_url))
-                    self.check_java_installation()
 
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Is auto-update turned off? This can be checked from the Java control panel in "
