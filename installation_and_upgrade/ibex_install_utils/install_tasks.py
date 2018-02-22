@@ -532,11 +532,9 @@ class UpgradeTasks(object):
         """
         with Task("Configure MySQL", self._prompt) as task:
             if task.do_step:
-                choice = self._prompt.prompt("This runs a first time configuration of MySQL on this machine. \n"
-                                             "WARNING: performing this step will wipe all existing historical data. "
-                                             "Proceed?", ["Y", "N"], "N")
-                if choice == "Y":
-                    subprocess.call("config_mysql.bat", cwd=SYSTEM_SETUP_PATH)
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Run config_mysql.bat in {}. \n "
+                    "WARNING: performing this step will wipe all existing historical data.".format(SYSTEM_SETUP_PATH))
 
     def upgrade_mysql(self):
         """
