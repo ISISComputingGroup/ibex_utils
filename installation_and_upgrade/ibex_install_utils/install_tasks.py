@@ -297,7 +297,10 @@ class UpgradeTasks(object):
                         self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
                 else:
                     self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
-                RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
+                try:
+                    RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
+                except Exception as e:
+                    print("WARNING: There was an error running upgrade script:\n{}".format(e))
 
     def remove_seci_shortcuts(self):
         """
@@ -541,6 +544,18 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
+    def install_mysql(self):
+        """
+        Prompt user to install MySQL and opens browser with instructions.
+
+        """
+        with Task("Install MySQL", self._prompt) as task:
+            if task.do_step:
+                url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Installing-and-Upgrading-MySQL"
+                if self._prompt.prompt("Please install MySQL following the instructions on the developer wiki. "
+                                       "Open instructions in browser now?", ["Y","N"], "N") == "Y":
+                    subprocess.call("explorer {}".format(url))
+
     def configure_mysql(self):
         """
         Run the MySQL configuration script
@@ -770,20 +785,19 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.check_git_installation()
         self._upgrade_tasks.check_java_installation()
-        #TODO self._upgrade_tasks.check_mysql_installation()
+        self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.remove_seci_shortcuts()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
-        # self._upgrade_tasks.upgrade_instrument_configuration()  TODO needed ?
+        self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.setup_calibrations_repository()
-        # self._upgrade_tasks.update_calibrations_repository()  TODO needed ?
+        self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.update_release_notes()
-        # self._upgrade_tasks.upgrade_mysql()  # TODO check in install
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.install_wiring_tables()
         self._upgrade_tasks.update_instlist()
@@ -804,7 +818,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.check_git_installation()
         self._upgrade_tasks.check_java_installation()
-        # TODO self._upgrade_tasks.check_mysql_installation()
         self._upgrade_tasks.take_screenshots()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
