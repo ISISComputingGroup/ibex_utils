@@ -359,7 +359,8 @@ class UpgradeTasks(object):
                         "upgraded to the desired 64-bit version from {}".format(java_url))
                 except:
                     self._prompt.prompt_and_raise_if_not_yes(
-                            "Please go to {} to download and install the desired 64-bit version".format(java_url))
+                            "No installation of Java found on this machine. Please go to {} to download and install the"
+                            " desired 64-bit version".format(java_url))
 
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Is auto-update turned off? This can be checked from the Java control panel in "

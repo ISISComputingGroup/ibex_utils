@@ -43,6 +43,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--release_dir", dest="release_dir", default=None,
                         help="directory from which the client and server should be installed")
+    parser.add_argument("--release_suffix", dest="release_suffix", default="", help="Suffix for specifying non-standard releases "
+                                                             "(such as those including hotfixes)")
     parser.add_argument("--server_dir", default=None, help="Directory from which IBEX server should be installed")
     parser.add_argument("--client_dir", default=None, help="Directory from which IBEX client should be installed")
     parser.add_argument("--confirm_step", default=False, action="store_true",
@@ -66,6 +68,8 @@ if __name__ == "__main__":
 
     if args.release_dir is not None:
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
+        if args.release_suffix is not "":
+            current_release_dir += "-{}".format(args.release_suffix)
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
     elif args.server_dir is not None and args.client_dir is not None:
