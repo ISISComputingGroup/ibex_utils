@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument('deployment_type', choices=upgrade_types,
                         help="What upgrade should be performed. ("
                              "training_update: update a training machine', "
-#                             "install_latest: install just the latest build of the server, client and genie_python, "
+                             "install_latest: install just the latest build of the server, client and genie_python, "
                              "instrument_install: full IBEX installation on a new instrument, "
                              "instrument_update: update configuration directory on an existing instrument, "
                              "instrument_deploy: deploy full IBEX upgrade on an existing instrument "
@@ -99,8 +99,8 @@ if __name__ == "__main__":
     try:
         if args.deployment_type == "training_update":
             upgrade_instrument.run_test_update()
-#        elif args.deployment_type == "install_latest":
-#            upgrade_instrument.remove_all_and_install_client_and_server()
+        elif args.deployment_type == "install_latest":
+            upgrade_instrument.remove_all_and_install_client_and_server()
         elif args.deployment_type == "instrument_install":
             upgrade_instrument.run_instrument_install()
         elif args.deployment_type == "instrument_update":

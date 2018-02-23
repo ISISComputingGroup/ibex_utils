@@ -716,11 +716,8 @@ class UpgradeInstrument(object):
         return not os.path.exists(LABVIEW_DAE_DIR)
 
     def run_test_update(self):
-        # TODO what is the use case?
         """
         Run a complete test upgrade on the current system
-        Returns:
-
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
         self._upgrade_tasks.stop_ibex_server()
@@ -735,9 +732,7 @@ class UpgradeInstrument(object):
     def remove_all_and_install_client_and_server(self):
         """
         Either install or upgrade the ibex client and server
-
         """
-        # TODO still needed?
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
@@ -747,7 +742,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.create_journal_sql_schema()
 
     def run_instrument_update(self):
-        # TODO what is the use case?
         """
         Update an instrument (just configuration and seci shortcuts)
         """
