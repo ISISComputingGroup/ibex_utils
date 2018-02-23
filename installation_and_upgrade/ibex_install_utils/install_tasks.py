@@ -760,6 +760,14 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.remove_seci_shortcuts()
 
+    def run_instrument_tests(self):
+        """
+        Run through client and server tests once installation / deployment has completed.
+        """
+        self._upgrade_tasks.perform_client_tests()
+        self._upgrade_tasks.perform_server_tests()
+        self._upgrade_tasks.inform_instrument_scientists()
+
     def run_instrument_install(self):
         """
         Do a first installation of IBEX on a new instrument.
@@ -783,15 +791,10 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.install_wiring_tables()
-
-        self._upgrade_tasks.perform_client_tests()
-        self._upgrade_tasks.perform_server_tests()
-
         self._upgrade_tasks.configure_motion()
         self._upgrade_tasks.add_nagios_checks()
         self._upgrade_tasks.update_instlist()
         self._upgrade_tasks.update_web_dashboard()
-        self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_upgrade(self):
         """
@@ -817,10 +820,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.upgrade_mysql()
         self._upgrade_tasks.reapply_hotfixes()
         self._upgrade_tasks.restart_vis()
-
-        self._upgrade_tasks.perform_client_tests()
-        self._upgrade_tasks.perform_server_tests()
-        self._upgrade_tasks.inform_instrument_scientists()
 
 
 class Task(object):

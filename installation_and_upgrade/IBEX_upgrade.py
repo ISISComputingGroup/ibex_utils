@@ -53,7 +53,7 @@ if __name__ == "__main__":
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
 
-    upgrade_types = ['training_update', 'instrument_install', 'instrument_update', 'instrument_deploy']
+    upgrade_types = ['training_update', 'instrument_install', 'instrument_update', 'instrument_deploy', 'instrument_test']
     # TODO review valid cases
     parser.add_argument('deployment_type', choices=upgrade_types,
                         help="What upgrade should be performed. ("
@@ -62,7 +62,8 @@ if __name__ == "__main__":
                              "instrument_install: full IBEX installation on a new instrument, "
                              "instrument_update: update configuration directory on an existing instrument, "
                              "instrument_deploy: deploy full IBEX upgrade on an existing instrument "
-                             "(Includes updating configuration)")
+                             "(Includes updating configuration), "
+                             "instrument_test: run through tests for IBEX client and server.")
 
     args = parser.parse_args()
 
@@ -106,6 +107,8 @@ if __name__ == "__main__":
             upgrade_instrument.run_instrument_update()
         elif args.deployment_type == "instrument_deploy":
             upgrade_instrument.run_instrument_upgrade()
+        elif args.deployment_type == "instrument_test":
+            upgrade_instrument.run_instrument_tests()
 
     except UserStop:
         print ("Stopping upgrade")
