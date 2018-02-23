@@ -353,7 +353,7 @@ class UpgradeTasks(object):
             if task.do_step:
                 java_url = "http://www.java.com/en/"
                 try:
-                    subprocess.call(["java -version"])
+                    subprocess.call(["java", "-version"])
                     self._prompt.prompt_and_raise_if_not_yes(
                         "Confirm that the java version above is the desired version or that you have "
                         "upgraded to the desired 64-bit version from {}".format(java_url))
@@ -650,6 +650,29 @@ class UpgradeTasks(object):
                 tables_dir = os.path.join(SETTINGS_CONFIG_PATH, self._machine_name, "configurations", "tables")
                 self._prompt.prompt_and_raise_if_not_yes("Install the wiring tables in {}.".format(tables_dir))
 
+    def configure_motion(self):
+        """
+        Prompt user to configure Galils
+        """
+        with Task("Configure motion setpoints", self._prompt) as task:
+            if task.do_step:
+                url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Deployment-on-an-Instrument-Control-PC#set-up-motion-set-points"
+                if self._prompt.prompt("Please configure the motion set points for this instrument. Instructions can be"
+                                       " found on the developer wiki. Open instructions in browser now?",
+                                       ["Y", "N"], "N") == "Y":
+                    subprocess.call("explorer {}".format(url))
+                self._prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
+
+    def add_nagios_checks(self):
+        """
+        Prompt user to add nagios checks.
+        """
+        with Task("Add Nagios checks", self._prompt) as task:
+            if task.do_step:
+                # For future reference, genie_python can send emails!
+                self._prompt.prompt_and_raise_if_not_yes("Add this instrument to the Nagios monitoring system. Talk to "
+                                                         "Freddie Akeroyd for help with this.")
+
     def inform_instrument_scientists(self):
         """
         Inform instrument scientists that the machine has been upgraded.
@@ -760,11 +783,14 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.install_wiring_tables()
-        self._upgrade_tasks.update_instlist()
-        self._upgrade_tasks.update_web_dashboard()
 
         self._upgrade_tasks.perform_client_tests()
         self._upgrade_tasks.perform_server_tests()
+
+        self._upgrade_tasks.configure_motion()
+        self._upgrade_tasks.add_nagios_checks()
+        self._upgrade_tasks.update_instlist()
+        self._upgrade_tasks.update_web_dashboard()
         self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_upgrade(self):
