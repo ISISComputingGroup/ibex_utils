@@ -53,17 +53,19 @@ if __name__ == "__main__":
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
 
-    upgrade_types = ['training_update', 'instrument_install', 'instrument_update', 'instrument_deploy', 'instrument_test']
-    # TODO review valid cases
+    upgrade_types = ['training_update', 'instrument_install', 'instrument_update', 'instrument_test',
+                     'instrument_deploy_pre_stop', 'instrument_deploy_main', 'instrument_deploy_post_start']
     parser.add_argument('deployment_type', choices=upgrade_types,
                         help="What upgrade should be performed. ("
                              "training_update: update a training machine', "
                              "install_latest: install just the latest build of the server, client and genie_python, "
                              "instrument_install: full IBEX installation on a new instrument, "
-                             "instrument_update: update configuration directory on an existing instrument, "
-                             "instrument_deploy: deploy full IBEX upgrade on an existing instrument "
-                             "(Includes updating configuration), "
-                             "instrument_test: run through tests for IBEX client and server.")
+                             "instrument_test: run through tests for IBEX client and server."
+                             "instrument_update: quick update of instrument, "
+                             "instrument_deploy: deploy full IBEX upgrade on an existing instrument, "
+                             "instrument_deploy_pre_stop: instrument_deploy part before the stop of instrument,"
+                             "instrument_deploy_main: instrument_deploy after stop but before starting it,"
+                             "instrument_deploy_post_start: instrument_deploy part after the start of instrument")
 
     args = parser.parse_args()
 
@@ -106,7 +108,13 @@ if __name__ == "__main__":
         elif args.deployment_type == "instrument_update":
             upgrade_instrument.run_instrument_update()
         elif args.deployment_type == "instrument_deploy":
-            upgrade_instrument.run_instrument_upgrade()
+            upgrade_instrument.run_instrument_deploy()
+        elif args.deployment_type == "instrument_deploy_pre_stop":
+            upgrade_instrument.run_instrument_deploy_pre_stop()
+        elif args.deployment_type == "instrument_deploy_main":
+            upgrade_instrument.run_instrument_deploy_main()
+        elif args.deployment_type == "instrument_deploy_post_start":
+            upgrade_instrument.run_instrument_deploy_post_start()
         elif args.deployment_type == "instrument_test":
             upgrade_instrument.run_instrument_tests()
 
