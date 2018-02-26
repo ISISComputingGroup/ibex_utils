@@ -617,7 +617,7 @@ class UpgradeTasks(object):
 
     def update_instlist(self):
         """
-        Add the instrument to the web dashboard
+        Prompt user to add instrument to the list of known IBEX instruments
         """
         with Task("Update Instrument List", self._prompt) as task:
             if task.do_step:
@@ -626,7 +626,7 @@ class UpgradeTasks(object):
 
     def update_web_dashboard(self):
         """
-        Add the instrument to the web dashboard
+        Prompt user to add the instrument to the web dashboard
         """
         with Task("Update web dashboard", self._prompt) as task:
             if task.do_step:
@@ -642,7 +642,7 @@ class UpgradeTasks(object):
 
     def install_wiring_tables(self):
         """
-        Add the instrument to the web dashboard
+        Prompt user to install wiring tables in the appropriate folder.
         """
         with Task("Install wiring tables", self._prompt) as task:
             if task.do_step:
