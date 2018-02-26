@@ -732,6 +732,10 @@ class UpgradeInstrument(object):
         """
         Either install or upgrade the ibex client and server
         """
+        self._upgrade_tasks.confirm(
+            "This script removes IBEX client and server and installs the latest build of both, without any extra steps."
+            " Proceed?")
+
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
@@ -739,19 +743,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
-
-    def run_instrument_update(self):
-        """
-        Update an instrument (just configuration and seci shortcuts)
-        """
-
-        self._upgrade_tasks.confirm("This script updates this instrument's configurations directory only. Proceed?")
-
-        self._upgrade_tasks.stop_ibex_server()
-        self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
-        self._upgrade_tasks.update_calibrations_repository()
-        self._upgrade_tasks.remove_seci_shortcuts()
 
     def run_instrument_tests(self):
         """

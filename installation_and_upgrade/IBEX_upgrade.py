@@ -43,8 +43,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--release_dir", dest="release_dir", default=None,
                         help="directory from which the client and server should be installed")
-    parser.add_argument("--release_suffix", dest="release_suffix", default="", help="Suffix for specifying non-standard releases "
-                                                             "(such as those including hotfixes)")
+    parser.add_argument("--release_suffix", dest="release_suffix", default="",
+                        help="Suffix for specifying non-standard releases "
+                             "(such as those including hotfixes)")
     parser.add_argument("--server_dir", default=None, help="Directory from which IBEX server should be installed")
     parser.add_argument("--client_dir", default=None, help="Directory from which IBEX client should be installed")
     parser.add_argument("--confirm_step", default=False, action="store_true",
@@ -53,15 +54,14 @@ if __name__ == "__main__":
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
 
-    upgrade_types = ['training_update', 'instrument_install', 'instrument_update', 'instrument_test',
-                     'instrument_deploy_pre_stop', 'instrument_deploy_main', 'instrument_deploy_post_start']
+    upgrade_types = ['training_update', 'instrument_install', 'instrument_test', 'instrument_deploy_pre_stop',
+                     'instrument_deploy_main', 'instrument_deploy_post_start']
     parser.add_argument('deployment_type', choices=upgrade_types,
                         help="What upgrade should be performed. ("
                              "training_update: update a training machine', "
                              "install_latest: install just the latest build of the server, client and genie_python, "
                              "instrument_install: full IBEX installation on a new instrument, "
                              "instrument_test: run through tests for IBEX client and server."
-                             "instrument_update: quick update of instrument, "
                              "instrument_deploy: deploy full IBEX upgrade on an existing instrument, "
                              "instrument_deploy_pre_stop: instrument_deploy part before the stop of instrument,"
                              "instrument_deploy_main: instrument_deploy after stop but before starting it,"
@@ -105,8 +105,6 @@ if __name__ == "__main__":
             upgrade_instrument.remove_all_and_install_client_and_server()
         elif args.deployment_type == "instrument_install":
             upgrade_instrument.run_instrument_install()
-        elif args.deployment_type == "instrument_update":
-            upgrade_instrument.run_instrument_update()
         elif args.deployment_type == "instrument_deploy":
             upgrade_instrument.run_instrument_deploy()
         elif args.deployment_type == "instrument_deploy_pre_stop":
