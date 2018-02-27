@@ -165,6 +165,134 @@ KNOWN_DEPENDENCIES = {
     "xxx.dbd": ""
 }
 
+KNOWN_MACROS_LIST = [
+    "ACCESSSECURITY=$(SUPPORT)/AccessSecurity/master",
+    "AGILENT33220A=$(SUPPORT)/agilent33220A/master",
+    "AGILENT3631A=$(SUPPORT)/agilent3631A/master",
+    "AMINT2L=$(SUPPORT)/amint2l/master",
+    "AREA_DETECTOR=$(SUPPORT)/areaDetector/master",
+    "ASUBFUNCTIONS=$(SUPPORT)/asubFunctions/master",
+    "ASYN=$(SUPPORT)/asyn/master",
+    "AUTOSAVE=$(SUPPORT)/autosave/master",
+    "AXIS=$(SUPPORT)/axis/master",
+    "BARNDOORS=$(SUPPORT)/barndoors/master",
+    "BOOST=$(EPICS_ROOT)/libraries/master/boost",
+    "BUSY=$(SUPPORT)/busy/master",
+    "CALC=$(SUPPORT)/calc/master",
+    "CAPUTLOG=$(SUPPORT)/caPutLog/master",
+    "CCD100=$(SUPPORT)/CCD100/master",
+    "COMMON=$(ISISSUPPORT)/Common/master",
+    "CRYVALVE=$(SUPPORT)/cryValve/master",
+    "CSM=$(SUPPORT)/csm/master",
+    "CURL=$(SUPPORT)/curl/master",
+    "CYBAMAN=$(SUPPORT)/cybaman/master",
+    "DANFYSIK8000=$(SUPPORT)/danfysikMps8000",
+    "DAQMXBASE=$(SUPPORT)/DAQmxBase/master",
+    "DEVIOCSTATS=$(SUPPORT)/devIocStats/master",
+    "ECLAB=$(SUPPORT)/ECLab/master",
+    "#EEMCU=$(SUPPORT)/MCAG_Base_Project/master/epics/m-epics-eemcu",
+    "EEMCU=$(SUPPORT)/MCAG_Base_Project/master/epics/epicsIOC",
+    "EFSW=$(SUPPORT)/efsw/master",
+    "EUROTHERM2K=$(SUPPORT)/eurotherm2k/master",
+    "FERMCHOP=$(SUPPORT)/FZJ_fermichopper/master",
+    "FZJDDFERMCHOP=$(SUPPORT)/FZJ_DDfermichopper/master",
+    "FILELIST=$(SUPPORT)/FileList/master",
+    "FILESERVER=$(SUPPORT)/FileServer/master",
+    "FINS=$(SUPPORT)/FINS/master",
+    "FLATBUFFERS=$(SUPPORT)/flatbuffers/master",
+    "GALIL=$(SUPPORT)/galil/master",
+    "GEMORC=$(SUPPORT)/gemorc/master",
+    "HAMEG8123=$(ISISSUPPORT)/Hameg_8123/master",
+    "HIDEWINDOW=$(SUPPORT)/HideWindow/master",
+    "HLG=$(SUPPORT)/hlg/master",
+    "HTMLTIDY=$(SUPPORT)/htmltidy/master",
+    "HVCAEN=$(SUPPORT)/HVCAENx527/master",
+    "ICPCONFIG=$(SUPPORT)/icpconfig/master",
+    "IEG=$(SUPPORT)/ieg/master",
+    "INSTRON=$(SUPPORT)/instron/master",
+    "IP=$(SUPPORT)/ip/master",
+    "IPAC=$(SUPPORT)/ipac/master",
+    "#ISISDAE=$(SUPPORT)/isisdae/master # comment out as contains incompatible version of TinyXML for DAE3",
+    "JAWS=$(SUPPORT)/jaws/master",
+    "JULABO=$(SUPPORT)/julabo/master",
+    "KHLY2400=$(SUPPORT)/Keithley_2400/master",
+    "KEPCO=$(SUPPORT)/kepco/master",
+    "LKSH336=$(SUPPORT)/lakeshore/master/lakeshore336",
+    "LKSH460=$(SUPPORT)/lakeshore460/master",
+    "LIBICONV=$(SUPPORT)/libiconv/master",
+    "LIBJSON=$(SUPPORT)/libjson/master",
+    "LIBRDKAFKA=$(SUPPORT)/librdkafka/master",
+    "LIBXML2=$(SUPPORT)/libxml2/master",
+    "LIBXSLT=$(SUPPORT)/libxslt/master",
+    "LINKAM95=$(SUPPORT)/linkam95/master",
+    "LVDCOM=$(ISISSUPPORT)/lvDCOM/master",
+    "MCA=$(SUPPORT)/mca/master",
+    "MAGNET3D=$(ISISSUPPORT)/magnet3D/master",
+    "MERCURY_ITC=$(ISISSUPPORT)/MercuryiTC/master",
+    "MK2CHOPR=$(SUPPORT)/mk2chopper/master",
+    "MODBUS=$(SUPPORT)/modbus/master",
+    "MOTIONSETPOINTS=$(SUPPORT)/motionSetPoints/master",
+    "MOTOR=$(SUPPORT)/motor/master",
+    "MOTOREXT=$(SUPPORT)/motorExtensions/master",
+    "MK2CHOPR=$(SUPPORT)/mk2chopper/master",
+    "MYSQL=$(SUPPORT)/MySQL/master",
+    "NEOCERA=$(SUPPORT)/neocera/master",
+    "NETSHRVAR=$(SUPPORT)/NetShrVar/master",
+    "NANODAC=$(SUPPORT)/nanodac/master",
+    "NULLHTTPD=$(SUPPORT)/nullhttpd/master",
+    "OPENSSL=$(SUPPORT)/OpenSSL/master",
+    "OPTICS=$(SUPPORT)/optics/master",
+    "PCRE=$(SUPPORT)/pcre/master",
+    "PDR2000=$(SUPPORT)/pdr2000/master",
+    "PIXELMAN=$(SUPPORT)/pixelman/master",
+    "PROCSERVCONTROL=$(SUPPORT)/procServControl/master",
+    "PUGIXML=$(SUPPORT)/pugixml/master",
+    "PVCOMPLETE=$(SUPPORT)/pvcomplete/master",
+    "PVDUMP=$(SUPPORT)/pvdump/master",
+    "READASCII=$(SUPPORT)/ReadASCII/master",
+    "ROTSC=$(SUPPORT)/rotating_sample_changer/master",
+    "RUNCONTROL=$(SUPPORT)/RunControl/master",
+    "RANDOM=$(SUPPORT)/random/master",
+    "SAMPLECHANGER=$(SUPPORT)/sampleChanger/master",
+    "SLACKING=$(EPICS_ROOT)/libraries/master/slacking",
+    "SNCSEQ=$(SUPPORT)/seq/master",
+    "SKFMB350=$(SUPPORT)/skf_mb350/master",
+    "SKFCHOPPER=$(SUPPORT)/SKFChopper/master",
+    "SPRLG=$(SUPPORT)/superlogics/master",
+    "SQLITE=$(SUPPORT)/sqlite/master",
+    "SSCAN=$(SUPPORT)/sscan/master",
+    "STD=$(SUPPORT)/std/master",
+    "STPS350=$(ISISSUPPORT)/Stanford_PS350/master",
+    "STSR400=$(ISISSUPPORT)/Stanford_SR400/master",
+    "STREAMDEVICE=$(SUPPORT)/StreamDevice/master",
+    "TDKLAMBDAGENESYS=$(SUPPORT)/TDKLambdaGenesys/master",
+    "TEKDMM40X0=$(SUPPORT)/Tektronix_DMM_40X0/master",
+    "TEKAFG3XXX=$(SUPPORT)/Tektronix_AFG3XXX/master",
+    "TEKMSO4104B=$(SUPPORT)/Tektronix_MSO_4104B/master",
+    "TINYXML=$(SUPPORT)/TinyXML/master",
+    "TPG300=$(SUPPORT)/TPG/master",
+    "TPG=$(SUPPORT)/TPG/master",
+    "TTIEX355P=$(SUPPORT)/ttiEX355P/master",
+    "UTILITIES=$(SUPPORT)/utilities/master",
+    "VISADRV=$(SUPPORT)/VISAdrv/master",
+    "WEBGET=$(SUPPORT)/webget/master",
+    "ZLIB=$(SUPPORT)/zlib/master",
+
+    # EPICS v4
+    "EV4_BASE=$(SUPPORT)/EPICS_V4/master",
+    "PVDATABASE=$(EV4_BASE)/pvDatabaseCPP",
+    "PVASRV=$(EV4_BASE)/pvaSrv",
+    "PVACLIENT=$(EV4_BASE)/pvaClientCPP",
+    "PVACCESS=$(EV4_BASE)/pvAccessCPP",
+    "NORMATIVETYPES=$(EV4_BASE)/normativeTypesCPP",
+    "PVDATA=$(EV4_BASE)/pvDataCPP",
+    "PVCOMMON=$(EV4_BASE)/pvCommonCPP"]
+
+KNOWN_MACROS = {}
+for macro in KNOWN_MACROS_LIST:
+    macro_name = macro.split("=")[0]
+    KNOWN_MACROS[macro_name] = macro
+
 
 def find(pattern, path):
     """
@@ -182,6 +310,42 @@ def find(pattern, path):
             if re.match(pattern, name) is not None:
                 result.append(os.path.join(root, name))
     return result
+
+
+def macro_dependencies(ioc_dir):
+    """
+    Get a list of possible dependenices for the macros
+    Args:
+        ioc_dir:
+
+    Returns:
+
+    """
+    file_list = find(r".*", ioc_dir)
+
+    all_dependencies = set()
+    for file_to_parse in file_list:
+        dependencies = set()
+        print("    - Parsing {}".format(file_to_parse))
+
+        for line in open(file_to_parse):
+            try:
+                splits = line.split("$(")[1:]
+            except IndexError:
+                splits = []
+            try:
+                splits.extend(line.split("${")[1:])
+            except IndexError:
+                pass
+            for split in splits:
+                for macro, dependency in KNOWN_MACROS.items():
+                    if split.strip().startswith(macro):
+                        dependencies.add(dependency)
+
+        print("    - Dependencies {}".format(dependencies))
+        all_dependencies = all_dependencies.union(dependencies)
+
+    return all_dependencies
 
 
 def build_dependencies(ioc_dir):
@@ -217,16 +381,17 @@ def build_dependencies(ioc_dir):
     return all_dependencies
 
 
-def get_entries(dependencies):
+def get_entries(dependencies, macros):
     """
     Get entries to add to release file
     Args:
         dependencies: dependencies for the IOC
+        macros: macros to add (yes I know it is not nice but it works)
 
     Returns:
 
     """
-    lines = set()
+    lines = set(macros)
     missing = set()
     for dependency in dependencies:
         try:
@@ -295,8 +460,10 @@ def replace_dependencies_in_release_file(base_dir):
     """
     abs_base_dir = os.path.abspath(base_dir)
     print("Working in '{0}'".format(abs_base_dir))
+    macros = macro_dependencies(abs_base_dir)
     dependencies = build_dependencies(abs_base_dir)
-    lines = get_entries(dependencies)
+    lines = get_entries(dependencies, macros)
+
     replace_config_lines(lines, abs_base_dir)
     print("Done")
 
