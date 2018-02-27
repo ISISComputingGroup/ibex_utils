@@ -7,6 +7,7 @@ import argparse
 import os
 import re
 
+
 # lines which indicate what should be replaced in the release file
 FIRST_OLD_RELEASE_LINE = "include $(TOP)/../../../configure/MASTER_RELEASE"
 RELEASE_LINES_TO_IGNORE = [
@@ -28,7 +29,7 @@ KNOWN_DEPENDENCIES = {
     "asubFunctions": "ASUBFUNCTIONS=$(SUPPORT)/asubFunctions/master",
     "asubFunctions.dbd": "ASUBFUNCTIONS=$(SUPPORT)/asubFunctions/master",
     "asyn": "ASYN=$(SUPPORT)/asyn/master\nONCRPC=$(SUPPORT)/oncrpc/master",
-    "asyn.dbd": "ASYN=$(SUPPORT)/asyn/master",
+    "asyn.dbd": "ASYN=$(SUPPORT)/asyn/master\nONCRPC=$(SUPPORT)/oncrpc/master",
     "axis.dbd": "AXIS=$(SUPPORT)/axis/master",
     "autosave": "AUTOSAVE=$(SUPPORT)/autosave/master",
     "base.dbd": "",
@@ -48,6 +49,8 @@ KNOWN_DEPENDENCIES = {
     "icpconfig": "ICPCONFIG=$(SUPPORT)/icpconfig/master",
     "icpconfig.dbd": "ICPCONFIG=$(SUPPORT)/icpconfig/master",
     "libjson": "LIBJSON=$(SUPPORT)/libjson/master",
+    "lvDCOM": "LVDCOM=$(ISISSUPPORT)/lvDCOM/master",
+    "lvDCOM.dbd": "LVDCOM=$(ISISSUPPORT)/lvDCOM/master",
     "motionSetPoints": "MOTIONSETPOINTS=$(SUPPORT)/motionSetPoints/master",
     "motionSetPoints.dbd": "MOTIONSETPOINTS=$(SUPPORT)/motionSetPoints/master",
     "motor": "MOTOR=$(SUPPORT)/motor/master",
@@ -55,6 +58,7 @@ KNOWN_DEPENDENCIES = {
     "motorSimSupport.dbd": "MOTOR=$(SUPPORT)/motor/master",
     "motorSupport.dbd": "MOTOR=$(SUPPORT)/motor/master",
     "pcre": "PCRE=$(SUPPORT)/pcre/master",
+    "pcrecpp": "PCRE=$(SUPPORT)/pcre/master",
     "pugixml": "PUGIXML=$(SUPPORT)/pugixml/master",
     "pv": "SNCSEQ=$(SUPPORT)/seq/master",
     "pvdump": "PVDUMP=$(SUPPORT)/pvdump/master",
@@ -71,8 +75,27 @@ KNOWN_DEPENDENCIES = {
     "stdSupport.dbd": "STD=$(SUPPORT)/std/master",
     "utilities": "UTILITIES=$(SUPPORT)/utilities/master",
     "utilities.dbd": "UTILITIES=$(SUPPORT)/utilities/master",
+    "xxx": "",
     "zlib": "ZLIB=$(SUPPORT)/zlib/master"
 }
+
+
+def find(pattern, path):
+    """
+    Find a file which matches a regex
+    Args:
+        pattern: regex to find
+        path: path to start in
+
+    Returns: list of matching filenames
+
+    """
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if re.match(name, pattern) is not None:
+                result.append(os.path.join(root, name))
+    return result
 
 
 def build_dependencies(ioc_dir):
@@ -81,20 +104,31 @@ def build_dependencies(ioc_dir):
     :param ioc_dir: path for the IOC
     :return: set of dependencies
     """
-    app_dir = [app_dir for app_dir in os.listdir(ioc_dir) if app_dir.endswith("IOC-01App")]
-    if len(app_dir) != 1:
-        exit("ERROR: Too many/too few app dirs found. Found {}".format(app_dir))
-    build_mak_filename = os.path.join(ioc_dir, app_dir[0], "src", "build.mak")
-    print("    - Parsing {}".format(build_mak_filename))
 
-    dependencies = set()
-    for line in open(build_mak_filename):
-        match = re.match(r"(?:\$\(APPNAME\)_DBD|\$\(APPNAME\)_LIBS) \+= (.*)", line)
-        if match is not None:
-            for dep in match.group(1).split():
-                dependencies.add(dep)
-    print("    - Dependencies {}".format(dependencies))
-    return dependencies
+    file_list = find(r"Makefile|build\.mak", ioc_dir)
+
+    if len(file_list) < 1:
+        exit("ERROR: Too few makefiles. Found {}".format(file_list))
+
+    all_dependencies = set()
+    for file_to_parse in file_list:
+        dependencies = set()
+        print("    - Parsing {}".format(file_to_parse))
+
+        for line in open(file_to_parse):
+            match = re.match(r".*(?:_DBD|_LIBS) \+= (.*)", line)
+            if match is not None:
+                for dep in match.group(1).split():
+                    dependencies.add(dep)
+
+            match = re.match(r".*(?:_DBD_|_LIBS_).* \+= (.*)", line)
+            if match is not None:
+                print("STRANGE: Strange line fix manually {}".format(line))
+
+        print("    - Dependencies {}".format(dependencies))
+        all_dependencies = all_dependencies.union(dependencies)
+
+    return all_dependencies
 
 
 def get_entries(dependencies):
@@ -167,17 +201,17 @@ def replace_config_lines(lines, ioc_dir):
                 outfile.write(line)
 
 
-def replace_dependencies_in_release_file(ioc_dir):
+def replace_dependencies_in_release_file(base_dir):
     """
-    Replaces the dependencies in the RELEASE file with dependencies from the IOC directory.
+    Replaces the dependencies in the RELEASE file with dependencies from the base directory.
     Args:
-        ioc_dir: the IOC directory
+        base_dir: the base directory which contains the release file
     """
-    abs_ioc_dir = os.path.abspath(ioc_dir)
-    print("Working in '{0}'".format(abs_ioc_dir))
-    dependencies = build_dependencies(abs_ioc_dir)
+    abs_base_dir = os.path.abspath(base_dir)
+    print("Working in '{0}'".format(abs_base_dir))
+    dependencies = build_dependencies(abs_base_dir)
     lines = get_entries(dependencies)
-    replace_config_lines(lines, abs_ioc_dir)
+    replace_config_lines(lines, abs_base_dir)
     print("Done")
 
 
