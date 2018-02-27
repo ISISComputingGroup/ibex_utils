@@ -93,7 +93,8 @@ def find(pattern, path):
     result = []
     for root, dirs, files in os.walk(path):
         for name in files:
-            if re.match(name, pattern) is not None:
+            if re.match(pattern, name) is not None:
+                print(name)
                 result.append(os.path.join(root, name))
     return result
 
@@ -105,7 +106,7 @@ def build_dependencies(ioc_dir):
     :return: set of dependencies
     """
 
-    file_list = find(r"Makefile|build\.mak", ioc_dir)
+    file_list = find(r"(build.mak)|(Makefile)", ioc_dir)
 
     if len(file_list) < 1:
         exit("ERROR: Too few makefiles. Found {}".format(file_list))
