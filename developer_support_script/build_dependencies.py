@@ -67,6 +67,7 @@ KNOWN_DEPENDENCIES = {
     "motorSimSupport": "MOTOR=$(SUPPORT)/motor/master",
     "motorSimSupport.dbd": "MOTOR=$(SUPPORT)/motor/master",
     "motorSupport.dbd": "MOTOR=$(SUPPORT)/motor/master",
+    "optics": "OPTICS=$(SUPPORT)/optics/master",
     "pcre": "PCRE=$(SUPPORT)/pcre/master",
     "pcrecpp": "PCRE=$(SUPPORT)/pcre/master",
     "pixelman": "PIXELMAN=$(SUPPORT)/pixelman/master",
