@@ -464,7 +464,10 @@ def replace_dependencies_in_release_file(base_dir):
     """
     abs_base_dir = os.path.abspath(base_dir)
     print("Working in '{0}'".format(abs_base_dir))
+
     macros = macro_dependencies(abs_base_dir)
+    if "ioc" in abs_base_dir:
+        macros.add("ACCESSSECURITY=$(SUPPORT)/AccessSecurity/master")
     dependencies = build_dependencies(abs_base_dir)
     lines = get_entries(dependencies, macros)
 
