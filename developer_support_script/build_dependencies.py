@@ -21,6 +21,7 @@ LAST_NEW_LINE = "# END OF AUTO GENERATED DEPENDENCIES"
 # Dependencies found in the makefile and what should be included in the release file
 KNOWN_DEPENDENCIES = {
     "$(EPICS_BASE_IOC_LIBS)": "",
+    "$(EPICS_BASE_HOST_LIBS)": "",
     "$(MYSQLLIB)": "MYSQL=$(SUPPORT)/MySQL/master",
     "SM300Motor": "MOTOR=$(SUPPORT)/motor/master",
     "SM300Motor.dbd": "MOTOR=$(SUPPORT)/motor/master",
@@ -54,6 +55,8 @@ KNOWN_DEPENDENCIES = {
     "devSoftMotor.dbd": "MOTOR=$(SUPPORT)/motor/master",
     "drvAsynIPPort.dbd": "ASYN=$(SUPPORT)/asyn/master",
     "drvAsynSerialPort.dbd": "ASYN=$(SUPPORT)/asyn/master",
+    "devKeithley2400": "KHLY2400=$(SUPPORT)/Keithley_2400/master",
+    "devKeithley2400.dbd": "KHLY2400=$(SUPPORT)/Keithley_2400/master",
     "easySQLite": "SQLITE=$(SUPPORT)/sqlite/master",
     "FileServer": "FILESERVER=$(SUPPORT)/FileServer/master",
     "icpconfig": "ICPCONFIG=$(SUPPORT)/icpconfig/master",
@@ -67,6 +70,7 @@ KNOWN_DEPENDENCIES = {
     "motorSimSupport": "MOTOR=$(SUPPORT)/motor/master",
     "motorSimSupport.dbd": "MOTOR=$(SUPPORT)/motor/master",
     "motorSupport.dbd": "MOTOR=$(SUPPORT)/motor/master",
+    "optics": "OPTICS=$(SUPPORT)/optics/master",
     "pcre": "PCRE=$(SUPPORT)/pcre/master",
     "pcrecpp": "PCRE=$(SUPPORT)/pcre/master",
     "pixelman": "PIXELMAN=$(SUPPORT)/pixelman/master",
