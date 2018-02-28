@@ -86,6 +86,12 @@ class UpgradeTasks(object):
         """
         return os.path.join(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER, UpgradeTasks._get_machine_name())
 
+    def confirm(self, message):
+        """
+        Ask user to confirm correct script was chosen.
+        """
+        self._prompt.prompt_and_raise_if_not_yes(message)
+
     def stop_ibex_server(self):
         """
         Stop the current IBEX server running. Current this can not be run because it kills any python
@@ -225,6 +231,45 @@ class UpgradeTasks(object):
         if answer != "Y":
             raise UserStop()
 
+    def setup_config_repository(self):
+        with Task("Set up configuration repository", self._prompt) as task:
+            if task.do_step:
+                inst_name = self._machine_name
+
+                subprocess.call("git config --global core.autocrlf true")
+                subprocess.call("git config --global credential.helper wincred")
+                subprocess.call("git config --global user.name spudulike")
+                subprocess.call("git config --global user.email spudulike@{}.isis.cclrc.ac.uk".format(inst_name.lower()))
+
+                if not os.path.exists(SETTINGS_CONFIG_PATH):
+                    os.makedirs(SETTINGS_CONFIG_PATH)
+
+                subprocess.call(
+                "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+                    inst_name), cwd=SETTINGS_CONFIG_PATH)
+
+                inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
+                subprocess.call("git pull", cwd=inst_config_path)
+
+                branch_exists = subprocess.call("git checkout {}".format(inst_name), cwd=inst_config_path) == 0
+                if not branch_exists:
+                    subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)
+
+                inst_scripts_path = os.path.join(inst_config_path, "Python")
+                if not os.path.exists(os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower()))):
+                    try:
+                        os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
+                                  os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower())))
+                        subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
+                        subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
+                        subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
+                        subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+                    except Exception as e:
+                        self._prompt.prompt_and_raise_if_not_yes(
+                            "Something went wrong setting up the configurations repository. Please resolve manually, "
+                            "instructions are in the developers manual under "
+                            "First-time-installing-and-building-(Windows): \n {}".format(e.message))
+
     def upgrade_instrument_configuration(self):
         """
         Update the configuration on the instrument using its upgrade config script.
@@ -254,7 +299,10 @@ class UpgradeTasks(object):
                         self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
                 else:
                     self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
-                RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
+                try:
+                    RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
+                except Exception as e:
+                    print("WARNING: There was an error running upgrade script:\n{}".format(e))
 
     def remove_seci_shortcuts(self):
         """
@@ -271,6 +319,21 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
                 self._prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
+    def setup_calibrations_repository(self):
+        """
+        Set up the calibration repository
+        """
+        with Task("Set up calibrations repository", self._prompt) as task:
+            if task.do_step:
+                if os.path.isdir(CALIBRATION_PATH):
+                    if self._prompt("Calibrations directory already exists. Update calibrations repository?",
+                                    ["Y", "N"], "N") == "Y":
+                        self.update_calibrations_repository()
+                else:
+                    os.makedirs(CALIBRATION_PATH)
+                    subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
+                                    "C:\Instrument\Settings\config\common", cwd=CALIBRATION_PATH)
+
     def update_calibrations_repository(self):
         """
         Update the calibration repository
@@ -284,22 +347,23 @@ class UpgradeTasks(object):
                     self._prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
                                                              "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
 
-    def install_java(self):
+    def check_java_installation(self):
         """
-        Install Java
+        Checks Java installation
         """
         with Task("Install java", self._prompt) as task:
             if task.do_step:
                 java_url = "http://www.java.com/en/"
-                java_installed = subprocess.call(["java", "-version"]) == 0
-                if java_installed:
+                try:
+                    subprocess.call(["java", "-version"])
                     self._prompt.prompt_and_raise_if_not_yes(
                         "Confirm that the java version above is the desired version or that you have "
                         "upgraded to the desired 64-bit version from {}".format(java_url))
-                else:
+                except:
                     self._prompt.prompt_and_raise_if_not_yes(
-                        "Java is not installed. Please go to {}, then download and install "
-                        "the desired 64-bit version".format(java_url))
+                            "No installation of Java found on this machine. Please go to {} to download and install the"
+                            " desired 64-bit version".format(java_url))
+
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Is auto-update turned off? This can be checked from the Java control panel in "
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
@@ -319,6 +383,19 @@ class UpgradeTasks(object):
                     "- Running IOCs\n"
                     "- Available configs\n"
                     "- Any open LabView VIs")
+
+    def configure_com_ports(self):
+        """
+        Configure the COM ports
+        """
+        with Task("Configure COM ports", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Using NPort Administrator (available under /Kits$/CompGroup/Utilities/), check that the COM ports "
+                    "on this machine are configured to standard, i.e.:\n"
+                    "- Moxa 1 starts at COM5\n"
+                    "- Moxa 2 starts at COM21\n"
+                    "- etc.\n")
 
     @staticmethod
     def _get_backup_dir():
@@ -429,6 +506,29 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
+    def install_mysql(self):
+        """
+        Prompt user to install MySQL and opens browser with instructions.
+
+        """
+        with Task("Install MySQL", self._prompt) as task:
+            if task.do_step:
+                url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Installing-and-Upgrading-MySQL"
+                if self._prompt.prompt("Please install MySQL following the instructions on the developer wiki. "
+                                       "Open instructions in browser now?", ["Y", "N"], "N") == "Y":
+                    subprocess.call("explorer {}".format(url))
+                self._prompt.prompt_and_raise_if_not_yes("Confirm MySQL has been successfully installed.")
+
+    def configure_mysql(self):
+        """
+        Run the MySQL configuration script
+        """
+        with Task("Configure MySQL", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Run config_mysql.bat in {}. \n"
+                    "WARNING: performing this step will wipe all existing historical data.".format(SYSTEM_SETUP_PATH))
+
     def upgrade_mysql(self):
         """
         Upgrade mysql step
@@ -515,9 +615,66 @@ class UpgradeTasks(object):
                     "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}".format(
                         self._get_instrument_name()))
 
+    def update_instlist(self):
+        """
+        Prompt user to add instrument to the list of known IBEX instruments
+        """
+        with Task("Update Instrument List", self._prompt) as task:
+            if task.do_step:
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Add the host name of the instrument to the list saved in the CS:INSTLIST PV")
+
+    def update_web_dashboard(self):
+        """
+        Prompt user to add the instrument to the web dashboard
+        """
+        with Task("Update web dashboard", self._prompt) as task:
+            if task.do_step:
+                redirect_page = os.path.join("C:", "inetpub","wwwroot","DataWeb","Dashboards","redirect.html")
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Add the host name of the instrument to NDX_INSTS or ALL_INSTS in webserver.py in the JSON_bourne "
+                    "repository.")
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "On NDAEXTWEB1, pull the updated code and add a link to the instrument dashboard on the main "
+                    "dataweb page under {}".format(redirect_page))
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Restart JSON_bourne on NDAEXTWEB1 when appropriate. (WARNING: This will kill all existing sessions!)")
+
+    def install_wiring_tables(self):
+        """
+        Prompt user to install wiring tables in the appropriate folder.
+        """
+        with Task("Install wiring tables", self._prompt) as task:
+            if task.do_step:
+                tables_dir = os.path.join(SETTINGS_CONFIG_PATH, self._machine_name, "configurations", "tables")
+                self._prompt.prompt_and_raise_if_not_yes("Install the wiring tables in {}.".format(tables_dir))
+
+    def configure_motion(self):
+        """
+        Prompt user to configure Galils
+        """
+        with Task("Configure motion setpoints", self._prompt) as task:
+            if task.do_step:
+                url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Deployment-on-an-Instrument-Control-PC#set-up-motion-set-points"
+                if self._prompt.prompt("Please configure the motion set points for this instrument. Instructions can be"
+                                       " found on the developer wiki. Open instructions in browser now?",
+                                       ["Y", "N"], "N") == "Y":
+                    subprocess.call("explorer {}".format(url))
+                self._prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
+
+    def add_nagios_checks(self):
+        """
+        Prompt user to add nagios checks.
+        """
+        with Task("Add Nagios checks", self._prompt) as task:
+            if task.do_step:
+                # For future reference, genie_python can send emails!
+                self._prompt.prompt_and_raise_if_not_yes("Add this instrument to the Nagios monitoring system. Talk to "
+                                                         "Freddie Akeroyd for help with this.")
+
     def inform_instrument_scientists(self):
         """
-        Inform instrument scientists that the machine is about to go down.
+        Inform instrument scientists that the machine has been upgraded.
         """
         with Task("Inform instrument scientists", self._prompt) as task:
             if task.do_step:
@@ -560,8 +717,6 @@ class UpgradeInstrument(object):
     def run_test_update(self):
         """
         Run a complete test upgrade on the current system
-        Returns:
-
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
         self._upgrade_tasks.stop_ibex_server()
@@ -576,8 +731,11 @@ class UpgradeInstrument(object):
     def remove_all_and_install_client_and_server(self):
         """
         Either install or upgrade the ibex client and server
-
         """
+        self._upgrade_tasks.confirm(
+            "This script removes IBEX client and server and installs the latest build of both, without any extra steps."
+            " Proceed?")
+
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
@@ -586,20 +744,49 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
 
-    def run_instrument_update(self):
+    def run_instrument_tests(self):
         """
-        Update an instrument (just configuration and seci shortcuts)
+        Run through client and server tests once installation / deployment has completed.
         """
-        self._upgrade_tasks.stop_ibex_server()
-        self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
-        self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.perform_client_tests()
+        self._upgrade_tasks.perform_server_tests()
+        self._upgrade_tasks.inform_instrument_scientists()
+
+    def run_instrument_install(self):
+        """
+        Do a first installation of IBEX on a new instrument.
+        """
+        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
+                                    "on a new instrument. Proceed?")
+
+        self._upgrade_tasks.check_java_installation()
+        self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.remove_seci_shortcuts()
 
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.setup_config_repository()
+        self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.configure_mysql()
+        self._upgrade_tasks.create_journal_sql_schema()
+        self._upgrade_tasks.configure_com_ports()
+        self._upgrade_tasks.setup_calibrations_repository()
+        self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.update_release_notes()
+        self._upgrade_tasks.restart_vis()
+        self._upgrade_tasks.install_wiring_tables()
+        self._upgrade_tasks.configure_motion()
+        self._upgrade_tasks.add_nagios_checks()
+        self._upgrade_tasks.update_instlist()
+        self._upgrade_tasks.update_web_dashboard()
+
     def run_instrument_deploy(self):
+
         """
-        Upgrade an instrument. A complete deployment upgrade.
+        Deploy a full IBEX upgrade on an existing instrument.
         """
+        self._upgrade_tasks.confirm(
+            "This script performs a full upgrade of the IBEX server and client on an existing instrument. Proceed?")
         self.run_instrument_deploy_pre_stop()
         self.run_instrument_deploy_main()
         self.run_instrument_deploy_post_start()
