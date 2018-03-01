@@ -409,11 +409,11 @@ class UpgradeTasks(object):
             if task.do_step:
                 try:
                     mysql_bin_dir = self._get_mysql_dir()
-                    RunProcess(SYSTEM_SETUP_PATH, "mysql.exe", executable_directory=mysql_bin_dir,
+                    RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
                                prog_args=["-u", "root", "-p", "--execute", "SET GLOBAL innodb_fast_shutdown=0"],
                                capture_pipes=False).run()
 
-                    RunProcess(SYSTEM_SETUP_PATH, "mysqladmin.exe", executable_directory=mysql_bin_dir,
+                    RunProcess(MYSQL_FILES_DIR, "mysqladmin.exe", executable_directory=mysql_bin_dir,
                                prog_args=["-u", "root", "-p", "shutdown"], capture_pipes=False).run()
 
                     #  Must wait for the database to properly stop otherwise when we copy it the copy fails because the
