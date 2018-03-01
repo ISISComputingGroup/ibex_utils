@@ -25,7 +25,7 @@ pipeline {
     stage("Build") {
       steps {
         bat """
-            installation_and_upgrade/install_latest_ibex.bat
+            installation_and_upgrade/instrument_install_latest_build_only.bat
             """
       }
     }
