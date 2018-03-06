@@ -2,12 +2,7 @@
 Classes to interact with the user
 """
 from .exceptions import UserStop
-
-# python 2/3 compatible for input
-try:
-    input = raw_input
-except NameError:
-    pass
+import six.moves
 
 
 class UserPrompt(object):
@@ -44,13 +39,13 @@ class UserPrompt(object):
             print("{prompt} : {default}".format(prompt=prompt_text, default=default))
             return default
         elif possibles is UserPrompt.ANY:
-            return input(prompt_text).strip()
+            return six.moves.input(prompt_text).strip()
         else:
             return self._get_user_answer(prompt_text, possibles, case_sensitive)
 
     def _get_user_answer(self, prompt_text, possibles, case_sensitive=False):
         while True:
-            answer = input(prompt_text).strip()
+            answer = six.moves.input(prompt_text).strip()
             for possible in possibles:
                 if answer == possible or (not case_sensitive and possible.lower() == answer.lower()):
                     return possible
@@ -69,12 +64,14 @@ class UserPrompt(object):
             return True
         return self._get_user_answer("Do step '{0}'? : ".format(step_text), ("Y", "N")) == "Y"
 
-    def prompt_and_raise_if_not_yes(self, message):
+    def prompt_and_raise_if_not_yes(self, message, default="N"):
         """
-        Prompt the user and raise and excpetion if they do not answer yes
+        Prompt the user and raise and exception if they do not answer yes
+        Default to Y in quiet mode
         Args:
             message: the message to prompt the user with
+            default: default answer if in automatic mode
         Raises UserStop: if the user does not answer Y
         """
-        if self.prompt("{}\nType Y when done.".format(message), ["Y", "N"], "N") != "Y":
+        if self.prompt("{}\nType Y when done.".format(message), possibles=["Y", "N"], default=default) != "Y":
             raise UserStop
