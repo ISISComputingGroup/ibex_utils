@@ -95,7 +95,7 @@ class UpgradeTasks(object):
         """
         Ask user to confirm correct script was chosen.
         """
-        self._prompt.prompt_and_raise_if_not_yes(message)
+        self._prompt.prompt_and_raise_if_not_yes(message, default="Y")
 
     def stop_ibex_server(self):
         """
@@ -237,6 +237,10 @@ class UpgradeTasks(object):
             raise UserStop()
 
     def setup_config_repository(self):
+        """
+        Creates the configuration repository, and swaps or creates a branch for the instrument.
+
+        """
         with Task("Set up configuration repository", self._prompt) as task:
             if task.do_step:
                 inst_name = self._machine_name
@@ -244,14 +248,15 @@ class UpgradeTasks(object):
                 subprocess.call("git config --global core.autocrlf true")
                 subprocess.call("git config --global credential.helper wincred")
                 subprocess.call("git config --global user.name spudulike")
-                subprocess.call("git config --global user.email spudulike@{}.isis.cclrc.ac.uk".format(inst_name.lower()))
+                set_user_email = "git config --global user.email spudulike@{}.isis.cclrc.ac.uk"
+                subprocess.call(set_user_email.format(inst_name.lower()))
 
                 if not os.path.exists(SETTINGS_CONFIG_PATH):
                     os.makedirs(SETTINGS_CONFIG_PATH)
 
                 subprocess.call(
-                "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
-                    inst_name), cwd=SETTINGS_CONFIG_PATH)
+                    "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+                        inst_name), cwd=SETTINGS_CONFIG_PATH)
 
                 inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
                 subprocess.call("git pull", cwd=inst_config_path)
@@ -267,7 +272,7 @@ class UpgradeTasks(object):
                                   os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower())))
                         subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
                         subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
-                        subprocess.call("git commit -m\"create initial python\"".format(inst_name), cwd=inst_config_path)
+                        subprocess.call('git commit -m"create initial python"'.format(inst_name), cwd=inst_config_path)
                         subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
                     except Exception as e:
                         self._prompt.prompt_and_raise_if_not_yes(
@@ -364,7 +369,7 @@ class UpgradeTasks(object):
                     self._prompt.prompt_and_raise_if_not_yes(
                         "Confirm that the java version above is the desired version or that you have "
                         "upgraded to the desired 64-bit version from {}".format(java_url))
-                except:
+                except (subprocess.CalledProcessError, WindowsError):
                     self._prompt.prompt_and_raise_if_not_yes(
                             "No installation of Java found on this machine. Please go to {} to download and install the"
                             " desired 64-bit version".format(java_url))
@@ -648,7 +653,7 @@ class UpgradeTasks(object):
         """
         with Task("Update web dashboard", self._prompt) as task:
             if task.do_step:
-                redirect_page = os.path.join("C:", "inetpub","wwwroot","DataWeb","Dashboards","redirect.html")
+                redirect_page = os.path.join("C:", "inetpub", "wwwroot", "DataWeb", "Dashboards", "redirect.html")
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Add the host name of the instrument to NDX_INSTS or ALL_INSTS in webserver.py in the JSON_bourne "
                     "repository.")
@@ -656,7 +661,8 @@ class UpgradeTasks(object):
                     "On NDAEXTWEB1, pull the updated code and add a link to the instrument dashboard on the main "
                     "dataweb page under {}".format(redirect_page))
                 self._prompt.prompt_and_raise_if_not_yes(
-                    "Restart JSON_bourne on NDAEXTWEB1 when appropriate. (WARNING: This will kill all existing sessions!)")
+                    "Restart JSON_bourne on NDAEXTWEB1 when appropriate. "
+                    "(WARNING: This will kill all existing sessions!)")
 
     def install_wiring_tables(self):
         """
@@ -673,7 +679,8 @@ class UpgradeTasks(object):
         """
         with Task("Configure motion setpoints", self._prompt) as task:
             if task.do_step:
-                url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Deployment-on-an-Instrument-Control-PC#set-up-motion-set-points"
+                url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
+                      "Deployment-on-an-Instrument-Control-PC#set-up-motion-set-points"
                 if self._prompt.prompt("Please configure the motion set points for this instrument. Instructions can be"
                                        " found on the developer wiki. Open instructions in browser now?",
                                        ["Y", "N"], "N") == "Y":
@@ -831,7 +838,7 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
-        self._upgrade_tasks.install_java()
+        self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.remove_seci_shortcuts()
