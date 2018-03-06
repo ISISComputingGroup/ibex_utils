@@ -71,10 +71,11 @@ class UserPrompt(object):
 
     def prompt_and_raise_if_not_yes(self, message):
         """
-        Prompt the user and raise and excpetion if they do not answer yes
+        Prompt the user and raise and exception if they do not answer yes
+        Default to Y in quiet mode
         Args:
             message: the message to prompt the user with
         Raises UserStop: if the user does not answer Y
         """
-        if self.prompt("{}\nType Y when done.".format(message), ["Y", "N"], "N") != "Y":
+        if self.prompt("{}\nType Y when done.".format(message), possibles=["Y", "N"], default="Y") != "Y":
             raise UserStop
