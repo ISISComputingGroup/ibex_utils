@@ -22,6 +22,7 @@ APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
 SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
+GUI_PATH_E4 = os.path.join(APPS_BASE_DIR, "Client_E4")
 PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 EPICS_UTILS_PATH = os.path.join(APPS_BASE_DIR, "EPICS_UTILS")
@@ -48,18 +49,20 @@ class UpgradeTasks(object):
     Class containing separate upgrade tasks.
     """
 
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, file_utils=FileUtils()):
+    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils=FileUtils()):
         """
         Initializer.
         Args:
             user_prompt: a object to allow prompting of the user
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
+            client_e4_source_dir: directory to install ibex E4 client from
             file_utils : collection of file utilities
         """
         self._prompt = user_prompt
         self._server_source_dir = server_source_dir
         self._client_source_dir = client_source_dir
+        self._client_e4_source_dir = client_e4_source_dir
         self._file_utils = file_utils
 
         self._machine_name = self._get_machine_name()
@@ -117,7 +120,7 @@ class UpgradeTasks(object):
         """
         with Task("Removing old version of IBEX", self._prompt) as task:
             if task.do_step:
-                for path in (EPICS_PATH, PYTHON_PATH, GUI_PATH, EPICS_UTILS_PATH):
+                for path in (EPICS_PATH, PYTHON_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH):
                     self._file_utils.remove_tree(path)
 
     def clean_up_desktop_ibex_training_folder(self):
@@ -182,8 +185,6 @@ class UpgradeTasks(object):
         Args:
             with_utils: True also install epics utils using icp binaries; False don't
 
-        Returns:
-
         """
         with Task("Installing IBEX Server", self._prompt) as task:
             if task.do_step:
@@ -195,13 +196,33 @@ class UpgradeTasks(object):
     def install_ibex_client(self):
         """
         Install the ibex client (which also installs genie python).
-        Returns:
 
         """
-        with Task("Installing IBEX GUI", self._prompt) as task:
+        self._install_set_version_of_ibex_client(self._client_source_dir, "")
+
+    def install_e4_ibex_client(self):
+        """
+        Install the ibex client E4 version (which also installs genie python).
+
+        """
+        source_dir = self._client_e4_source_dir
+        if source_dir is None:
+            self._prompt.prompt_and_raise_if_not_yes("The E4 client path has not been set; continue with installation?")
+        else:
+            self._install_set_version_of_ibex_client(source_dir, " E4")
+
+    def _install_set_version_of_ibex_client(self, source_dir, version):
+        """
+        Install a given version of the Ibex client.
+        Args:
+            source_dir: source directory for the client
+            version: the version of the code for a message (with a space)
+        """
+        with Task("Installing IBEX GUI{}".format(version), self._prompt) as task:
             if task.do_step:
                 self._file_utils.mkdir_recursive(APPS_BASE_DIR)
-                RunProcess(self._client_source_dir, "install_client.bat", press_any_key=True).run()
+
+                RunProcess(source_dir, "install_client.bat", press_any_key=True).run()
 
     def start_ibex_server(self):
         """
@@ -722,16 +743,18 @@ class UpgradeInstrument(object):
     """
     Class to upgrade the instrument installation to the given version of IBEX.
     """
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, file_utils=FileUtils()):
+    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils=FileUtils()):
         """
         Initializer.
         Args:
             user_prompt: a object to allow prompting of the user
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
+            client_e4_source_dir: directory to install ibex E4 client from
             file_utils : collection of file utilities
         """
-        self._upgrade_tasks = UpgradeTasks(user_prompt, server_source_dir, client_source_dir, file_utils)
+        self._upgrade_tasks = UpgradeTasks(
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils)
 
     @staticmethod
     def _should_install_utils():
@@ -769,6 +792,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
 
