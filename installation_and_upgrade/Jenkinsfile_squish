@@ -10,8 +10,7 @@ pipeline {
   }
   
   triggers {
-    pollSCM('H/2 * * * *')
-    upstream(upstreamProjects: 'ibex_gui_pipeline,genie_python_pipeline,	EPICS_IOC_Windows7_x64', threshold: hudson.model.Result.SUCCESS)
+    cron('H 3 * * *')  // run once between 3am and 4am (any minute with an hour of 3am)
   }
   
   stages {  
