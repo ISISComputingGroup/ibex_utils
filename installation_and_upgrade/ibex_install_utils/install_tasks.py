@@ -62,7 +62,7 @@ class UpgradeTasks(object):
         self._prompt = user_prompt
         self._server_source_dir = server_source_dir
         self._client_source_dir = client_source_dir
-        self._client_E4_source_dir = client_e4_source_dir
+        self._client_e4_source_dir = client_e4_source_dir
         self._file_utils = file_utils
 
         self._machine_name = self._get_machine_name()
@@ -205,7 +205,7 @@ class UpgradeTasks(object):
         Install the ibex client E4 version (which also installs genie python).
 
         """
-        source_dir = self._client_E4_source_dir
+        source_dir = self._client_e4_source_dir
         if source_dir is None:
             self._prompt.prompt_and_raise_if_not_yes("The E4 client path has not been set; continue with installation?")
         else:
