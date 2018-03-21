@@ -31,7 +31,7 @@ def _get_latest_release_path(release_dir):
     releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
     releases = filter(regex.match, releases)
 
-    if releases == []:
+    if len(releases) == 0:
         print("Error: No releases found in '{0}'".format(release_dir))
         sys.exit(3)
     current_release = max(releases)
@@ -45,9 +45,10 @@ if __name__ == "__main__":
                         help="directory from which the client and server should be installed")
     parser.add_argument("--release_suffix", dest="release_suffix", default="",
                         help="Suffix for specifying non-standard releases "
-                             "(such as those including hotfixes)")
+                             "(such as those including hot fixes)")
     parser.add_argument("--server_dir", default=None, help="Directory from which IBEX server should be installed")
     parser.add_argument("--client_dir", default=None, help="Directory from which IBEX client should be installed")
+    parser.add_argument("--client_e4_dir", default=None, help="Directory from which IBEX E4 client should be installed")
     parser.add_argument("--confirm_step", default=False, action="store_true",
                         help="Confirm each major action before performing it")
     parser.add_argument("--quiet", default=False, action="store_true",
@@ -67,7 +68,7 @@ if __name__ == "__main__":
                              "instrument_deploy_post_start: instrument_deploy part after the start of instrument")
 
     args = parser.parse_args()
-
+    client_e4_dir = args.client_e4_dir
     if args.release_dir is not None:
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
         if args.release_suffix is not "":
@@ -89,13 +90,16 @@ if __name__ == "__main__":
 
         client_build_dir = os.path.join(args.kits_icp_dir, "Client")
         client_dir = _get_latest_directory_path(client_build_dir, "BUILD")
+        if client_e4_dir is None:
+            client_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
+            client_e4_dir = _get_latest_directory_path(client_build_dir, "BUILD")
     else:
         print("You must specify either the release directory or kits_icp_dir or "
               "BOTH the server and client directories.")
         sys.exit(2)
 
     prompt = UserPrompt(args.quiet, args.confirm_step)
-    upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir)
+    upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir)
 
     try:
         if args.deployment_type == "training_update":
