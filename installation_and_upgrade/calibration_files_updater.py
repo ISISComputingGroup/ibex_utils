@@ -14,6 +14,7 @@ from genie_python.utilities import dehex_and_decompress
 
 FNULL = open(os.devnull, 'w')
 
+
 class CalibrationsFolder(object):
     """
     Context manager for accessing calibration folders on remote instruments.
