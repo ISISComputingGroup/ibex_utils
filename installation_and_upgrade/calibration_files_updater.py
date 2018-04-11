@@ -126,10 +126,10 @@ if __name__ == "__main__":
     # Report
     failed_instruments = [host for host in results.keys() if not results[host]]
     successful_instruments = [host for host in results.keys() if results[host]]
+    if len(successful_instruments) > 0:
+        logger.warning("The following instruments were updated successfully: " + ", ".join(successful_instruments))
     if len(failed_instruments) > 0:
         logger.warning("The following instruments could not be updated. Please do them by hand: " +
                        ", ".join(failed_instruments))
-    if len(successful_instruments) > 0:
-        logger.warning("The following instruments were updated successfully: " + ", ".join(successful_instruments))
 
     sys.exit(0)
