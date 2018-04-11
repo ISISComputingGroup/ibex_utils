@@ -103,13 +103,9 @@ if __name__ == "__main__":
     logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
     logger = logging.getLogger("main")
 
-    # We shouldn't store the password in the repo, but we don't want to proceed with an incorrect password.
-    # Store a hash and compare
-    expected_hash = "51b0250c33fafc86dc69ab4335ca7c885a141c6d4ab1401962d35f3fa7384558"
-    password = getpass.getpass("Confirm gamekeeper password: ")
-    while not hashlib.sha256(password).hexdigest() == expected_hash:
-        password = getpass.getpass("Password incorrect, please try again: ")
-
+    # Don't store the password in the repo
+    password = getpass.getpass("Enter gamekeeper password: ")
+    
     # Loop over all instruments
     results = dict()
 
