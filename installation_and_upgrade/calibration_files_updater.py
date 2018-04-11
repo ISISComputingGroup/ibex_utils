@@ -7,9 +7,11 @@ import git
 import subprocess
 import json
 import logging
+import os
 from genie_python import genie as g
 from genie_python.utilities import dehex_and_decompress
 
+FNULL = open(os.devnull, 'w')
 
 class CalibrationsFolder(object):
     """
@@ -24,14 +26,16 @@ class CalibrationsFolder(object):
         """
         Returns: True if disconnect is successful, else False.
         """
-        return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), '/del', '/y']) == 0
+        return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), '/del', '/y'],
+                               stdout=FNULL, stderr=FNULL) == 0
 
     def connect_to_drive(self):
         """
         Returns: True if the connection is successful, else False
         """
         return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), self.network_location,
-                                '/user:{}'.format(self.username_with_domain), self.password]) == 0
+                                '/user:{}'.format(self.username_with_domain), self.password],
+                               stdout=FNULL, stderr=FNULL) == 0
 
     def __init__(self, instrument_host, password):
         self.username_with_domain = "{}\\{}".format(instrument_host, CalibrationsFolder.USERNAME)
@@ -56,51 +60,62 @@ def get_instrument_hosts():
     return (inst['hostName'] for inst in json.loads(dehex_and_decompress(g.get_pv("CS:INSTLIST"))))
 
 
-def update_instrument(hosts, password, dry_run=False):
+def update_instrument(host, password, logger, dry_run=False):
     """
     Updates the calibration files on the named host.
 
     Args:
         host: The instrument host to update
         password: The password to access the remote network location
+        logger: Handles log messages
         dry_run: Whether to do a read-only dry run
 
     Returns:
         Success: Whether the update completed successfully
     """
+    logging.info("Updating {}".format(host))
     success = False
     with CalibrationsFolder(host, password) as repo:
         if repo is None:
-            pass
+            logger.warning("Unable to connect to host, {}".format(host))
         elif "master" not in repo.git.branch():
-            pass
+            logger.warning("The calibrations folder on {} does not point at the master branch".format(host))
         elif len(repo.git.diff()) > 0:
-            pass
+            logger.warning("The calibrations folder on {} has uncommitted changes".format(host))
         elif dry_run:
-            pass
+            logger.info("{} has passed all status checks, but not updated as this is a dry run".format(host))
             success = True
         else:
             try:
+                logger.info("Performing git pull on {}".format(host))
                 repo.git.pull()
+                logger.info("Pull successful")
                 success = True
             except git.GitCommandError as e:
-               pass
+                logger.error("Git pull on {} failed with error: {}".format(host, e))
     return success
 
 
 if __name__ == "__main__":
+    # Set up logging
+    logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
+    logger = logging.getLogger("main")
+
     # Ask for this every time. We shouldn't store it in a public repo
     password = raw_input("Enter gamekeeper password: ")
 
     # Loop over all instruments
-    failed_instruments = []
+    results = dict()
     for host in get_instrument_hosts():
-        success = update_instrument(host, password, True)
-        if not success:
-            failed_instruments.append(host)
+        results[host] = update_instrument(host, password, logger, True)
 
-    # Report failures
+    # Report
+    failed_instruments = (host for host in results.keys() if not results[host])
+    successful_instruments = (host for host in results.keys() if results[host])
     if len(failed_instruments) > 0:
-        pass
+        logger.warning("The following instruments could not be updated. Please do them by hand: " +
+                       ", ".join(failed_instruments))
+    if len(successful_instruments) > 0:
+        logger.warning("The following instruments were updated successfully: " + ", ".join(successful_instruments))
 
     sys.exit(0)
