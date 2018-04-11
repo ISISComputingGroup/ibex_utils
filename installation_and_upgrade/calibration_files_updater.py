@@ -21,7 +21,6 @@ class CalibrationsFolder(object):
     """
 
     DRIVE_LETTER = "q"
-    USERNAME = "gamekeeper"
 
     @staticmethod
     def disconnect_from_drive():
@@ -39,8 +38,8 @@ class CalibrationsFolder(object):
                                 '/user:{}'.format(self.username_with_domain), self.password],
                                stdout=FNULL, stderr=FNULL) == 0
 
-    def __init__(self, instrument_host, password):
-        self.username_with_domain = "{}\\{}".format(instrument_host, CalibrationsFolder.USERNAME)
+    def __init__(self, instrument_host, username, password):
+        self.username_with_domain = "{}\\{}".format(instrument_host, username)
         self.network_location = r'\\{}\c$\Instrument\Settings\config\common'.format(instrument_host)
         self.password = password
 
@@ -62,12 +61,13 @@ def get_instrument_hosts():
     return (inst['hostName'] for inst in json.loads(dehex_and_decompress(g.get_pv("CS:INSTLIST"))))
 
 
-def update_instrument(host, password, logger, dry_run=False):
+def update_instrument(host, username, password, logger, dry_run=False):
     """
     Updates the calibration files on the named host.
 
     Args:
         host: The instrument host to update
+        username: The username to access the remote network location
         password: The password to access the remote network location
         logger: Handles log messages
         dry_run: Whether to do a read-only dry run
@@ -77,7 +77,7 @@ def update_instrument(host, password, logger, dry_run=False):
     """
     logging.info("Updating {}".format(host))
     success = False
-    with CalibrationsFolder(host, password) as repo:
+    with CalibrationsFolder(host, username, password) as repo:
         if repo is None:
             logger.warning("Unable to connect to host, {}".format(host))
         elif "master" not in repo.git.branch():
@@ -103,7 +103,8 @@ if __name__ == "__main__":
     logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
     logger = logging.getLogger("main")
 
-    # Don't store the password in the repo
+    # Get user credentials, don't store in the repo
+    username = raw_input("Enter username (no domain): ")
     password = getpass.getpass("Enter gamekeeper password: ")
 
     # Is this a dry run?
@@ -115,7 +116,7 @@ if __name__ == "__main__":
     # Update the instruments
     results = dict()
     for host in get_instrument_hosts():
-        results[host] = update_instrument(host, password, logger, dry_run)
+        results[host] = update_instrument(host, username, password, logger, dry_run)
 
     # Report
     failed_instruments = [host for host in results.keys() if not results[host]]
