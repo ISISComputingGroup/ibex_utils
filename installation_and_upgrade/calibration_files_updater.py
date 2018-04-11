@@ -105,9 +105,6 @@ if __name__ == "__main__":
 
     # Don't store the password in the repo
     password = getpass.getpass("Enter gamekeeper password: ")
-    
-    # Loop over all instruments
-    results = dict()
 
     # Is this a dry run?
     dry_run_raw = raw_input("Is this a dry run [Y/N]? ").upper()
@@ -116,6 +113,7 @@ if __name__ == "__main__":
     dry_run = dry_run_raw == "Y"
 
     # Update the instruments
+    results = dict()
     for host in get_instrument_hosts():
         results[host] = update_instrument(host, password, logger, dry_run)
 
