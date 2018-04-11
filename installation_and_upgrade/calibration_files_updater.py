@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import hashlib
+import getpass
 from genie_python import genie as g
 from genie_python.utilities import dehex_and_decompress
 
@@ -105,9 +106,9 @@ if __name__ == "__main__":
     # We shouldn't store the password in the repo, but we don't want to proceed with an incorrect password.
     # Store a hash and compare
     expected_hash = "51b0250c33fafc86dc69ab4335ca7c885a141c6d4ab1401962d35f3fa7384558"
-    password = raw_input("Confirm gamekeeper password: ")
+    password = getpass.getpass("Confirm gamekeeper password: ")
     while not hashlib.sha256(password).hexdigest() == expected_hash:
-        password = raw_input("Password incorrect, please try again: ")
+        password = getpass.getpass("Password incorrect, please try again: ")
 
     # Loop over all instruments
     results = dict()
@@ -123,8 +124,8 @@ if __name__ == "__main__":
         results[host] = update_instrument(host, password, logger, dry_run)
 
     # Report
-    failed_instruments = (host for host in results.keys() if not results[host])
-    successful_instruments = (host for host in results.keys() if results[host])
+    failed_instruments = [host for host in results.keys() if not results[host]]
+    successful_instruments = [host for host in results.keys() if results[host]]
     if len(failed_instruments) > 0:
         logger.warning("The following instruments could not be updated. Please do them by hand: " +
                        ", ".join(failed_instruments))
