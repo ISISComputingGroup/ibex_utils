@@ -2,7 +2,6 @@
 Script to update calibration files on instruments
 """
 
-import sys
 import git
 import subprocess
 import json
@@ -131,5 +130,3 @@ if __name__ == "__main__":
     if len(failed_instruments) > 0:
         logger.warning("The following instruments could not be updated. Please do them by hand: " +
                        ", ".join(failed_instruments))
-
-    sys.exit(0)
