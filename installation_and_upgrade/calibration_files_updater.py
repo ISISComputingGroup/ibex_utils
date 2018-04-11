@@ -8,6 +8,7 @@ import subprocess
 import json
 import logging
 import os
+import hashlib
 from genie_python import genie as g
 from genie_python.utilities import dehex_and_decompress
 
@@ -101,13 +102,25 @@ if __name__ == "__main__":
     logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
     logger = logging.getLogger("main")
 
-    # Ask for this every time. We shouldn't store it in a public repo
-    password = raw_input("Enter gamekeeper password: ")
+    # We shouldn't store the password in the repo, but we don't want to proceed with an incorrect password.
+    # Store a hash and compare
+    expected_hash = "51b0250c33fafc86dc69ab4335ca7c885a141c6d4ab1401962d35f3fa7384558"
+    password = raw_input("Confirm gamekeeper password: ")
+    while not hashlib.sha256(password).hexdigest() == expected_hash:
+        password = raw_input("Password incorrect, please try again: ")
 
     # Loop over all instruments
     results = dict()
+
+    # Is this a dry run?
+    dry_run_raw = raw_input("Is this a dry run [Y/N]? ").upper()
+    while dry_run_raw not in ["Y", "N"]:
+        raw_input("Invalid response, try again. Is this a dry run [Y/N]? ").upper()
+    dry_run = dry_run_raw == "Y"
+
+    # Update the instruments
     for host in get_instrument_hosts():
-        results[host] = update_instrument(host, password, logger, True)
+        results[host] = update_instrument(host, password, logger, dry_run)
 
     # Report
     failed_instruments = (host for host in results.keys() if not results[host])
