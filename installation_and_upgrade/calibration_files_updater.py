@@ -7,10 +7,10 @@ import subprocess
 import json
 import logging
 import os
-import hashlib
 import getpass
 from genie_python import genie as g
 from genie_python.utilities import dehex_and_decompress
+from six.moves import input
 
 FNULL = open(os.devnull, 'w')
 
@@ -104,13 +104,13 @@ if __name__ == "__main__":
     logger = logging.getLogger("main")
 
     # Get user credentials, don't store in the repo
-    username = raw_input("Enter username (no domain): ")
+    username = input("Enter username (no domain): ")
     password = getpass.getpass("Enter gamekeeper password: ")
 
     # Is this a dry run?
-    dry_run_raw = raw_input("Is this a dry run [Y/N]? ").upper()
+    dry_run_raw = input("Is this a dry run [Y/N]? ").upper()
     while dry_run_raw not in ["Y", "N"]:
-        raw_input("Invalid response, try again. Is this a dry run [Y/N]? ").upper()
+        dry_run_raw = input("Invalid response, try again. Is this a dry run [Y/N]? ").upper()
     dry_run = dry_run_raw == "Y"
 
     # Update the instruments
