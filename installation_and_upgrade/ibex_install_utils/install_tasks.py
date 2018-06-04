@@ -728,6 +728,16 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Inform the instrument scientists that the upgrade has been completed")
 
+    def apply_changes_noted_in_release_notes(self):
+        """
+        Apply any changes noted in the release notes.
+        """
+        with Task("Apply changes in release notes", self._prompt) as task:
+            if task.do_step:
+                # For future reference, genie_python can send emails!
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Look in the IBEX wiki at the release notes for the version you are deploying. Apply needed fixes.")
+
     def create_journal_sql_schema(self):
         """
         Create the journal schema if it doesn't exist.
@@ -824,6 +834,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.setup_calibrations_repository()
         self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.install_wiring_tables()
@@ -871,6 +882,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.upgrade_mysql()
         self._upgrade_tasks.reapply_hotfixes()

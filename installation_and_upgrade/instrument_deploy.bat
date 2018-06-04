@@ -18,7 +18,8 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
   start /wait cmd /c "%STOP_IBEX%")
 )
 
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_mainIF ERRORLEVEL 1 EXIT /b %errorlevel%
+call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_main
+IF ERRORLEVEL 1 EXIT /b %errorlevel%
 
 start /wait cmd /c "%START_IBEX%"
 
