@@ -62,4 +62,4 @@ if __name__ == '__main__':
         for item in xml_data:
 
             outputfile.write('\n'.join(x for x in item))
-            outputfile.write("\nNumber of VIs: {}\n".format(str(len(item))))
+            outputfile.write("\nNumber of VIs in configuration/component: {}\n".format(str(len(item))))
