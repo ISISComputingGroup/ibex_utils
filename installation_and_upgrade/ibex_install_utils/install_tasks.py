@@ -44,8 +44,8 @@ SECI = "SECI User interface.lnk"
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
 
-RAM_LIMIT = 8e+9
-DISK_LIMIT = 3e+10
+RAM_MIN = 8e+9
+FREE_DISK_MIN = 3e+10
 
 
 class UpgradeInstrument(object):
@@ -912,22 +912,22 @@ class UpgradeTasks(object):
 
     def _check_virtual_memory(self):
         """
-        Checks the machine's virtual memory.
+        Checks the machine's virtual memory meet minimum requirements.
         """
         with Task("Check virtual memory is above {}".format(RAM_LIMIT), self._prompt) as task:
             if task.do_step:
                 ram = psutil.virtual_memory()
-                if ram.total < RAM_LIMIT:
+                if ram.total < RAM_MIN:
                     self._prompt.prompt_and_raise_if_not_yes(
                         "The machine requires at least 8GB of total RAM to run.")
 
     def _check_disk_usage(self):
         """
-        Checks the machine's virtual memory.
+        Checks the machine's free disk space meets minimum requirements.
         """
         with Task("Check there is {} free disk space".format(DISK_LIMIT), self._prompt) as task:
             if task.do_step:
                 disk_space = psutil.disk_usage()
-                if disk_space.free < DISK_LIMIT:
+                if disk_space.free < FREE_DISK_MIN:
                     self._prompt.prompt_and_raise_if_not_yes(
                         "The machine requires at least 30GB of free disk space.")
