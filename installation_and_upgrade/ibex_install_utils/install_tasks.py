@@ -8,6 +8,7 @@ import shutil
 import socket
 import subprocess
 from datetime import date
+import psutil
 
 import git
 
@@ -42,6 +43,9 @@ PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Sta
 SECI = "SECI User interface.lnk"
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
+
+RAM_LIMIT = 8e+9
+DISK_LIMIT = 3e+10
 
 
 class UpgradeInstrument(object):
@@ -115,6 +119,8 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
                                     "on a new instrument. Proceed?")
+
+        self._upgrade_tasks.check_resources()
 
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.install_mysql()
@@ -896,3 +902,32 @@ class UpgradeTasks(object):
                 sql_password = self._prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
                                                    os.getenv("MYSQL_PASSWORD", "environment variable not set"))
                 RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
+
+    def check_resources(self):
+        """
+        Check the machine's resources meet minimum requirements.
+        """
+        self._check_virtual_memory()
+        self._check_disk_usage()
+
+    def _check_virtual_memory(self):
+        """
+        Checks the machine's virtual memory.
+        """
+        with Task("Check virtual memory is above {}".format(RAM_LIMIT), self._prompt) as task:
+            if task.do_step:
+                ram = psutil.virtual_memory()
+                if ram.total < RAM_LIMIT:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "The machine requires at least 8GB of total RAM to run.")
+
+    def _check_disk_usage(self):
+        """
+        Checks the machine's virtual memory.
+        """
+        with Task("Check there is {} free disk space".format(DISK_LIMIT), self._prompt) as task:
+            if task.do_step:
+                disk_space = psutil.disk_usage()
+                if disk_space.free < DISK_LIMIT:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "The machine requires at least 30GB of free disk space.")
