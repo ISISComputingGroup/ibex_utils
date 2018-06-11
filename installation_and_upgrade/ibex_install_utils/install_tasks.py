@@ -79,6 +79,7 @@ class UpgradeInstrument(object):
         Run a complete test upgrade on the current system
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
+        self._upgrade_tasks.check_virtual_memory()
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
@@ -907,10 +908,10 @@ class UpgradeTasks(object):
         """
         Check the machine's resources meet minimum requirements.
         """
-        self._check_virtual_memory()
+        self.check_virtual_memory()
         self._check_disk_usage()
 
-    def _check_virtual_memory(self):
+    def check_virtual_memory(self):
         """
         Checks the machine's virtual memory meet minimum requirements.
         """
@@ -919,7 +920,7 @@ class UpgradeTasks(object):
                 ram = psutil.virtual_memory()
                 if ram.total < RAM_MIN:
                     self._prompt.prompt_and_raise_if_not_yes(
-                        "The machine requires at least 8GB of total RAM to run.")
+                        "The machine requires at least 8GB of total RAM to run IBEX.")
 
     def _check_disk_usage(self):
         """
@@ -930,4 +931,4 @@ class UpgradeTasks(object):
                 disk_space = psutil.disk_usage()
                 if disk_space.free < FREE_DISK_MIN:
                     self._prompt.prompt_and_raise_if_not_yes(
-                        "The machine requires at least 30GB of free disk space.")
+                        "The machine requires at least 30GB of free disk space to run IBEX.")
