@@ -915,20 +915,20 @@ class UpgradeTasks(object):
         """
         Checks the machine's virtual memory meet minimum requirements.
         """
-        with Task("Check virtual memory is above {}".format(RAM_LIMIT), self._prompt) as task:
+        with Task("Check virtual memory is above {}".format(RAM_MIN), self._prompt) as task:
             if task.do_step:
                 ram = psutil.virtual_memory()
                 if ram.total < RAM_MIN:
                     self._prompt.prompt_and_raise_if_not_yes(
-                        "The machine requires at least 8GB of total RAM to run IBEX.")
+                        "The machine requires at least 8GB of RAM to run IBEX.")
 
     def _check_disk_usage(self):
         """
         Checks the machine's free disk space meets minimum requirements.
         """
-        with Task("Check there is {} free disk space".format(DISK_LIMIT), self._prompt) as task:
+        with Task("Check there is {} free disk space".format(FREE_DISK_MIN), self._prompt) as task:
             if task.do_step:
-                disk_space = psutil.disk_usage()
+                disk_space = psutil.disk_usage("/")
                 if disk_space.free < FREE_DISK_MIN:
                     self._prompt.prompt_and_raise_if_not_yes(
                         "The machine requires at least 30GB of free disk space to run IBEX.")
