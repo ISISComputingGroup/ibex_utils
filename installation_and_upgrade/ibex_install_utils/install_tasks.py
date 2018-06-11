@@ -79,7 +79,6 @@ class UpgradeInstrument(object):
         Run a complete test upgrade on the current system
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
-        self._upgrade_tasks.check_virtual_memory()
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
@@ -197,6 +196,7 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.take_screenshots()
+        self._upgrade_tasks.check_virtual_memory()
         self._upgrade_tasks.stop_ibex_server()
 
 
