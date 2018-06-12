@@ -10,6 +10,7 @@ from genie_python import genie as g
 VELOCITY_UNITS = "EGU per sec"
 
 PV, AXIS_NAME = "PV", "Axis Name"
+SETPOINT, POSITION = "Setpoint", "Position"
 OFF = "User Offset"
 LOW_LIM, HIGH_LIM = "Soft Low Limit", "Soft High Limit"
 VELO, MAX_VELO = "Velocity ({})".format(VELOCITY_UNITS), "Max Velocity ({})".format(VELOCITY_UNITS)
@@ -27,14 +28,14 @@ AF, TL = "Analog Feedback", "Torque Limit"
 CT, CP, FN, FC = "CT", "CP", "FN", "FC"
 FA, FV = "Feedforward Acceleration", "Feedforward Velocity"
 
-output_order = [AXIS_NAME, PV, UNITS, MOTOR_RES, INV_MOTOR_RES, ENCODER_RES, INV_ENCODER_RES, VELO, MAX_VELO, ACCEL,
-                DECEL_DIST, LOW_LIM, HIGH_LIM, OFF, P, I, D, MTR_TYPE, ENC_TYPE, AUX_ENC_TYPE, K1, K2, K3, ZN, ZP,
-                AF, TL, CT, CP, FN, FC, FA, FV]
+output_order = [AXIS_NAME, PV, SETPOINT, POSITION, UNITS, MOTOR_RES, INV_MOTOR_RES, ENCODER_RES, INV_ENCODER_RES, VELO,
+                MAX_VELO, ACCEL, DECEL_DIST, LOW_LIM, HIGH_LIM, OFF, P, I, D, MTR_TYPE, ENC_TYPE, AUX_ENC_TYPE, K1, K2,
+                K3, ZN, ZP, AF, TL, CT, CP, FN, FC, FA, FV]
 
 
-all_motor_params = {AXIS_NAME: ".DESC", UNITS: ".EGU", ENCODER_RES: ".ERES", MOTOR_RES: ".MRES",
-                    ACCEL: ".ACCL", VELO: ".VELO", MAX_VELO: ".VMAX", LOW_LIM: ".DLLM", HIGH_LIM: ".DHLM",
-                    OFF: ".OFF", P: ".PCOF", I: ".ICOF", D: ".DCOF"}
+all_motor_params = {AXIS_NAME: ".DESC", SETPOINT: ".VAL", POSITION: ".RBV",  UNITS: ".EGU", ENCODER_RES: ".ERES",
+                    MOTOR_RES: ".MRES", ACCEL: ".ACCL", VELO: ".VELO", MAX_VELO: ".VMAX", LOW_LIM: ".DLLM",
+                    HIGH_LIM: ".DHLM", OFF: ".OFF", P: ".PCOF", I: ".ICOF", D: ".DCOF"}
 
 galil_specific_params = {MTR_TYPE: "_MTRTYPE_CMD", ENC_TYPE: "_MENCTYPE_CMD", AUX_ENC_TYPE: "_AENCTYPE_CMD",
                          K1: "_K1_SP", K2: "_K2_SP", K3: "_K3_SP", ZP: "_ZP_SP", ZN: "_ZN_SP",
@@ -78,20 +79,14 @@ def get_params_for_one_axis(axis):
     return axis_values
 
 
-def get_params_and_save(save_file, num_of_controllers=8):
+def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     """
-    Gets all the motor parameters and saves them to the specified file as a csv.
+    Gets all the motor parameters and saves them to an open file reference as a csv.
 
     Args:
-        save_file (string): The csv file to save the data to.
+        file_reference (BinaryIO): The csv file to save the data to.
         num_of_controllers (int, optional): The number of motor controllers on the instrument (default is 8)
     """
-    try:
-        open(save_file, "w")
-    except IOError:
-        print("ERROR: Cannot write to {}".format(save_file))
-        return
-
     data = []
     for motor in range(1, num_of_controllers+1):
         for axis in range(1, 9):
@@ -100,8 +95,20 @@ def get_params_and_save(save_file, num_of_controllers=8):
                 print("Gathering data for {}".format(axis_pv))
                 data.append(get_params_for_one_axis(axis_pv))
 
-    print("Saving to {}".format(save_file))
-    with open(save_file, "w") as f:
-        writer = csv.DictWriter(f, output_order, restval="N/A", extrasaction='ignore')
-        writer.writeheader()
-        writer.writerows(data)
+    print("Saving to {}".format(file_reference.name))
+
+    writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction='ignore')
+    writer.writeheader()
+    writer.writerows(data)
+
+
+def get_params_and_save(file_name, num_of_controllers=8):
+    """
+    Gets all the motor parameters and saves them to a file by name as a csv.
+
+    Args:
+        file_name: name of the file to save to
+        num_of_controllers (int, optional): The number of motor controllers on the instrument (default is 8)
+    """
+    with open(file_name, "w") as f:
+        get_params_and_save_to_file(f, num_of_controllers)
