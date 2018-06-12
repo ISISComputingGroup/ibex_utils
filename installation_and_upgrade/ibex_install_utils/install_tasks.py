@@ -354,12 +354,16 @@ class UpgradeTasks(object):
     def remove_seci_one(self):
         """
         Removes SECI 1
-        Returns:
-
         """
-        with Task("Remove SECI 1 Path: {}".format(SECI_ONE_PATH), self._prompt) as task:
+        with Task("Remove SECI 1 Path", self._prompt) as task:
             if task.do_step:
-                self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
+                if os.path.exists(SECI_ONE_PATH):
+                    try:
+                        self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
+                    except (IOError, WindowsError) as e:
+                        self._prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
+                                                                 "'{}'. Please remove it manually and type 'Y' to "
+                                                                 "confirm".format(SECI_ONE_PATH, e.message))
 
     def setup_calibrations_repository(self):
         """
