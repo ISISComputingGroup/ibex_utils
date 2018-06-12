@@ -1,7 +1,7 @@
 """
 Tasks associated with install
 """
-import json
+
 import pprint
 from contextlib import contextmanager
 from time import sleep
@@ -12,7 +12,7 @@ import socket
 import subprocess
 from datetime import date, datetime
 import git
-import zlib
+
 
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.exceptions import UserStop, ErrorInRun
