@@ -40,6 +40,7 @@ LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
 PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
 SECI = "SECI User interface.lnk"
+SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility")
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
 
@@ -349,6 +350,16 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
                 self._prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
                 self._prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
+
+    def remove_seci_one(self):
+        """
+        Removes SECI 1
+        Returns:
+
+        """
+        with Task("Remove SECI 1 Path: {}".format(SECI_ONE_PATH), self._prompt) as task:
+            if task.do_step:
+                self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
 
     def setup_calibrations_repository(self):
         """
@@ -824,6 +835,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.remove_seci_shortcuts()
+        self._upgrade_tasks.remove_seci_one()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
