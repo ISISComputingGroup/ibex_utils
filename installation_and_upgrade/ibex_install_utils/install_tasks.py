@@ -7,8 +7,7 @@ import os
 import shutil
 import socket
 import subprocess
-from datetime import date
-
+from datetime import date, datetime
 import git
 
 from ibex_install_utils.exceptions import UserStop, ErrorInRun
@@ -16,6 +15,12 @@ from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import Task
 from ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.motor_params import get_params_and_save
+
+from genie_python import genie
+
+# Needed because python is being run across the network so genie_python may not know where it's running.
+genie.set_instrument(os.getenv("MYPVPREFIX"))
 
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
@@ -33,7 +38,10 @@ CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
-MYSQL_FILES_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var", "mysql")
+
+VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
+MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
+MOTOR_SETTINGS_BACKUPS_DIR = os.path.join(VAR_DIR, "motor_settings")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -748,6 +756,20 @@ class UpgradeTasks(object):
                                                    os.getenv("MYSQL_PASSWORD", "environment variable not set"))
                 RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
 
+    def save_motor_parameters_to_file(self):
+        """
+        Saves the motor parameters to csv file.
+        """
+        with Task("Save motor parameters to csv file", self._prompt) as task:
+            if task.do_step:
+                filename = os.path.join(MOTOR_SETTINGS_BACKUPS_DIR, "{}.csv"
+                                        .format(datetime.today().strftime('%Y-%m-%d-%H-%M-%S')))
+
+                if not os.path.exists(MOTOR_SETTINGS_BACKUPS_DIR):
+                    os.makedirs(MOTOR_SETTINGS_BACKUPS_DIR)
+
+                get_params_and_save(filename)
+
 
 class UpgradeInstrument(object):
     """
@@ -895,4 +917,5 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.take_screenshots()
+        self._upgrade_tasks.save_motor_parameters_to_file()
         self._upgrade_tasks.stop_ibex_server()
