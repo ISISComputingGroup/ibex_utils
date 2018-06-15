@@ -954,12 +954,14 @@ class UpgradeTasks(object):
                 blocks = self._ca.get_blocks()
 
                 if blocks is None:
-                    message = "No available blocks - not archiving."
-                    print(message)
+                    print("Blockserver unavailable - not archiving.")
                 else:
-                    for block in blocks:
-                        with self.timestamped_pv_backups_file(name=block, directory="blocks") as f:
-                            f.write("{}\r\n".format(self._ca.cget(block)))
+                    if blocks:
+                        for block in blocks:
+                            with self.timestamped_pv_backups_file(name=block, directory="blocks") as f:
+                                f.write("{}\r\n".format(self._ca.cget(block)))
+                    else:
+                        print("Blockserver available but no blocks found - not archiving anything")
 
     def save_blockserver_pv_to_file(self):
         """

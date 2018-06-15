@@ -59,6 +59,6 @@ class CaWrapper(object):
     def cget(self, block):
         """
         Returns:
-            A collection of blocks, or None if the PV was not connected. 
+            A collection of blocks, or None if the PV was not connected.
         """
         return g.cget(block)
