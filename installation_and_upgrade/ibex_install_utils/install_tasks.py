@@ -1,22 +1,27 @@
 """
 Tasks associated with install
 """
+
+import pprint
+from contextlib import contextmanager
 from time import sleep
 
 import os
 import shutil
 import socket
 import subprocess
-from datetime import date
+from datetime import date, datetime
 import psutil
-
 import git
 
+
+from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.exceptions import UserStop, ErrorInRun
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import Task
 from ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.motor_params import get_params_and_save_to_file
 
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
@@ -34,7 +39,10 @@ CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
-MYSQL_FILES_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var", "mysql")
+
+VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
+MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
+PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -147,7 +155,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_web_dashboard()
 
     def run_instrument_deploy(self):
-
         """
         Deploy a full IBEX upgrade on an existing instrument.
         """
@@ -169,6 +176,9 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.perform_client_tests()
         self._upgrade_tasks.perform_server_tests()
         self._upgrade_tasks.inform_instrument_scientists()
+        self._upgrade_tasks.save_motor_parameters_to_file()
+        self._upgrade_tasks.save_blocks_to_file()
+        self._upgrade_tasks.save_blockserver_pv_to_file()
 
     def run_instrument_deploy_main(self):
         """
@@ -197,8 +207,9 @@ class UpgradeInstrument(object):
             Current the server can not be started or stopped in this python script.
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
-        self._upgrade_tasks.take_screenshots()
-        self._upgrade_tasks.check_virtual_memory()
+        self._upgrade_tasks.save_motor_parameters_to_file()
+        self._upgrade_tasks.save_blocks_to_file()
+        self._upgrade_tasks.save_blockserver_pv_to_file()
         self._upgrade_tasks.stop_ibex_server()
 
 
@@ -224,6 +235,8 @@ class UpgradeTasks(object):
         self._file_utils = file_utils
 
         self._machine_name = self._get_machine_name()
+
+        self._ca = CaWrapper()
 
     @staticmethod
     def _get_machine_name():
@@ -571,22 +584,6 @@ class UpgradeTasks(object):
                     "Is auto-update turned off? This can be checked from the Java control panel in "
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
 
-    def take_screenshots(self):
-        """
-        take screen shots of initial system
-        """
-        with Task("Take screenshots", self._prompt) as task:
-            if task.do_step:
-                self._prompt.prompt_and_raise_if_not_yes(
-                    "Take screenshots of the current IBEX setup for future reference. These should include:\n"
-                    "- Client and server versions\n"
-                    "- Blocks\n"
-                    "- Major perspectives\n"
-                    "- Current configuration tabs\n"
-                    "- Running IOCs\n"
-                    "- Available configs\n"
-                    "- Any open LabView VIs")
-
     def configure_com_ports(self):
         """
         Configure the COM ports
@@ -919,6 +916,83 @@ class UpgradeTasks(object):
                 sql_password = self._prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
                                                    os.getenv("MYSQL_PASSWORD", "environment variable not set"))
                 RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
+
+    @contextmanager
+    def timestamped_pv_backups_file(self, name, directory, extension="txt"):
+        """
+        Context manager to create a timestamped file in the pv backups directory
+
+        Args:
+            name (str): path to the file
+            extension (str): the extension of the file
+        """
+        filename = os.path.join(PV_BACKUPS_DIR, directory, "{}_{}.{}"
+                                .format(name, datetime.today().strftime('%Y-%m-%d-%H-%M-%S'), extension))
+
+        if not os.path.exists(os.path.join(PV_BACKUPS_DIR, directory)):
+            os.makedirs(os.path.join(PV_BACKUPS_DIR, directory))
+
+        with open(filename, "w") as f:
+            yield f
+
+    def save_motor_parameters_to_file(self):
+        """
+        Saves the motor parameters to csv file.
+        """
+        with Task("Save motor parameters to csv file", self._prompt) as task:
+            if task.do_step:
+                with self.timestamped_pv_backups_file(name="motors", directory="motors", extension="csv") as f:
+                    get_params_and_save_to_file(f)
+
+    def save_blocks_to_file(self):
+        """
+        Saves block parameters in a file.
+        """
+
+        with Task("Save block parameters to file", self._prompt) as task:
+            if task.do_step:
+                blocks = self._ca.get_blocks()
+
+                if blocks is None:
+                    print("Blockserver unavailable - not archiving.")
+                else:
+                    if blocks:
+                        for block in blocks:
+                            with self.timestamped_pv_backups_file(name=block, directory="blocks") as f:
+                                f.write("{}\r\n".format(self._ca.cget(block)))
+                    else:
+                        print("Blockserver available but no blocks found - not archiving anything")
+
+    def save_blockserver_pv_to_file(self):
+        """
+        Saves the blockserver PV to a file.
+        """
+
+        def pretty_print(data):
+            return pprint.pformat(data, width=800, indent=2)
+
+        with Task("Save blockserver PV to file", self._prompt) as task:
+            if task.do_step:
+                pvs_to_save = [
+                    ("all_component_details", "CS:BLOCKSERVER:ALL_COMPONENT_DETAILS"),
+                    ("block_names", "CS:BLOCKSERVER:BLOCKNAMES"),
+                    ("groups", "CS:BLOCKSERVER:GROUPS"),
+                    ("configs", "CS:BLOCKSERVER:CONFIGS"),
+                    ("components", "CS:BLOCKSERVER:COMPS"),
+                    ("runcontrol_out", "CS:BLOCKSERVER:GET_RC_OUT"),
+                    ("runcontrol_pars", "CS:BLOCKSERVER:GET_RC_PARS"),
+                    ("curr_config_details", "CS:BLOCKSERVER:GET_CURR_CONFIG_DETAILS"),
+                    ("server_status", "CS:BLOCKSERVER:SERVER_STATUS"),
+                    ("synoptic_names", "CS:SYNOPTICS:NAMES"),
+                ]
+
+                for name, pv in pvs_to_save:
+                    with self.timestamped_pv_backups_file(directory="inst_servers", name=name) as f:
+                        try:
+                            f.write("{}\r\n".format(pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))))
+                        except Exception as e:
+                            print("Couldn't get data from {} because: {}".format(pv, e.message))
+                            f.write(e.message)
 
     def check_resources(self):
         """
