@@ -25,6 +25,9 @@ class CaWrapper(object):
 
         Args:
             name (str): Name of the PV to get.
+
+        Returns:
+            None if the PV was not connected
         """
         return g.get_pv(name, is_local=True)
 
@@ -34,6 +37,9 @@ class CaWrapper(object):
 
         Args:
             name (str): Name of the PV to get
+
+        Returns:
+            None if the PV was not available, otherwise the decoded json object
         """
         data = self.get_local_pv(name)
         if data is None:
@@ -43,8 +49,16 @@ class CaWrapper(object):
 
     @six.wraps(g.get_blocks)
     def get_blocks(self):
+        """
+        Returns:
+            A collection of blocks, or None if the PV was not connected
+        """
         return g.get_blocks()
 
     @six.wraps(g.cget)
     def cget(self, block):
+        """
+        Returns:
+            A collection of blocks, or None if the PV was not connected. 
+        """
         return g.cget(block)
