@@ -153,6 +153,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.add_nagios_checks()
         self._upgrade_tasks.update_instlist()
         self._upgrade_tasks.update_web_dashboard()
+        self._upgrade_tasks.put_autostart_script_in_startup_area()
 
     def run_instrument_deploy(self):
         """
@@ -179,6 +180,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.save_motor_parameters_to_file()
         self._upgrade_tasks.save_blocks_to_file()
         self._upgrade_tasks.save_blockserver_pv_to_file()
+        self._upgrade_tasks.put_autostart_script_in_startup_area()
 
     def run_instrument_deploy_main(self):
         """
@@ -1022,3 +1024,25 @@ class UpgradeTasks(object):
                 if disk_space.free < FREE_DISK_MIN:
                     self._prompt.prompt_and_raise_if_not_yes(
                         "The machine requires at least {:.1e}B of free disk space to run IBEX.".format(FREE_DISK_MIN))
+
+    def put_autostart_script_in_startup_area(self):
+
+        autostart_script_name = "ibex_system_boot.bat"
+
+        with Task("Put IBEX autostart into pc start menu", self._prompt) as task:
+            if task.do_step:
+                from_path = os.path.join(EPICS_PATH, autostart_script_name)
+                to_path = os.path.join(PC_START_MENU, "Programs", "Startup", autostart_script_name)
+
+                # Remove old version if exists
+                if os.path.exists(to_path):
+                    try:
+                        os.remove(to_path)
+                    except (OSError, IOError):
+                        self._prompt.prompt_and_raise_if_not_yes("Please manually remove file at '{}'".format(to_path))
+
+                try:
+                    shutil.copyfile(from_path, to_path)
+                except (OSError, IOError):
+                    self._prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
+                                                             .format(from_path, to_path))
