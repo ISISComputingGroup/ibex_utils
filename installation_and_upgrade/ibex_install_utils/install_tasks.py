@@ -1026,6 +1026,10 @@ class UpgradeTasks(object):
                         "The machine requires at least {:.1e}B of free disk space to run IBEX.".format(FREE_DISK_MIN))
 
     def put_autostart_script_in_startup_area(self):
+        """
+        Copies the ibex server autostart script into the PC startup folder so that the IBEX server starts
+        automatically on startup.
+        """
 
         autostart_script_name = "ibex_system_boot.bat"
 
