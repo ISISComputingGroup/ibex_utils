@@ -68,8 +68,17 @@ def get_params_for_one_axis(axis):
     """
     axis_values = {name: g.get_pv(axis + pv) for name, pv in all_motor_params.items()}
     axis_values[PV] = axis
-    axis_values[INV_MOTOR_RES] = 1.0 / axis_values[MOTOR_RES]
-    axis_values[INV_ENCODER_RES] = 1.0 / axis_values[ENCODER_RES]
+
+    try:
+        axis_values[INV_MOTOR_RES] = 1.0 / axis_values[MOTOR_RES]
+    except ZeroDivisionError:
+        axis_values[INV_MOTOR_RES] = None
+
+    try:
+        axis_values[INV_ENCODER_RES] = 1.0 / axis_values[ENCODER_RES]
+    except ZeroDivisionError:
+        axis_values[INV_ENCODER_RES] = None
+
     axis_values[DECEL_DIST] = axis_values[MAX_VELO]*axis_values[ACCEL]
     if pv_exists(axis + "_MTRTYPE_CMD"):
         axis_values.update({name: g.get_pv(axis + pv) for name, pv in galil_specific_params.items()})
