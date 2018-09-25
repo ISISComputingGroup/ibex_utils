@@ -109,7 +109,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
