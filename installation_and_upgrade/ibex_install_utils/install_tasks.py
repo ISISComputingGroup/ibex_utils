@@ -26,6 +26,8 @@ from ibex_install_utils.motor_params import get_params_and_save_to_file
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
+SCRIPT_SERVER_PATH = os.path.join(EPICS_PATH, "ISIS", "scriptserver", "master")
+
 SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
 GUI_PATH_E4 = os.path.join(APPS_BASE_DIR, "Client_E4")
@@ -94,6 +96,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_settings()
         self._upgrade_tasks.install_settings()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
 
@@ -109,6 +112,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
@@ -136,6 +140,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_seci_one()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
@@ -192,6 +197,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
@@ -1049,3 +1055,20 @@ class UpgradeTasks(object):
                 except (OSError, IOError):
                     self._prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
                                                              .format(from_path, to_path))
+
+    def ensure_nicos_has_a_release_file(self):
+        with Task("Ensure NICOS has a release file (NICOS will fail if this is not done)", self._prompt) as task:
+            if task.do_step:
+                release_file_path = os.path.join(SCRIPT_SERVER_PATH, "nicos", "RELEASE-VERSION")
+                if os.path.exists(release_file_path):
+                    print("Release file already exists - not doing anything")
+                    return
+                else:
+                    file_contents = "0.0.0-000-000000\r\n"
+                    try:
+                        with open(release_file_path, "w") as f:
+                            f.write(file_contents)
+                        print("Release file added at {}")
+                    except (IOError, OSError):
+                        print("Error while writing release file - please manually add the file at {}. "
+                              "The contents of the file should be '{}'.".format(release_file_path, file_contents))
