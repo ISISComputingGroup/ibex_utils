@@ -17,8 +17,8 @@ class UserPrompt(object):
         """
         Initializer.
         Args:
-            automatic: should the prompt ignore the user and use default responses
-            confirm_steps: should the user confirm a step before running it; setting automatic overrides this
+            automatic (bool): should the prompt ignore the user and use default responses
+            confirm_steps (bool): should the user confirm a step before running it; setting automatic overrides this
         """
         self._automatic = automatic
         self._confirm_steps = confirm_steps
