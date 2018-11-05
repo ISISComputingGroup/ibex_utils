@@ -5,6 +5,8 @@ Filesystem utility classes
 import os
 import shutil
 
+from ibex_install_utils.exceptions import UserStop
+
 
 class FileUtils(object):
     """
@@ -49,3 +51,21 @@ class FileUtils(object):
         """
         shutil.copytree(src, dst)
         FileUtils.remove_tree(src)
+
+    @staticmethod
+    def move_file(source, destination, prompt):
+        """
+        Move a file from the source to destination
+        Args:
+            source: source path
+            destination: destination path
+            prompt: use this prompt to ask if the move is not sucessful
+        """
+        while True:
+            try:
+                shutil.move(source, destination)
+                break
+            except IOError as ex:
+                prompt_message = "Unable to move '{}' to '{}': {}\n Try again?".format(source, destination, str(ex))
+                if prompt.prompt(prompt_message, possibles=["Y", "N"], default="N") != "Y":
+                    raise UserStop

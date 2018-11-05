@@ -1,7 +1,6 @@
 """
 Tasks associated with install
 """
-from time import sleep
 
 import os
 import shutil
@@ -16,6 +15,9 @@ from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import Task
 from ibex_install_utils.user_prompt import UserPrompt
+
+BACKUP_DATA_DIR = os.path.join("C:\\", "data")
+BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
 
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
@@ -34,6 +36,7 @@ SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resou
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 MYSQL_FILES_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var", "mysql")
+SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -42,6 +45,8 @@ PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Sta
 SECI = "SECI User interface.lnk"
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
+
+STAGE_DELETED = os.path.join("\\\\isis", "inst$", "backups$", "stage-deleted")
 
 
 class UpgradeTasks(object):
@@ -162,8 +167,10 @@ class UpgradeTasks(object):
                         inst_name = inst_name.lower()[len(p):]
                         break
                 inst_name = inst_name.replace("-", "_")
-                shutil.move(os.path.join(settings_path, "Python", "init_inst_name.py"),
-                            os.path.join(settings_path, "Python", "init_{inst_name}.py".format(inst_name=inst_name)))
+                self._file_utils.move_file(
+                    os.path.join(settings_path, "Python", "init_inst_name.py"),
+                    os.path.join(settings_path, "Python", "init_{inst_name}.py".format(inst_name=inst_name)),
+                    self._prompt)
 
                 shutil.copytree(SOURCE_MACHINE_SETTINGS_COMMON_PATH, os.path.join(SETTINGS_CONFIG_PATH, "common"))
 
@@ -430,10 +437,23 @@ class UpgradeTasks(object):
 
     @staticmethod
     def _get_backup_dir():
-        new_backup_dir = os.path.join("C:\\", "data", "old", "ibex_backup_{}".format(date.today().strftime("%Y_%m_%d")))
+        """
+        Returns: The backup dir, will create it if needed (both old and dir).
+        Raises: IOError if the base dir doesn't exist
+        """
+        new_backup_dir = os.path.join(BACKUP_DIR, "ibex_backup_{}".format(UpgradeTasks._today_date_for_filenames()))
+
+        if not os.path.exists(BACKUP_DATA_DIR):
+            raise IOError("Base directory does not exist {}".format(BACKUP_DATA_DIR))
+        if not os.path.exists(BACKUP_DIR):
+            os.mkdir(BACKUP_DIR)
         if not os.path.exists(new_backup_dir):
             os.mkdir(new_backup_dir)
         return new_backup_dir
+
+    @staticmethod
+    def _today_date_for_filenames():
+        return date.today().strftime("%Y_%m_%d")
 
     def _backup_dir(self, src, copy=True):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
@@ -458,15 +478,13 @@ class UpgradeTasks(object):
         """
         with Task("Backup old directories", self._prompt) as task:
             if task.do_step:
-                data = os.path.join("C:\\", "data")
-                if os.path.exists(data):
-                    old_data = os.path.join("C:\\", "data", "old")
-                    if not os.path.exists(old_data):
-                        os.mkdir(old_data)
+                if os.path.exists(BACKUP_DATA_DIR):
+                    if not os.path.exists(BACKUP_DIR):
+                        os.mkdir(BACKUP_DIR)
 
                     # Delete all but the oldest backup
-                    current_backups = [os.path.join(old_data, d) for d in os.listdir(old_data)
-                                       if os.path.isdir(os.path.join(old_data, d)) and d.startswith("ibex_backup")]
+                    current_backups = [os.path.join(BACKUP_DIR, d) for d in os.listdir(BACKUP_DIR)
+                                       if os.path.isdir(os.path.join(BACKUP_DIR, d)) and d.startswith("ibex_backup")]
                     if len(current_backups) > 0:
                         all_but_newest_backup = sorted(current_backups, key=os.path.getmtime)[:-1]
                         backups_to_delete = all_but_newest_backup
@@ -475,19 +493,19 @@ class UpgradeTasks(object):
 
                     for d in backups_to_delete:
                         print("Removing backup {}".format(d))
-                        self._file_utils.remove_tree(os.path.join(old_data, d))
+                        self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d))
 
                     # Move the folders
-                    for app_path in [EPICS_PATH, EPICS_UTILS_PATH, GUI_PATH, PYTHON_PATH]:
+                    for app_path in [EPICS_PATH, EPICS_UTILS_PATH, GUI_PATH, PYTHON_PATH, GUI_PATH_E4]:
                         self._backup_dir(app_path, copy=False)
 
                     # Backup settings and autosave
-                    self._backup_dir(os.path.join("C:\\", "Instrument", "Settings"))
-                    self._backup_dir(os.path.join("C:\\", "Instrument", "var", "Autosave"))
+                    self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"))
+                    self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "var", "Autosave"))
                 else:
                     self._prompt.prompt_and_raise_if_not_yes(
-                        "Unable to find data directory C:\\data. Please backup the current installation of IBEX "
-                        "manually")
+                        "Unable to find data directory '{}'. Please backup the current installation of IBEX "
+                        "manually".format(BACKUP_DATA_DIR))
 
     def _get_mysql_dir(self):
         mysql_base_dir = os.path.join("C:\\", "Program Files", "MySQL")
@@ -510,36 +528,44 @@ class UpgradeTasks(object):
         """
         with Task("Backup database", self._prompt) as task:
             if task.do_step:
+                result_file = os.path.join(self._get_backup_dir(),
+                                           SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
                 try:
                     mysql_bin_dir = self._get_mysql_dir()
-                    RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
-                               prog_args=["-u", "root", "-p", "--execute", "SET GLOBAL innodb_fast_shutdown=0"],
+                    dump_command = ["-u", "root", "-p", "--all-databases", "--result-file={}".format(result_file)]
+                    RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
+                               prog_args=dump_command,
                                capture_pipes=False).run()
-
-                    RunProcess(MYSQL_FILES_DIR, "mysqladmin.exe", executable_directory=mysql_bin_dir,
-                               prog_args=["-u", "root", "-p", "shutdown"], capture_pipes=False).run()
-
-                    #  Must wait for the database to properly stop otherwise when we copy it the copy fails because the
-                    #   file disappears
-                    mysql_pid_file = os.path.join(MYSQL_FILES_DIR, "Data", "{}.pid".format(self._machine_name))
-                    for i in range(1, 60):
-                        if os.path.exists(mysql_pid_file):
-                            print("Waiting for pid file to be removed.")
-                            sleep(1)
-                        else:
-                            break
-                    if os.path.exists(mysql_pid_file):
-                        raise ErrorInRun("MySQL appears not to have stopped the pid file, '{}', is still there!".format(
-                            mysql_pid_file))
 
                 except ErrorInRun as ex:
                     self._prompt.prompt_and_raise_if_not_yes(
-                        "Unable to run mysql. Please shut down the service manually. Error is {}".format(ex.message))
-                    self._prompt.prompt_and_raise_if_not_yes(
-                        "Stopping the MySQL service failed. Please do it manually")
+                        "Unable to run mysqldump. Please dump the database manually . Error is {}".format(ex.message))
 
-                self._backup_dir(MYSQL_FILES_DIR)
-                self._prompt.prompt_and_raise_if_not_yes("Data backup complete. Please restart the MYSQL service")
+                if os.path.getsize(result_file) < 100:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Dump file '{}' seems to be small is it correct? ".format(result_file))
+
+                self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
+                                           self._prompt)
+
+    def truncate_database(self):
+        """
+        Truncate the message log and sample tables
+        """
+        with Task("Truncate database", self._prompt) as task:
+            if task.do_step:
+                try:
+                    mysql_bin_dir = self._get_mysql_dir()
+
+                    RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
+                               prog_args=["-u", "root", "-p",
+                                          "--execute", "truncate table msg_log.message;truncate table archive.sample"],
+                               capture_pipes=False).run()
+
+                except ErrorInRun as ex:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "Unable to run mysql command, please truncate the database manually. "
+                        "Error is {}".format(ex.message))
 
     def update_release_notes(self):
         """
@@ -810,6 +836,7 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
                                     "on a new instrument. Proceed?")
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
 
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.install_mysql()
@@ -884,3 +911,10 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.take_screenshots()
         self._upgrade_tasks.stop_ibex_server()
+
+    def run_truncate_database(self):
+        """
+        Truncate databases only
+        """
+        self._upgrade_tasks.backup_database()
+        self._upgrade_tasks.truncate_database()
