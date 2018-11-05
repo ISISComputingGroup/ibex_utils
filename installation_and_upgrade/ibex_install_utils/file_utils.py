@@ -68,7 +68,7 @@ class FileUtils(object):
             try:
                 shutil.move(source, destination)
                 break
-            except IOError as ex:
+            except shutil.Error as ex:
                 prompt_message = "Unable to move '{}' to '{}': {}\n Try again?".format(source, destination, str(ex))
                 if prompt.prompt(prompt_message, possibles=["Y", "N"], default="N") != "Y":
                     raise UserStop

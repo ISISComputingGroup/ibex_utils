@@ -4,7 +4,6 @@ Tasks associated with install
 
 import pprint
 from contextlib import contextmanager
-from time import sleep
 
 import os
 import shutil
@@ -59,7 +58,8 @@ SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
 
-STAGE_DELETED = os.path.join("\\\\isis", "inst$", "backups$", "stage-deleted")
+STAGE_DELETED = os.path.join(r"\\isis", "inst$", "backups$", "stage-deleted")
+SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
 
 RAM_MIN = 8e+9
 FREE_DISK_MIN = 3e+10
@@ -232,6 +232,7 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
+
 
 class UpgradeTasks(object):
     """
@@ -524,7 +525,7 @@ class UpgradeTasks(object):
                 else:
                     self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
                 try:
-                    RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat").run()
+                    RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
                 except Exception as e:
                     print("WARNING: There was an error running upgrade script:\n{}".format(e))
 
@@ -628,7 +629,7 @@ class UpgradeTasks(object):
         new_backup_dir = os.path.join(BACKUP_DIR, "ibex_backup_{}".format(UpgradeTasks._today_date_for_filenames()))
 
         if not os.path.exists(BACKUP_DATA_DIR):
-            raise IOError("Base directory does not exist {}".format(BACKUP_DATA_DIR))
+            raise IOError("Base directory does not exist {} should be a provided linked dir".format(BACKUP_DATA_DIR))
         if not os.path.exists(BACKUP_DIR):
             os.mkdir(BACKUP_DIR)
         if not os.path.exists(new_backup_dir):
@@ -716,7 +717,8 @@ class UpgradeTasks(object):
                                            SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
                 try:
                     mysql_bin_dir = self._get_mysql_dir()
-                    dump_command = ["-u", "root", "-p", "--all-databases", "--result-file={}".format(result_file)]
+                    dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
+                                    "--result-file={}".format(result_file)]
                     RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
                                prog_args=dump_command,
                                capture_pipes=False).run()
@@ -725,7 +727,7 @@ class UpgradeTasks(object):
                     self._prompt.prompt_and_raise_if_not_yes(
                         "Unable to run mysqldump. Please dump the database manually . Error is {}".format(ex.message))
 
-                if os.path.getsize(result_file) < 100:
+                if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
                     self._prompt.prompt_and_raise_if_not_yes(
                         "Dump file '{}' seems to be small is it correct? ".format(result_file))
 
@@ -965,6 +967,7 @@ class UpgradeTasks(object):
 
         Args:
             name (str): path to the file
+            directory (str): directory of file
             extension (str): the extension of the file
         """
         filename = os.path.join(PV_BACKUPS_DIR, directory, "{}_{}.{}"
@@ -1009,7 +1012,7 @@ class UpgradeTasks(object):
         Saves the blockserver PV to a file.
         """
 
-        def pretty_print(data):
+        def _pretty_print(data):
             return pprint.pformat(data, width=800, indent=2)
 
         with Task("Save blockserver PV to file", self._prompt) as task:
@@ -1030,7 +1033,7 @@ class UpgradeTasks(object):
                 for name, pv in pvs_to_save:
                     with self.timestamped_pv_backups_file(directory="inst_servers", name=name) as f:
                         try:
-                            f.write("{}\r\n".format(pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))))
+                            f.write("{}\r\n".format(_pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))))
                         except Exception as e:
                             print("Couldn't get data from {} because: {}".format(pv, e.message))
                             f.write(e.message)
@@ -1091,6 +1094,10 @@ class UpgradeTasks(object):
                                                              .format(from_path, to_path))
 
     def ensure_nicos_has_a_release_file(self):
+        """
+        Nagios must have a release version file in the base otherwise it will not start. This ensures that if we are
+        working from a commit instead of a release that the file exists by creating it if it doesn't.
+        """
         with Task("Ensure NICOS has a release file (NICOS will fail if this is not done)", self._prompt) as task:
             if task.do_step:
                 release_file_path = os.path.join(SCRIPT_SERVER_PATH, "nicos", "RELEASE-VERSION")
