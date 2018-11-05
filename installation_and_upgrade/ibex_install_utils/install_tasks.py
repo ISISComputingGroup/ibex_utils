@@ -250,7 +250,7 @@ class UpgradeTasks(object):
             client_e4_source_dir: directory to install ibex E4 client from
             file_utils : collection of file utilities
         """
-        self._prompt = user_prompt
+        self.prompt = user_prompt  # This is needed to allow @tasks to work
         self._server_source_dir = server_source_dir
         self._client_source_dir = client_source_dir
         self._client_e4_source_dir = client_e4_source_dir
@@ -291,7 +291,7 @@ class UpgradeTasks(object):
         """
         Ask user to confirm correct script was chosen.
         """
-        self._prompt.prompt_and_raise_if_not_yes(message, default="Y")
+        self.prompt.prompt_and_raise_if_not_yes(message, default="Y")
 
     def stop_ibex_server(self):
         """
@@ -301,7 +301,7 @@ class UpgradeTasks(object):
         Returns:
 
         """
-        # with Task("Stopping IBEX server", self._prompt):
+        # with Task("Stopping IBEX server", self.prompt):
         #     RunProcess(EPICS_PATH, "stop_ibex_server.bat").run()
         pass
 
@@ -355,7 +355,7 @@ class UpgradeTasks(object):
         self._file_utils.move_file(
             os.path.join(settings_path, "Python", "init_inst_name.py"),
             os.path.join(settings_path, "Python", "init_{inst_name}.py".format(inst_name=inst_name)),
-            self._prompt)
+            self.prompt)
 
         shutil.copytree(SOURCE_MACHINE_SETTINGS_COMMON_PATH, os.path.join(SETTINGS_CONFIG_PATH, "common"))
 
@@ -364,7 +364,7 @@ class UpgradeTasks(object):
         """
         Get user to record running vis
         """
-        self._prompt.prompt_and_raise_if_not_yes("Write down any VIs which are running for use later?")
+        self.prompt.prompt_and_raise_if_not_yes("Write down any VIs which are running for use later?")
 
     @task("Upgrading Notepad++. Please follow system dialogs")
     def upgrade_notepad_pp(self):
@@ -387,7 +387,7 @@ class UpgradeTasks(object):
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
         RunProcess(self._server_source_dir, "install_to_inst.bat").run()
-        if with_utils and self._prompt.confirm_step("install icp binaries"):
+        if with_utils and self.prompt.confirm_step("install icp binaries"):
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
     @task("Installing IBEX Client (Old E3)")
@@ -406,7 +406,7 @@ class UpgradeTasks(object):
         """
         source_dir = self._client_e4_source_dir
         if source_dir is None:
-            self._prompt.prompt_and_raise_if_not_yes("The E4 client path has not been set; continue with installation?")
+            self.prompt.prompt_and_raise_if_not_yes("The E4 client path has not been set; continue with installation?")
         else:
             self._install_set_version_of_ibex_client(source_dir)
 
@@ -447,7 +447,7 @@ class UpgradeTasks(object):
         print("Upgrade {0} as a {1}".format(self._machine_name, machine_type))
         print("    Server source: {0}".format(self._server_source_dir))
         print("    Client source: {0}".format(self._client_source_dir))
-        answer = self._prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
+        answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()
 
@@ -489,7 +489,7 @@ class UpgradeTasks(object):
                 subprocess.call('git commit -m"create initial python"'.format(inst_name), cwd=inst_config_path)
                 subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
             except Exception as e:
-                self._prompt.prompt_and_raise_if_not_yes(
+                self.prompt.prompt_and_raise_if_not_yes(
                     "Something went wrong setting up the configurations repository. Please resolve manually, "
                     "instructions are in the developers manual under "
                     "First-time-installing-and-building-(Windows): \n {}".format(e.message))
@@ -509,7 +509,7 @@ class UpgradeTasks(object):
                         "    5. Resolve any merge conflicts\n"\
                         "    6. git push\n"
         automatic_prompt = "Attempt automatic configuration merge?"
-        if self._prompt.confirm_step(automatic_prompt):
+        if self.prompt.confirm_step(automatic_prompt):
             try:
                 repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, self._machine_name))
                 repo.git.checkout("master")
@@ -519,9 +519,9 @@ class UpgradeTasks(object):
                 repo.git.push()
             except git.GitCommandError as e:
                 print("Error doing automatic merge, please perform the merge manually: {}".format(e))
-                self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
+                self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
         else:
-            self._prompt.prompt_and_raise_if_not_yes(manual_prompt)
+            self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
         try:
             RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
         except Exception as e:
@@ -534,12 +534,12 @@ class UpgradeTasks(object):
         """
         for path in AUTOSTART_LOCATIONS:
             if os.path.exists(path):
-                self._prompt.prompt_and_raise_if_not_yes(
+                self.prompt.prompt_and_raise_if_not_yes(
                     "SECI autostart found in {}, delete this.".format(path))
 
-        self._prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
-        self._prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
-        self._prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
+        self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
+        self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
+        self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
     @task("Remove SECI 1 Path")
     def remove_seci_one(self):
@@ -550,7 +550,7 @@ class UpgradeTasks(object):
             try:
                 self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
             except (IOError, WindowsError) as e:
-                self._prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
+                self.prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
                                                          "'{}'. Please remove it manually and type 'Y' to "
                                                          "confirm".format(SECI_ONE_PATH, e.message))
 
@@ -560,8 +560,8 @@ class UpgradeTasks(object):
         Set up the calibration repository
         """
         if os.path.isdir(CALIBRATION_PATH):
-            if self._prompt("Calibrations directory already exists. Update calibrations repository?",
-                            ["Y", "N"], "N") == "Y":
+            if self.prompt("Calibrations directory already exists. Update calibrations repository?",
+                           ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
             os.makedirs(CALIBRATION_PATH)
@@ -577,7 +577,7 @@ class UpgradeTasks(object):
             repo = git.Repo(CALIBRATION_PATH)
             repo.git.pull()
         except git.GitCommandError:
-            self._prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
+            self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
                                                      "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
 
     @task("Install java")
@@ -588,15 +588,15 @@ class UpgradeTasks(object):
         java_url = "/<Public Share>/third_party_installers/"
         try:
             subprocess.call(["java", "-version"])
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "Confirm that the java version above is the desired version or that you have "
                 "upgraded to the desired 64-bit version from {}".format(java_url))
         except (subprocess.CalledProcessError, WindowsError):
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                     "No installation of Java found on this machine. You can find an installer for the java"
                     "version used in the current release in {}.".format(java_url))
 
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Is auto-update turned off? This can be checked from the Java control panel in "
             "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
 
@@ -605,7 +605,7 @@ class UpgradeTasks(object):
         """
         Configure the COM ports
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Using NPort Administrator (available under /Kits$/CompGroup/Utilities/), check that the COM ports "
             "on this machine are configured to standard, i.e.:\n"
             "- Moxa 1 starts at COM5\n"
@@ -635,11 +635,11 @@ class UpgradeTasks(object):
     def _backup_dir(self, src, copy=True):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
         if src in os.getcwd():
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "You appear to be trying to delete the folder, {}, containing the current working directory {}. "
                 "Please do this manually to be on the safe side".format(src, os.getcwd()))
         elif os.path.exists(backup_dir):
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "Backup dir {} already exist. Please backup this app manually".format(backup_dir))
         elif os.path.exists(src):
             if copy:
@@ -679,7 +679,7 @@ class UpgradeTasks(object):
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"))
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "var", "Autosave"))
         else:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "Unable to find data directory '{}'. Please backup the current installation of IBEX "
                 "manually".format(BACKUP_DATA_DIR))
 
@@ -705,24 +705,20 @@ class UpgradeTasks(object):
         """
         result_file = os.path.join(self._get_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
-        try:
-            mysql_bin_dir = self._get_mysql_dir()
-            dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
-                            "--result-file={}".format(result_file)]
-            RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
-                       prog_args=dump_command,
-                       capture_pipes=False).run()
 
-        except ErrorInRun as ex:
-            self._prompt.prompt_and_raise_if_not_yes(
-                "Unable to run mysqldump. Please dump the database manually . Error is {}".format(ex.message))
+        mysql_bin_dir = self._get_mysql_dir()
+        dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
+                        "--result-file={}".format(result_file)]
+        RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
+                   prog_args=dump_command,
+                   capture_pipes=False).run()
 
         if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "Dump file '{}' seems to be small is it correct? ".format(result_file))
 
         self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
-                                   self._prompt)
+                                   self.prompt)
 
     @task("Truncate database")
     def truncate_database(self):
@@ -738,7 +734,7 @@ class UpgradeTasks(object):
                        capture_pipes=False).run()
 
         except ErrorInRun as ex:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "Unable to run mysql command, please truncate the database manually. "
                 "Error is {}".format(ex.message))
 
@@ -747,7 +743,7 @@ class UpgradeTasks(object):
         """
         Update the release notes.
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
     @task("Install MySQL")
@@ -757,17 +753,17 @@ class UpgradeTasks(object):
 
         """
         url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Installing-and-Upgrading-MySQL"
-        if self._prompt.prompt("Please install MySQL following the instructions on the developer wiki. "
+        if self.prompt.prompt("Please install MySQL following the instructions on the developer wiki. "
                                "Open instructions in browser now?", ["Y", "N"], "N") == "Y":
             subprocess.call("explorer {}".format(url))
-        self._prompt.prompt_and_raise_if_not_yes("Confirm MySQL has been successfully installed.")
+        self.prompt.prompt_and_raise_if_not_yes("Confirm MySQL has been successfully installed.")
 
     @task("Configure MySQL")
     def configure_mysql(self):
         """
         Run the MySQL configuration script
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Run config_mysql.bat in {} now. \n"
             "WARNING: performing this step will wipe all existing historical data. \n"
             "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
@@ -784,14 +780,14 @@ class UpgradeTasks(object):
             if not os.path.exists(mysql_path):
                 raise OSError()
             subprocess.call([mysql_path, "--version"])
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "If required, upgrade MySQL as per {}".format(install_mysql_url))
         except OSError:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "MySQL not detected on system. Please verify and install if necessary via the instructions at "
                 "{}".format(install_mysql_url))
         finally:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "Confirm that the MySQL catalog auto-update has been switched off as described at {}"
                 .format(install_mysql_url))
 
@@ -800,7 +796,7 @@ class UpgradeTasks(object):
         """
         Reapply any hotfixes to the build.
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Have you applied any hotfixes listed that are not fixed by the release, as on the instrument "
             "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
@@ -809,7 +805,7 @@ class UpgradeTasks(object):
         """
         Restart Vis which were running on upgrade start.
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Please restart any VIs that were running at the start of the upgrade")
 
     @task("Client release tests")
@@ -817,12 +813,12 @@ class UpgradeTasks(object):
         """
         Test that the client works
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Check that the version displayed in the client is as expected after the deployment")
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Confirm that genie_python works from within the client and via genie_python.bat (this includes"
             "verifying that the 'g.' and 'inst.' prefixes work as expected)")
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Verify that the current configuration is consistent with the system prior to upgrade")
 
     @task("Server release tests")
@@ -834,7 +830,7 @@ class UpgradeTasks(object):
                                    "Server-Release-Tests"
 
         print("For further details, see {}".format(server_release_tests_url))
-        self._prompt.prompt_and_raise_if_not_yes("Check that blocks are logging as expected")
+        self.prompt.prompt_and_raise_if_not_yes("Check that blocks are logging as expected")
 
         print("Checking that configurations are being pushed to the appropriate repository")
         repo = git.Repo(self._get_config_path())
@@ -844,11 +840,11 @@ class UpgradeTasks(object):
         if "up-to-date with 'origin/{}".format(self._get_machine_name()) in status:
             print("Configurations updating correctly")
         else:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "Unexpected git status. Please confirm that configurations are being pushed to the appropriate "
                 "remote repository")
 
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Check that the web dashboard for this instrument is updating "
             "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}".format(
                 self._get_instrument_name()))
@@ -858,7 +854,7 @@ class UpgradeTasks(object):
         """
         Prompt user to add instrument to the list of known IBEX instruments
         """
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Add the host name of the instrument to the list saved in the CS:INSTLIST PV")
 
     @task("Update web dashboard")
@@ -867,13 +863,13 @@ class UpgradeTasks(object):
         Prompt user to add the instrument to the web dashboard
         """
         redirect_page = os.path.join("C:", "inetpub", "wwwroot", "DataWeb", "Dashboards", "redirect.html")
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Add the host name of the instrument to NDX_INSTS or ALL_INSTS in webserver.py in the JSON_bourne "
             "repository.")
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "On NDAEXTWEB1, pull the updated code and add a link to the instrument dashboard on the main "
             "dataweb page under {}".format(redirect_page))
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Restart JSON_bourne on NDAEXTWEB1 when appropriate. "
             "(WARNING: This will kill all existing sessions!)")
 
@@ -883,7 +879,7 @@ class UpgradeTasks(object):
         Prompt user to install wiring tables in the appropriate folder.
         """
         tables_dir = os.path.join(SETTINGS_CONFIG_PATH, self._machine_name, "configurations", "tables")
-        self._prompt.prompt_and_raise_if_not_yes("Install the wiring tables in {}.".format(tables_dir))
+        self.prompt.prompt_and_raise_if_not_yes("Install the wiring tables in {}.".format(tables_dir))
 
     @task("Configure motion setpoints")
     def configure_motion(self):
@@ -892,11 +888,11 @@ class UpgradeTasks(object):
         """
         url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
               "Deployment-on-an-Instrument-Control-PC#set-up-motion-set-points"
-        if self._prompt.prompt("Please configure the motion set points for this instrument. Instructions can be"
+        if self.prompt.prompt("Please configure the motion set points for this instrument. Instructions can be"
                                " found on the developer wiki. Open instructions in browser now?",
-                               ["Y", "N"], "N") == "Y":
+                              ["Y", "N"], "N") == "Y":
             subprocess.call("explorer {}".format(url))
-        self._prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
+        self.prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
 
     @task("Add Nagios checks")
     def add_nagios_checks(self):
@@ -904,7 +900,7 @@ class UpgradeTasks(object):
         Prompt user to add nagios checks.
         """
         # For future reference, genie_python can send emails!
-        self._prompt.prompt_and_raise_if_not_yes("Add this instrument to the Nagios monitoring system. Talk to "
+        self.prompt.prompt_and_raise_if_not_yes("Add this instrument to the Nagios monitoring system. Talk to "
                                                  "Freddie Akeroyd for help with this.")
 
     @task("Inform instrument scientists")
@@ -913,7 +909,7 @@ class UpgradeTasks(object):
         Inform instrument scientists that the machine has been upgraded.
         """
         # For future reference, genie_python can send emails!
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Inform the instrument scientists that the upgrade has been completed")
 
     @task("Apply changes in release notes")
@@ -922,7 +918,7 @@ class UpgradeTasks(object):
         Apply any changes noted in the release notes.
         """
         # For future reference, genie_python can send emails!
-        self._prompt.prompt_and_raise_if_not_yes(
+        self.prompt.prompt_and_raise_if_not_yes(
             "Look in the IBEX wiki at the release notes for the version you are deploying. Apply needed fixes.")
 
     @task("Create journal table SQL schema if it doesn't exist")
@@ -930,8 +926,8 @@ class UpgradeTasks(object):
         """
         Create the journal schema if it doesn't exist.
         """
-        sql_password = self._prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
-                                           os.getenv("MYSQL_PASSWORD", "environment variable not set"))
+        sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
+                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"))
         RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
 
     @contextmanager
@@ -1023,7 +1019,7 @@ class UpgradeTasks(object):
         """
         ram = psutil.virtual_memory()
         if ram.total < RAM_MIN:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "The machine requires at least {:.1e}B of RAM to run IBEX.".format(RAM_MIN))
 
     @task("Check there is {:.1e}B free disk space".format(FREE_DISK_MIN))
@@ -1033,7 +1029,7 @@ class UpgradeTasks(object):
         """
         disk_space = psutil.disk_usage("/")
         if disk_space.free < FREE_DISK_MIN:
-            self._prompt.prompt_and_raise_if_not_yes(
+            self.prompt.prompt_and_raise_if_not_yes(
                 "The machine requires at least {:.1e}B of free disk space to run IBEX.".format(FREE_DISK_MIN))
 
     @task("Put IBEX autostart into pc start menu")
@@ -1053,13 +1049,13 @@ class UpgradeTasks(object):
             try:
                 os.remove(to_path)
             except (OSError, IOError):
-                self._prompt.prompt_and_raise_if_not_yes("Please manually remove file at '{}'".format(to_path))
+                self.prompt.prompt_and_raise_if_not_yes("Please manually remove file at '{}'".format(to_path))
 
         try:
             shutil.copyfile(from_path, to_path)
         except (OSError, IOError):
-            self._prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
-                                                     .format(from_path, to_path))
+            self.prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
+                                                    .format(from_path, to_path))
 
     @task("Ensure NICOS has a release file (NICOS will fail if this is not done)")
     def ensure_nicos_has_a_release_file(self):

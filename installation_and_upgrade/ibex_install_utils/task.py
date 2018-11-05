@@ -7,7 +7,30 @@ from ibex_install_utils.exceptions import UserStop
 from ibex_install_utils.user_prompt import UserPrompt
 
 
-def task(task_name, attribute_name="_prompt"):
+def _run_task_to_completion(task_name, prompt, self_decorated_method, func, args, kwargs):
+    try:
+        func(self_decorated_method, *args, **kwargs)
+        print("... Done")
+        return True
+    except UserStop as ex:
+        raise ex
+    except Exception:
+        print("Error in task '{}'".format(task_name))
+        traceback.print_exc()
+
+        answer = prompt.prompt(
+            "Do you want to R: restart task, S: skip and continue with next task, A: abort script: ",
+            possibles=["R", "S", "A"], default="A")
+        if answer == "R":
+            return False
+        elif answer == "S":
+            print("... Skipping task")
+            return True
+        else:
+            raise UserStop()
+
+
+def task(task_name, attribute_name="prompt"):
     """
         Decorator for tasks to be performed for installs.
 
@@ -16,35 +39,13 @@ def task(task_name, attribute_name="_prompt"):
         """
 
     def _task_with_name_decorator(func):
-        def _wrapper(class_of_decorated_method, *args, **kwargs):
-            prompt = getattr(class_of_decorated_method, attribute_name)
+        def _wrapper(self_of_decorated_method, *args, **kwargs):
+            prompt = getattr(self_of_decorated_method, attribute_name)
             if prompt.confirm_step(task_name):
                 print("{} ...".format(task_name))
-                while not _run_task(class_of_decorated_method, args, kwargs, prompt):
-                    pass
-
-        def _run_task(class_of_decorated_method, args, kwargs, prompt):
-            try:
-                func(class_of_decorated_method, *args, **kwargs)
-                print("... Done")
-                return True
-            except UserStop as ex:
-                raise ex
-            except Exception:
-                print("Error in task '{}'".format(task_name))
-                traceback.print_exc()
-
-                answer = prompt.prompt(
-                    "Do you want to R: restart task, S: skip and continue with next task, A: abort script: ",
-                    possibles=["R", "S", "A"], default="A")
-                if answer == "R":
-                    return False
-                elif answer == "S":
-                    print("... Skipping task")
-                    return True
-                else:
-                    raise UserStop()
-
+                while True:
+                    if _run_task_to_completion(task_name, prompt, self_of_decorated_method, func, args, kwargs):
+                        break
         return _wrapper
     return _task_with_name_decorator
 
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     class TaskTest:
         """Test Task"""
         def __init__(self):
-            self._prompt = UserPrompt(False, True)
+            self.prompt = UserPrompt(False, True)
 
         @task("play it again")
         def play(self):
