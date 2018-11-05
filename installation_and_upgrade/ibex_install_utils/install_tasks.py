@@ -587,7 +587,6 @@ class UpgradeTasks(object):
         """
         with Task("Install java", self._prompt) as task:
             if task.do_step:
-                # java_url = "http://www.java.com/en/"
                 java_url = "/<Public Share>/third_party_installers/"
                 try:
                     subprocess.call(["java", "-version"])
