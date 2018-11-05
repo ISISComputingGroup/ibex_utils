@@ -892,6 +892,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
+        self._upgrade_tasks.truncate_database()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_ibex_client()
