@@ -186,11 +186,11 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.perform_client_tests()
         self._upgrade_tasks.perform_server_tests()
-        self._upgrade_tasks.inform_instrument_scientists()
         self._upgrade_tasks.save_motor_parameters_to_file()
         self._upgrade_tasks.save_blocks_to_file()
         self._upgrade_tasks.save_blockserver_pv_to_file()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
+        self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_deploy_main(self):
         """
@@ -221,6 +221,7 @@ class UpgradeInstrument(object):
             Current the server can not be started or stopped in this python script.
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
+        self._upgrade_tasks.record_running_vis()
         self._upgrade_tasks.save_motor_parameters_to_file()
         self._upgrade_tasks.save_blocks_to_file()
         self._upgrade_tasks.save_blockserver_pv_to_file()
@@ -357,6 +358,13 @@ class UpgradeTasks(object):
             self._prompt)
 
         shutil.copytree(SOURCE_MACHINE_SETTINGS_COMMON_PATH, os.path.join(SETTINGS_CONFIG_PATH, "common"))
+
+    @task("Record running vis")
+    def record_running_vis(self):
+        """
+        Get user to record running vis
+        """
+        self._prompt.prompt_and_raise_if_not_yes("Write down any VIs which are running for use later?")
 
     @task("Upgrading Notepad++. Please follow system dialogs")
     def upgrade_notepad_pp(self):
@@ -577,7 +585,7 @@ class UpgradeTasks(object):
         """
         Checks Java installation
         """
-        java_url = "http://www.java.com/en/"
+        java_url = "/<Public Share>/third_party_installers/"
         try:
             subprocess.call(["java", "-version"])
             self._prompt.prompt_and_raise_if_not_yes(
@@ -585,8 +593,8 @@ class UpgradeTasks(object):
                 "upgraded to the desired 64-bit version from {}".format(java_url))
         except (subprocess.CalledProcessError, WindowsError):
             self._prompt.prompt_and_raise_if_not_yes(
-                    "No installation of Java found on this machine. Please go to {} to download and install the"
-                    " desired 64-bit version".format(java_url))
+                    "No installation of Java found on this machine. You can find an installer for the java"
+                    "version used in the current release in {}.".format(java_url))
 
         self._prompt.prompt_and_raise_if_not_yes(
             "Is auto-update turned off? This can be checked from the Java control panel in "
@@ -760,8 +768,9 @@ class UpgradeTasks(object):
         Run the MySQL configuration script
         """
         self._prompt.prompt_and_raise_if_not_yes(
-            "Run config_mysql.bat in {}. \n"
-            "WARNING: performing this step will wipe all existing historical data.".format(SYSTEM_SETUP_PATH))
+            "Run config_mysql.bat in {} now. \n"
+            "WARNING: performing this step will wipe all existing historical data. \n"
+            "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
 
     @task("Upgrade MySQL")
     def upgrade_mysql(self):
