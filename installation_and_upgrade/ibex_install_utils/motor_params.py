@@ -3,7 +3,6 @@ Script to extract information from motors to be consumed by the motion controls 
 load the script into a genie_python console and run as a standard user script.
 """
 
-import os
 import csv
 from genie_python import genie as g
 
