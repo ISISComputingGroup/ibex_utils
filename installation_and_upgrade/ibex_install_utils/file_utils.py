@@ -14,16 +14,19 @@ class FileUtils(object):
     """
 
     @staticmethod
-    def remove_tree(path):
+    def remove_tree(path, use_robocopy=True):
         """
         Delete a file path if it exists
         Args:
             path: path to delete
         """
-        empty_dir = r"\\isis\inst$\Kits$\CompGroup\ICP\empty_dir_for_robocopy"
-        if os.path.isdir(path):
-            os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".
-                      format(empty_dir, path))
+        if use_robocopy:
+            empty_dir = r"\\isis\inst$\Kits$\CompGroup\ICP\empty_dir_for_robocopy"
+            if os.path.isdir(path):
+                os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".
+                          format(empty_dir, path))
+        else:
+            shutil.rmtree(path)
 
     def mkdir_recursive(self, path):
         """

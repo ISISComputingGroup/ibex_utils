@@ -2,19 +2,26 @@
 Tasks associated with install
 """
 
+import pprint
+from contextlib import contextmanager
+from time import sleep
+
 import os
 import shutil
 import socket
 import subprocess
-from datetime import date
-
+from datetime import date, datetime
+import psutil
 import git
 
+
+from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.exceptions import UserStop, ErrorInRun
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import Task
 from ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.motor_params import get_params_and_save_to_file
 
 BACKUP_DATA_DIR = os.path.join("C:\\", "data")
 BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
@@ -22,6 +29,8 @@ BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
+SCRIPT_SERVER_PATH = os.path.join(EPICS_PATH, "ISIS", "scriptserver", "master")
+
 SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
 GUI_PATH_E4 = os.path.join(APPS_BASE_DIR, "Client_E4")
@@ -35,7 +44,10 @@ CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
-MYSQL_FILES_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var", "mysql")
+
+VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
+MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
+PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
 SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
@@ -43,11 +55,183 @@ LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
 PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
 SECI = "SECI User interface.lnk"
+SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility")
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
 
 STAGE_DELETED = os.path.join("\\\\isis", "inst$", "backups$", "stage-deleted")
 
+RAM_MIN = 8e+9
+FREE_DISK_MIN = 3e+10
+
+
+class UpgradeInstrument(object):
+    """
+    Class to upgrade the instrument installation to the given version of IBEX.
+    """
+    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils=FileUtils()):
+        """
+        Initializer.
+        Args:
+            user_prompt: a object to allow prompting of the user
+            server_source_dir: directory to install ibex server from
+            client_source_dir: directory to install ibex client from
+            client_e4_source_dir: directory to install ibex E4 client from
+            file_utils : collection of file utilities
+        """
+        self._upgrade_tasks = UpgradeTasks(
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils)
+
+    @staticmethod
+    def _should_install_utils():
+        """
+        Condition on which to install ibex utils (ICP_Binaries)
+
+        :return: True if utils should be installed, False otherwise
+        """
+        return not os.path.exists(LABVIEW_DAE_DIR)
+
+    def run_test_update(self):
+        """
+        Run a complete test upgrade on the current system
+        """
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
+        self._upgrade_tasks.stop_ibex_server()
+        self._upgrade_tasks.remove_old_ibex()
+        self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
+        self._upgrade_tasks.remove_settings()
+        self._upgrade_tasks.install_settings()
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
+        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.upgrade_notepad_pp()
+
+    def remove_all_and_install_client_and_server(self):
+        """
+        Either install or upgrade the ibex client and server
+        """
+        self._upgrade_tasks.confirm(
+            "This script removes IBEX client and server and installs the latest build of both, without any extra steps."
+            " Proceed?")
+
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
+        self._upgrade_tasks.stop_ibex_server()
+        self._upgrade_tasks.remove_old_ibex()
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
+        self._upgrade_tasks.install_e4_ibex_client()
+        self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.create_journal_sql_schema()
+
+    def run_instrument_tests(self):
+        """
+        Run through client and server tests once installation / deployment has completed.
+        """
+        self._upgrade_tasks.perform_client_tests()
+        self._upgrade_tasks.perform_server_tests()
+        self._upgrade_tasks.inform_instrument_scientists()
+
+    def run_instrument_install(self):
+        """
+        Do a first installation of IBEX on a new instrument.
+        """
+        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
+                                    "on a new instrument. Proceed?")
+
+        self._upgrade_tasks.check_resources()
+
+        self._upgrade_tasks.check_java_installation()
+        self._upgrade_tasks.install_mysql()
+        self._upgrade_tasks.remove_seci_shortcuts()
+        self._upgrade_tasks.remove_seci_one()
+
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
+        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.setup_config_repository()
+        self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.configure_mysql()
+        self._upgrade_tasks.create_journal_sql_schema()
+        self._upgrade_tasks.configure_com_ports()
+        self._upgrade_tasks.setup_calibrations_repository()
+        self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.apply_changes_noted_in_release_notes()
+        self._upgrade_tasks.update_release_notes()
+        self._upgrade_tasks.restart_vis()
+        self._upgrade_tasks.install_wiring_tables()
+        self._upgrade_tasks.configure_motion()
+        self._upgrade_tasks.add_nagios_checks()
+        self._upgrade_tasks.update_instlist()
+        self._upgrade_tasks.update_web_dashboard()
+        self._upgrade_tasks.put_autostart_script_in_startup_area()
+
+    def run_instrument_deploy(self):
+        """
+        Deploy a full IBEX upgrade on an existing instrument.
+        """
+        self._upgrade_tasks.confirm(
+            "This script performs a full upgrade of the IBEX server and client on an existing instrument. Proceed?")
+        self.run_instrument_deploy_pre_stop()
+        self.run_instrument_deploy_main()
+        self.run_instrument_deploy_post_start()
+
+    def run_instrument_deploy_post_start(self):
+        """
+            Upgrade an instrument. Steps to do after ibex has been started.
+
+            Current the server can not be started in this python script.
+        """
+        self._upgrade_tasks.start_ibex_server()
+        self._upgrade_tasks.start_ibex_gui()
+        self._upgrade_tasks.restart_vis()
+        self._upgrade_tasks.perform_client_tests()
+        self._upgrade_tasks.perform_server_tests()
+        self._upgrade_tasks.inform_instrument_scientists()
+        self._upgrade_tasks.save_motor_parameters_to_file()
+        self._upgrade_tasks.save_blocks_to_file()
+        self._upgrade_tasks.save_blockserver_pv_to_file()
+        self._upgrade_tasks.put_autostart_script_in_startup_area()
+
+    def run_instrument_deploy_main(self):
+        """
+            Upgrade an instrument. Steps to do after ibex has been stopped but before it is restarted.
+
+            Current the server can not be started or stopped in this python script.
+        """
+        self._upgrade_tasks.check_java_installation()
+        self._upgrade_tasks.backup_old_directories()
+        self._upgrade_tasks.backup_database()
+        self._upgrade_tasks.truncate_database()
+        self._upgrade_tasks.remove_seci_shortcuts()
+        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.ensure_nicos_has_a_release_file()
+        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.create_journal_sql_schema()
+        self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.apply_changes_noted_in_release_notes()
+        self._upgrade_tasks.update_release_notes()
+        self._upgrade_tasks.upgrade_mysql()
+        self._upgrade_tasks.reapply_hotfixes()
+
+    def run_instrument_deploy_pre_stop(self):
+        """
+            Upgrade an instrument. Steps to do before ibex is stopped.
+
+            Current the server can not be started or stopped in this python script.
+        """
+        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
+        self._upgrade_tasks.save_motor_parameters_to_file()
+        self._upgrade_tasks.save_blocks_to_file()
+        self._upgrade_tasks.save_blockserver_pv_to_file()
+        self._upgrade_tasks.stop_ibex_server()
+
+    def run_truncate_database(self):
+        """
+        Truncate databases only
+        """
+        self._upgrade_tasks.backup_database()
+        self._upgrade_tasks.truncate_database()
 
 class UpgradeTasks(object):
     """
@@ -71,6 +255,8 @@ class UpgradeTasks(object):
         self._file_utils = file_utils
 
         self._machine_name = self._get_machine_name()
+
+        self._ca = CaWrapper()
 
     @staticmethod
     def _get_machine_name():
@@ -357,6 +543,20 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
                 self._prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
+    def remove_seci_one(self):
+        """
+        Removes SECI 1
+        """
+        with Task("Remove SECI 1 Path", self._prompt) as task:
+            if task.do_step:
+                if os.path.exists(SECI_ONE_PATH):
+                    try:
+                        self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
+                    except (IOError, WindowsError) as e:
+                        self._prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
+                                                                 "'{}'. Please remove it manually and type 'Y' to "
+                                                                 "confirm".format(SECI_ONE_PATH, e.message))
+
     def setup_calibrations_repository(self):
         """
         Set up the calibration repository
@@ -405,22 +605,6 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Is auto-update turned off? This can be checked from the Java control panel in "
                     "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
-
-    def take_screenshots(self):
-        """
-        take screen shots of initial system
-        """
-        with Task("Take screenshots", self._prompt) as task:
-            if task.do_step:
-                self._prompt.prompt_and_raise_if_not_yes(
-                    "Take screenshots of the current IBEX setup for future reference. These should include:\n"
-                    "- Client and server versions\n"
-                    "- Blocks\n"
-                    "- Major perspectives\n"
-                    "- Current configuration tabs\n"
-                    "- Running IOCs\n"
-                    "- Available configs\n"
-                    "- Any open LabView VIs")
 
     def configure_com_ports(self):
         """
@@ -754,6 +938,16 @@ class UpgradeTasks(object):
                 self._prompt.prompt_and_raise_if_not_yes(
                     "Inform the instrument scientists that the upgrade has been completed")
 
+    def apply_changes_noted_in_release_notes(self):
+        """
+        Apply any changes noted in the release notes.
+        """
+        with Task("Apply changes in release notes", self._prompt) as task:
+            if task.do_step:
+                # For future reference, genie_python can send emails!
+                self._prompt.prompt_and_raise_if_not_yes(
+                    "Look in the IBEX wiki at the release notes for the version you are deploying. Apply needed fixes.")
+
     def create_journal_sql_schema(self):
         """
         Create the journal schema if it doesn't exist.
@@ -764,158 +958,151 @@ class UpgradeTasks(object):
                                                    os.getenv("MYSQL_PASSWORD", "environment variable not set"))
                 RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
 
-
-class UpgradeInstrument(object):
-    """
-    Class to upgrade the instrument installation to the given version of IBEX.
-    """
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils=FileUtils()):
+    @contextmanager
+    def timestamped_pv_backups_file(self, name, directory, extension="txt"):
         """
-        Initializer.
+        Context manager to create a timestamped file in the pv backups directory
+
         Args:
-            user_prompt: a object to allow prompting of the user
-            server_source_dir: directory to install ibex server from
-            client_source_dir: directory to install ibex client from
-            client_e4_source_dir: directory to install ibex E4 client from
-            file_utils : collection of file utilities
+            name (str): path to the file
+            extension (str): the extension of the file
         """
-        self._upgrade_tasks = UpgradeTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils)
+        filename = os.path.join(PV_BACKUPS_DIR, directory, "{}_{}.{}"
+                                .format(name, datetime.today().strftime('%Y-%m-%d-%H-%M-%S'), extension))
 
-    @staticmethod
-    def _should_install_utils():
-        """
-        Condition on which to install ibex utils (ICP_Binaries)
+        if not os.path.exists(os.path.join(PV_BACKUPS_DIR, directory)):
+            os.makedirs(os.path.join(PV_BACKUPS_DIR, directory))
 
-        :return: True if utils should be installed, False otherwise
-        """
-        return not os.path.exists(LABVIEW_DAE_DIR)
+        with open(filename, "w") as f:
+            yield f
 
-    def run_test_update(self):
+    def save_motor_parameters_to_file(self):
         """
-        Run a complete test upgrade on the current system
+        Saves the motor parameters to csv file.
         """
-        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
-        self._upgrade_tasks.stop_ibex_server()
-        self._upgrade_tasks.remove_old_ibex()
-        self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
-        self._upgrade_tasks.remove_settings()
-        self._upgrade_tasks.install_settings()
-        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.upgrade_notepad_pp()
+        with Task("Save motor parameters to csv file", self._prompt) as task:
+            if task.do_step:
+                with self.timestamped_pv_backups_file(name="motors", directory="motors", extension="csv") as f:
+                    get_params_and_save_to_file(f)
 
-    def remove_all_and_install_client_and_server(self):
+    def save_blocks_to_file(self):
         """
-        Either install or upgrade the ibex client and server
+        Saves block parameters in a file.
         """
-        self._upgrade_tasks.confirm(
-            "This script removes IBEX client and server and installs the latest build of both, without any extra steps."
-            " Proceed?")
 
-        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
-        self._upgrade_tasks.stop_ibex_server()
-        self._upgrade_tasks.remove_old_ibex()
-        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.install_e4_ibex_client()
-        self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
+        with Task("Save block parameters to file", self._prompt) as task:
+            if task.do_step:
+                blocks = self._ca.get_blocks()
 
-    def run_instrument_tests(self):
-        """
-        Run through client and server tests once installation / deployment has completed.
-        """
-        self._upgrade_tasks.perform_client_tests()
-        self._upgrade_tasks.perform_server_tests()
-        self._upgrade_tasks.inform_instrument_scientists()
+                if blocks is None:
+                    print("Blockserver unavailable - not archiving.")
+                else:
+                    if blocks:
+                        for block in blocks:
+                            with self.timestamped_pv_backups_file(name=block, directory="blocks") as f:
+                                f.write("{}\r\n".format(self._ca.cget(block)))
+                    else:
+                        print("Blockserver available but no blocks found - not archiving anything")
 
-    def run_instrument_install(self):
+    def save_blockserver_pv_to_file(self):
         """
-        Do a first installation of IBEX on a new instrument.
+        Saves the blockserver PV to a file.
         """
-        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
-                                    "on a new instrument. Proceed?")
-        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
 
-        self._upgrade_tasks.check_java_installation()
-        self._upgrade_tasks.install_mysql()
-        self._upgrade_tasks.remove_seci_shortcuts()
+        def pretty_print(data):
+            return pprint.pformat(data, width=800, indent=2)
 
-        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.setup_config_repository()
-        self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.configure_mysql()
-        self._upgrade_tasks.create_journal_sql_schema()
-        self._upgrade_tasks.configure_com_ports()
-        self._upgrade_tasks.setup_calibrations_repository()
-        self._upgrade_tasks.update_calibrations_repository()
-        self._upgrade_tasks.update_release_notes()
-        self._upgrade_tasks.restart_vis()
-        self._upgrade_tasks.install_wiring_tables()
-        self._upgrade_tasks.configure_motion()
-        self._upgrade_tasks.add_nagios_checks()
-        self._upgrade_tasks.update_instlist()
-        self._upgrade_tasks.update_web_dashboard()
+        with Task("Save blockserver PV to file", self._prompt) as task:
+            if task.do_step:
+                pvs_to_save = [
+                    ("all_component_details", "CS:BLOCKSERVER:ALL_COMPONENT_DETAILS"),
+                    ("block_names", "CS:BLOCKSERVER:BLOCKNAMES"),
+                    ("groups", "CS:BLOCKSERVER:GROUPS"),
+                    ("configs", "CS:BLOCKSERVER:CONFIGS"),
+                    ("components", "CS:BLOCKSERVER:COMPS"),
+                    ("runcontrol_out", "CS:BLOCKSERVER:GET_RC_OUT"),
+                    ("runcontrol_pars", "CS:BLOCKSERVER:GET_RC_PARS"),
+                    ("curr_config_details", "CS:BLOCKSERVER:GET_CURR_CONFIG_DETAILS"),
+                    ("server_status", "CS:BLOCKSERVER:SERVER_STATUS"),
+                    ("synoptic_names", "CS:SYNOPTICS:NAMES"),
+                ]
 
-    def run_instrument_deploy(self):
+                for name, pv in pvs_to_save:
+                    with self.timestamped_pv_backups_file(directory="inst_servers", name=name) as f:
+                        try:
+                            f.write("{}\r\n".format(pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))))
+                        except Exception as e:
+                            print("Couldn't get data from {} because: {}".format(pv, e.message))
+                            f.write(e.message)
 
+    def check_resources(self):
         """
-        Deploy a full IBEX upgrade on an existing instrument.
+        Check the machine's resources meet minimum requirements.
         """
-        self._upgrade_tasks.confirm(
-            "This script performs a full upgrade of the IBEX server and client on an existing instrument. Proceed?")
-        self.run_instrument_deploy_pre_stop()
-        self.run_instrument_deploy_main()
-        self.run_instrument_deploy_post_start()
+        self.check_virtual_memory()
+        self._check_disk_usage()
 
-    def run_instrument_deploy_post_start(self):
+    def check_virtual_memory(self):
         """
-            Upgrade an instrument. Steps to do after ibex has been started.
+        Checks the machine's virtual memory meet minimum requirements.
+        """
+        with Task("Check virtual memory is above {:.1e}B".format(RAM_MIN), self._prompt) as task:
+            if task.do_step:
+                ram = psutil.virtual_memory()
+                if ram.total < RAM_MIN:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "The machine requires at least {:.1e}B of RAM to run IBEX.".format(RAM_MIN))
 
-            Current the server can not be started in this python script.
+    def _check_disk_usage(self):
         """
-        self._upgrade_tasks.start_ibex_server()
-        self._upgrade_tasks.start_ibex_gui()
-        self._upgrade_tasks.restart_vis()
-        self._upgrade_tasks.perform_client_tests()
-        self._upgrade_tasks.perform_server_tests()
-        self._upgrade_tasks.inform_instrument_scientists()
+        Checks the machine's free disk space meets minimum requirements.
+        """
+        with Task("Check there is {:.1e}B free disk space".format(FREE_DISK_MIN), self._prompt) as task:
+            if task.do_step:
+                disk_space = psutil.disk_usage("/")
+                if disk_space.free < FREE_DISK_MIN:
+                    self._prompt.prompt_and_raise_if_not_yes(
+                        "The machine requires at least {:.1e}B of free disk space to run IBEX.".format(FREE_DISK_MIN))
 
-    def run_instrument_deploy_main(self):
+    def put_autostart_script_in_startup_area(self):
         """
-            Upgrade an instrument. Steps to do after ibex has been stopped but before it is restarted.
+        Copies the ibex server autostart script into the PC startup folder so that the IBEX server starts
+        automatically on startup.
+        """
 
-            Current the server can not be started or stopped in this python script.
-        """
-        self._upgrade_tasks.check_java_installation()
-        self._upgrade_tasks.backup_old_directories()
-        self._upgrade_tasks.backup_database()
-        self._upgrade_tasks.truncate_database()
-        self._upgrade_tasks.remove_seci_shortcuts()
-        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
-        self._upgrade_tasks.update_calibrations_repository()
-        self._upgrade_tasks.update_release_notes()
-        self._upgrade_tasks.upgrade_mysql()
-        self._upgrade_tasks.reapply_hotfixes()
+        autostart_script_name = "ibex_system_boot.bat"
 
-    def run_instrument_deploy_pre_stop(self):
-        """
-            Upgrade an instrument. Steps to do before ibex is stopped.
+        with Task("Put IBEX autostart into pc start menu", self._prompt) as task:
+            if task.do_step:
+                from_path = os.path.join(EPICS_PATH, autostart_script_name)
+                to_path = os.path.join(PC_START_MENU, "Programs", "Startup", autostart_script_name)
 
-            Current the server can not be started or stopped in this python script.
-        """
-        self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
-        self._upgrade_tasks.take_screenshots()
-        self._upgrade_tasks.stop_ibex_server()
+                # Remove old version if exists
+                if os.path.exists(to_path):
+                    try:
+                        os.remove(to_path)
+                    except (OSError, IOError):
+                        self._prompt.prompt_and_raise_if_not_yes("Please manually remove file at '{}'".format(to_path))
 
-    def run_truncate_database(self):
-        """
-        Truncate databases only
-        """
-        self._upgrade_tasks.backup_database()
-        self._upgrade_tasks.truncate_database()
+                try:
+                    shutil.copyfile(from_path, to_path)
+                except (OSError, IOError):
+                    self._prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
+                                                             .format(from_path, to_path))
+
+    def ensure_nicos_has_a_release_file(self):
+        with Task("Ensure NICOS has a release file (NICOS will fail if this is not done)", self._prompt) as task:
+            if task.do_step:
+                release_file_path = os.path.join(SCRIPT_SERVER_PATH, "nicos", "RELEASE-VERSION")
+                if os.path.exists(release_file_path):
+                    print("Release file already exists - not doing anything")
+                    return
+                else:
+                    file_contents = "0.0.0-000-000000\r\n"
+                    try:
+                        with open(release_file_path, "w") as f:
+                            f.write(file_contents)
+                        print("Release file added at {}")
+                    except (IOError, OSError):
+                        print("Error while writing release file - please manually add the file at {}. "
+                              "The contents of the file should be '{}'.".format(release_file_path, file_contents))

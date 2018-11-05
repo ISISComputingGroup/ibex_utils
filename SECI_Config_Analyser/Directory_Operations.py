@@ -81,7 +81,7 @@ class ReadConfigFiles(object):
 
     def _remove_duplicates(self, input_list):
         """
-        remove duplicates from list
+        remove duplicates from list, then sort alphabetically
         :param input_list: input list
         :return: output_list: original list with duplicates removed
         """
@@ -98,6 +98,10 @@ class ReadConfigFiles(object):
             if item not in encountered:
                 output_list.append(item)
                 encountered.add(item)
+
+        # sort alphabetically
+
+        output_list.sort()
 
         return output_list
 
