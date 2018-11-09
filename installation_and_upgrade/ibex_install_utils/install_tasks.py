@@ -754,7 +754,7 @@ class UpgradeTasks(object):
         """
         url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Installing-and-Upgrading-MySQL"
         if self.prompt.prompt("Please install MySQL following the instructions on the developer wiki. "
-                               "Open instructions in browser now?", ["Y", "N"], "N") == "Y":
+                              "Open instructions in browser now?", ["Y", "N"], "N") == "Y":
             subprocess.call("explorer {}".format(url))
         self.prompt.prompt_and_raise_if_not_yes("Confirm MySQL has been successfully installed.")
 

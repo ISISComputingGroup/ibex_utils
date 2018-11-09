@@ -3,7 +3,7 @@ Task infrastructure.
 """
 import traceback
 
-from ibex_install_utils.exceptions import UserStop
+from ibex_install_utils.exceptions import UserStop, ErrorInTask
 from ibex_install_utils.user_prompt import UserPrompt
 
 
@@ -27,7 +27,7 @@ def _run_task_to_completion(task_name, prompt, self_decorated_method, func, args
             print("... Skipping task")
             return True
         else:
-            raise UserStop()
+            raise ErrorInTask("Task aborted")
 
 
 def task(task_name, attribute_name="prompt"):
