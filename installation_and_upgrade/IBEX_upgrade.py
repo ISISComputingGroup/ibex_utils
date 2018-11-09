@@ -123,8 +123,8 @@ if __name__ == "__main__":
             upgrade_instrument.run_truncate_database()
 
     except UserStop:
-        print ("Stopping upgrade")
-        sys.exit(0)
+        print ("User stopped upgrade")
+        sys.exit(2)
     except ErrorInTask as error_in_run_ex:
         print("Error in upgrade: {0}".format(error_in_run_ex.message))
         sys.exit(1)

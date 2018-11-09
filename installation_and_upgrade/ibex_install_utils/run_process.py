@@ -4,6 +4,7 @@ Running processes infrastructure.
 
 import os
 import subprocess
+import traceback
 
 from ibex_install_utils.exceptions import ErrorInRun
 
@@ -70,6 +71,7 @@ class RunProcess(object):
                 print("    > {line}".format(line=line))
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
+            traceback.print_exc()
             raise ErrorInRun("Command failed with error: {0}".format(ex))
         except WindowsError as ex:
             if ex.errno == 2:
