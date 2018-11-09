@@ -15,7 +15,7 @@ import git
 
 
 from ibex_install_utils.ca_utils import CaWrapper
-from ibex_install_utils.exceptions import UserStop, ErrorInRun
+from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
@@ -512,20 +512,21 @@ class UpgradeTasks(object):
         if self.prompt.confirm_step(automatic_prompt):
             try:
                 repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, self._machine_name))
-                repo.git.checkout("master")
-                repo.git.pull()
-                repo.git.checkout(self._machine_name.upper())
-                repo.git.merge("master")
-                repo.git.push()
+                if repo.active_branch != self._machine_name and False:
+                    print("Git branch, '{}', is not the same as machine name ,'{}' ".format(
+                        repo.active_branch, self._machine_name))
+                    raise ErrorInTask("Git branch is not the same as machine name")
+                else:
+                    repo.remote().fetch()
+                    print("     merge: {}".format(repo.git.merge("origin/master")))
+                    print("      push: {}".format(repo.git.push()))
             except git.GitCommandError as e:
                 print("Error doing automatic merge, please perform the merge manually: {}".format(e))
                 self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
-        try:
-            RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
-        except Exception as e:
-            print("WARNING: There was an error running upgrade script:\n{}".format(e))
+
+        RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
 
     @task("Remove SECI shortcuts")
     def remove_seci_shortcuts(self):
@@ -551,8 +552,8 @@ class UpgradeTasks(object):
                 self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
             except (IOError, WindowsError) as e:
                 self.prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
-                                                         "'{}'. Please remove it manually and type 'Y' to "
-                                                         "confirm".format(SECI_ONE_PATH, e.message))
+                                                        "'{}'. Please remove it manually and type 'Y' to "
+                                                        "confirm".format(SECI_ONE_PATH, e.message))
 
     @task("Set up calibrations repository")
     def setup_calibrations_repository(self):
@@ -578,7 +579,7 @@ class UpgradeTasks(object):
             repo.git.pull()
         except git.GitCommandError:
             self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
-                                                     "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
+                                                    "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
 
     @task("Install java")
     def check_java_installation(self):
@@ -889,7 +890,7 @@ class UpgradeTasks(object):
         url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
               "Deployment-on-an-Instrument-Control-PC#set-up-motion-set-points"
         if self.prompt.prompt("Please configure the motion set points for this instrument. Instructions can be"
-                               " found on the developer wiki. Open instructions in browser now?",
+                              " found on the developer wiki. Open instructions in browser now?",
                               ["Y", "N"], "N") == "Y":
             subprocess.call("explorer {}".format(url))
         self.prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
@@ -901,7 +902,7 @@ class UpgradeTasks(object):
         """
         # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes("Add this instrument to the Nagios monitoring system. Talk to "
-                                                 "Freddie Akeroyd for help with this.")
+                                                "Freddie Akeroyd for help with this.")
 
     @task("Inform instrument scientists")
     def inform_instrument_scientists(self):
