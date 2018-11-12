@@ -512,7 +512,7 @@ class UpgradeTasks(object):
         if self.prompt.confirm_step(automatic_prompt):
             try:
                 repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, self._machine_name))
-                if repo.active_branch != self._machine_name:
+                if repo.active_branch.name != self._machine_name:
                     print("Git branch, '{}', is not the same as machine name ,'{}' ".format(
                         repo.active_branch, self._machine_name))
                     raise ErrorInTask("Git branch is not the same as machine name")
