@@ -28,7 +28,6 @@ BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
-SCRIPT_SERVER_PATH = os.path.join(EPICS_PATH, "ISIS", "scriptserver", "master")
 
 SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
@@ -102,7 +101,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_settings()
         self._upgrade_tasks.install_settings()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
 
@@ -118,7 +116,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
@@ -146,7 +143,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_seci_one()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
@@ -204,7 +200,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
-        self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
@@ -1058,22 +1053,3 @@ class UpgradeTasks(object):
             self.prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
                                                     .format(from_path, to_path))
 
-    @task("Ensure NICOS has a release file (NICOS will fail if this is not done)")
-    def ensure_nicos_has_a_release_file(self):
-        """
-        Nagios must have a release version file in the base otherwise it will not start. This ensures that if we are
-        working from a commit instead of a release that the file exists by creating it if it doesn't.
-        """
-        release_file_path = os.path.join(SCRIPT_SERVER_PATH, "nicos", "RELEASE-VERSION")
-        if os.path.exists(release_file_path):
-            print("Release file already exists - not doing anything")
-            return
-        else:
-            file_contents = "0.0.0-000-000000\r\n"
-            try:
-                with open(release_file_path, "w") as f:
-                    f.write(file_contents)
-                print("Release file added at {}")
-            except (IOError, OSError):
-                print("Error while writing release file - please manually add the file at {}. "
-                      "The contents of the file should be '{}'.".format(release_file_path, file_contents))
