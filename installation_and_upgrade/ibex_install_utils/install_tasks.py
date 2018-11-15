@@ -121,7 +121,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
 
     def run_instrument_tests(self):
         """
@@ -519,7 +518,7 @@ class UpgradeTasks(object):
                 else:
                     print("     fetch: {}".format(repo.git.fetch()))
                     print("     merge: {}".format(repo.git.merge("origin/master")))
-                    print("      push: {}".format(repo.git.push()))
+                    # no longer push let the instrument do that on start up if needed
             except git.GitCommandError as e:
                 print("Error doing automatic merge, please perform the merge manually: {}".format(e))
                 self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
