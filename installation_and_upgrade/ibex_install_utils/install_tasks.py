@@ -111,8 +111,8 @@ class UpgradeInstrument(object):
         Either install or upgrade the ibex client and server
         """
         self._upgrade_tasks.confirm(
-            "This script removes IBEX client and server and installs the latest build of both, without any extra steps."
-            " Proceed?")
+            "This script removes IBEX client and server and installs the latest build of both, and upgrade the "
+            "config/schema without any extra steps. Proceed?")
 
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
@@ -121,6 +121,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.ensure_nicos_has_a_release_file()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.create_journal_sql_schema()
 
     def run_instrument_tests(self):
         """
