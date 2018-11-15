@@ -111,8 +111,8 @@ class UpgradeInstrument(object):
         Either install or upgrade the ibex client and server
         """
         self._upgrade_tasks.confirm(
-            "This script removes IBEX client and server and installs the latest build of both, without any extra steps."
-            " Proceed?")
+            "This script removes IBEX client and server and installs the latest build of both, and upgrade the "
+            "config/schema without any extra steps. Proceed?")
 
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.stop_ibex_server()
@@ -519,7 +519,7 @@ class UpgradeTasks(object):
                 else:
                     print("     fetch: {}".format(repo.git.fetch()))
                     print("     merge: {}".format(repo.git.merge("origin/master")))
-                    print("      push: {}".format(repo.git.push()))
+                    # no longer push let the instrument do that on start up if needed
             except git.GitCommandError as e:
                 print("Error doing automatic merge, please perform the merge manually: {}".format(e))
                 self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
