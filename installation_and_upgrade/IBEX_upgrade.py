@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
 
     upgrade_types = ['training_update', 'instrument_install', 'instrument_test', 'instrument_deploy_pre_stop',
-                     'instrument_deploy_main', 'instrument_deploy_post_start', 'install_latest_incr', ,'install_latest', 'truncate_database']
+                     'instrument_deploy_main', 'instrument_deploy_post_start', 'install_latest_incr', 'install_latest', 'truncate_database']
     parser.add_argument('deployment_type', choices=upgrade_types,
                         help="What upgrade should be performed. ("
                              "training_update: update a training machine', "
