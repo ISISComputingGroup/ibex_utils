@@ -84,7 +84,7 @@ if __name__ == "__main__":
         print("You must specify BOTH the server and client directories.")
         sys.exit(2)
     elif args.kits_icp_dir is not None:
-        if not args.deployment_type in ['install_latest_incr','install_latest']:
+        if args.deployment_type not in ['install_latest_incr','install_latest']:
             print("When specifying kits_icp_dir you choose the install latest deployment type.")
             sys.exit(2)
         if args.deployment_type == 'install_latest_incr':
