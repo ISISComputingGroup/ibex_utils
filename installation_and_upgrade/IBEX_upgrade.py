@@ -90,7 +90,7 @@ if __name__ == "__main__":
         if args.deployment_type == 'install_latest_incr':
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", "EPICS_win7_x64")
         else:
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", "EPICS_win7_x64_CLEAN")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", "EPICS_CLEAN_win7_x64")
         server_dir = _get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
 
         client_build_dir = os.path.join(args.kits_icp_dir, "Client")
