@@ -556,7 +556,7 @@ class UpgradeTasks(object):
         Set up the calibration repository
         """
         if os.path.isdir(CALIBRATION_PATH):
-            if self.prompt("Calibrations directory already exists. Update calibrations repository?",
+            if self.prompt.prompt("Calibrations directory already exists. Update calibrations repository?",
                            ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
