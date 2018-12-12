@@ -556,13 +556,14 @@ class UpgradeTasks(object):
         Set up the calibration repository
         """
         if os.path.isdir(CALIBRATION_PATH):
-            if self.prompt("Calibrations directory already exists. Update calibrations repository?",
+            if self.prompt.prompt("Calibrations directory already exists. Update calibrations repository?",
                            ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
-            os.makedirs(CALIBRATION_PATH)
-            subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                            "C:\Instrument\Settings\config\common", cwd=CALIBRATION_PATH)
+            exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
+                            "C:\Instrument\Settings\config\common")
+            if exit_code is not 0:
+                raise ErrorInRun("Failed to set up common calibration directory.")
 
     @task("Updating calibrations repository")
     def update_calibrations_repository(self):
