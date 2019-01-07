@@ -49,8 +49,14 @@ class IbexTicket:
             self.Number = int(data[0][1:])
             self.Title = data[1]
             self.Author = data[2]
-            self.Labels = data[3]
+            labels = data[3]
+            labels = labels.replace("[", "")
+            labels = labels.replace("]", "")
+            labels = labels.replace("'", "")
+            labels = labels.replace(",", "")
+            self.Labels = labels.split()
             self.Proposer = data[4][:-1]
+            self.priority_decision(from_file)
             # See if there is already an estimate for the ticket
             self.get_estimate()
         else:
@@ -73,9 +79,10 @@ class IbexTicket:
 
     def get_estimate(self):
         # Look for an estimate in the labels and apply a value if appropriate
-        for label in self.Labels:
-            if is_number(label):
-                self.Estimate = float(label)
+        for labels in self.Labels:
+            if is_number(labels):
+                self.Estimate = float(labels)
+                self.Labels.remove(labels)
 
     def print_ticket(self):
         # So that you can read it in a console window
@@ -88,11 +95,13 @@ class IbexTicket:
 
     def file_line(self):
         # Print the bare minimum to the file so that development on the data can continue
-        return "#%d;%s;%s;%s;%s\r\n" % (self.Number, self.Title, self.Author, self.Labels, self.Proposer)
+        return "#%d;%s;%s;%s;%s\r" % (self.Number, self.Title, self.Author, self.Labels, self.Proposer)
 
-    def priority_decision(self):
+    def priority_decision(self, from_file=False):
         # Decide if this should be prioritised
         # If it is ready, we ought to consider it
+        if not self.Labels:
+            return
         if "ready" in self.Labels:
             # If it is rework we don't want to consider it, so if it ready, rework should not be an associated label
             if "rework" not in self.Labels:
@@ -100,22 +109,23 @@ class IbexTicket:
                 self.PrioritiseMe = True
         else:
             self.PrioritiseMe = True
-            # Get the events to find the most recent proposer
-            url = BaseURL + "/" + str(self.Number) + "/events"
-            contents=get_web_content_as_json(url)
-            proposers = {}
-            # Get the list of proposers from the events
-            for event in contents:
-                if event["event"] == "labeled":
-                    if event["label"]["name"] == "proposal":
-                        proposers[event["created_at"]] = event["actor"]["login"]
-            # If there is only one proposer, use that proposer ID, otehrwise sort the proposal creation times,
-            # and use the proposer from the last one in the list
-            if len(proposers) == 1:
-                self.Proposer = proposers.values()[0]
+            if from_file:
+                self.Proposer = ""
             else:
-                times = sorted(proposers.keys())
-                self.Proposer = proposers[times[-1]]
+                # Get the events to find the most recent proposer
+                url = BaseURL + "/" + str(self.Number) + "/events"
+                contents=get_web_content_as_json(url)
+                proposers = {}
+                # Get the list of proposers from the events
+                for event in contents:
+                    if event["event"] == "labeled":
+                        if event["label"]["name"] == "proposal":
+                            proposers[event["created_at"]] = event["actor"]["login"]
+                # If there is only one proposer, use that proposer ID, otehrwise sort the proposal creation times,
+                # and use the proposer from the last one in the list
+                if proposers:
+                    times = sorted(proposers.keys())
+                    self.Proposer = proposers[times[-1]]
 
 
 def get_open_tickets():
@@ -193,7 +203,8 @@ def add_info(document, printable, alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.LE
 
 # Use one or the other of these lines, depending on what you are allowed to do, and what you have available
 # loadText("out.txt")
-get_open_tickets()
+# get_open_tickets()
+load_text("toformat.txt")
 
 # Just in case you want to look at it
 # for Ticket in Tickets:
@@ -213,11 +224,26 @@ section.page_height = new_height
 # Should consider adding the other labels as well...
 for Ticket in Tickets:
     if Ticket.PrioritiseMe:
-        add_info(document,str(Ticket.Estimate),alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.RIGHT)
-        add_info(document, Ticket.Title, point=40)
-        add_info(document,"#" + str(Ticket.Number),point=96,bold=True)
-        add_info(document,"Author: " + Ticket.Author, point=20)
-        add_info(document,"Proposed by: " + Ticket.Proposer, italic=True, point = 20)
+        add_info(document,str(Ticket.Estimate),alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.RIGHT, point=36)
+        num_size = 96
+        title_size = 48
+        if len(Ticket.Title) > 35:
+            num_size = 84
+            title_size = 32
+        add_info(document, "#" + str(Ticket.Number), point=num_size, bold=True)
+        add_info(document, Ticket.Title, point=title_size)
+        number_of_rows = max(2,len(Ticket.Labels))
+        table = document.add_table(rows=number_of_rows, cols=2)
+        people_cells = table.columns[0].cells
+        add_info(people_cells[0],"Author: " + Ticket.Author, point=20)
+        add_info(people_cells[1],"Proposed by: " + Ticket.Proposer, italic=True, point=14)
+        label_cells = table.columns[1].cells
+        if Ticket.Labels:
+            label_index = 0
+            for label in Ticket.Labels:
+                if not is_number(label):
+                    add_info(label_cells[label_index],label, point=14)
+                    label_index = label_index + 1
         document.add_page_break()
 
 # Save the document so that you can load and print it
