@@ -833,7 +833,7 @@ class UpgradeTasks(object):
         repo.git.fetch()
         status = repo.git.status()
         print("Current repository status is: {}".format(status))
-        if "up-to-date with 'origin/{}".format(self._get_machine_name()) in status:
+        if "up to date with 'origin/{}".format(self._get_machine_name()) in status:
             print("Configurations updating correctly")
         else:
             self.prompt.prompt_and_raise_if_not_yes(
