@@ -1039,7 +1039,7 @@ class UpgradeTasks(object):
         autostart_script_name = "ibex_system_boot.bat"
 
         from_path = os.path.join(EPICS_PATH, autostart_script_name)
-        to_path = os.path.join(PC_START_MENU, "Programs", "Startup", autostart_script_name)
+        to_path = os.path.join(USER_START_MENU, "Programs", "Startup", autostart_script_name)
 
         # Remove old version if exists
         if os.path.exists(to_path):
