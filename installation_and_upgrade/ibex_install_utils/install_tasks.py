@@ -10,6 +10,8 @@ import shutil
 import socket
 import subprocess
 from datetime import date, datetime
+from os.path import isfile, join
+
 import psutil
 import git
 
@@ -43,6 +45,9 @@ SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resou
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
+THIRD_PARTY_INSTALLERS_REL_DIR = "..\\..\\third_party_installers"
+THIRD_PARTY_LATEST = os.path.join(THIRD_PARTY_INSTALLERS_REL_DIR, "latest_versions")
+
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
 MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
 PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
@@ -59,6 +64,9 @@ AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI
 
 STAGE_DELETED = os.path.join(r"\\isis", "inst$", "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
+
+GIT_INSTALL_ARGS = ["/SILENT", "/CLOSEAPPLICATIONS"]
+JRE_INSTALL_ARGS = ["/s"]
 
 RAM_MIN = 8e+9
 FREE_DISK_MIN = 3e+10
@@ -89,6 +97,12 @@ class UpgradeInstrument(object):
         :return: True if utils should be installed, False otherwise
         """
         return not os.path.exists(LABVIEW_DAE_DIR)
+
+    def liam_test(self):
+        """
+        Run just the useful parts for the updating improvements
+        """
+        self._upgrade_tasks.copy_third_party_installs()
 
     def run_test_update(self):
         """
@@ -137,7 +151,6 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.check_resources()
 
-        self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_seci_one()
@@ -193,7 +206,7 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
-        self._upgrade_tasks.check_java_installation()
+        self._upgrade_tasks.copy_third_party_installs()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
@@ -576,25 +589,28 @@ class UpgradeTasks(object):
             self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
                                                     "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
 
-    @task("Install java")
-    def check_java_installation(self):
+    @task("Copy third party installs")
+    def copy_third_party_installs(self):
         """
-        Checks Java installation
+        Reminds the user to copy the third party installs from the share
         """
-        java_url = "/<Public Share>/third_party_installers/"
-        try:
-            subprocess.call(["java", "-version"])
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Confirm that the java version above is the desired version or that you have "
-                "upgraded to the desired 64-bit version from {}".format(java_url))
-        except (subprocess.CalledProcessError, WindowsError):
-            self.prompt.prompt_and_raise_if_not_yes(
-                    "No installation of Java found on this machine. You can find an installer for the java"
-                    "version used in the current release in {}.".format(java_url))
-
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Is auto-update turned off? This can be checked from the Java control panel in "
-            "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
+        print("This is a new feature. If you find problems, add them to #3492, or open a new one and reference #3492")
+        # enumerate files in directory
+        installers = [f for f in os.listdir(THIRD_PARTY_LATEST) if isfile(join(THIRD_PARTY_LATEST, f))]
+        # for each file
+        for installer in installers:
+            if "Git" in installer:
+                RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer, prog_args=GIT_INSTALL_ARGS).run()
+                # TODO update git config
+            elif "jre" in installer:
+                # TODO uninstall old java and install latest version
+                RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer, prog_args=JRE_INSTALL_ARGS).run(shell_option=True)
+            elif "Npadm" in installer:
+                if os.path.isdir("C:\\Program Files\\NPortAdminSuite"):
+                    print("NPort already installed")
+                else:
+                    # Note that there is apparently no way to do a quiet install of NPort
+                    RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer).run(shell_option=True)
 
     @task("Configure COM ports")
     def configure_com_ports(self):

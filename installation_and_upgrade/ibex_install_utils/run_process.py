@@ -36,7 +36,7 @@ class RunProcess(object):
         else:
             self._full_path_to_process_file = os.path.join(executable_directory, executable_file)
 
-    def run(self):
+    def run(self, shell_option=False):
         """
         Run the process
 
@@ -51,21 +51,24 @@ class RunProcess(object):
                 command_line.extend(self._prog_args)
 
             if not self._capture_pipes:
-                error_code = subprocess.call(command_line, cwd=self._working_dir)
+                error_code = subprocess.call(command_line, cwd=self._working_dir, shell=shell_option)
                 if error_code != 0:
                     raise ErrorInRun("Command failed with error code: {0}".format(error_code))
                 output_lines = ""
             elif self._press_any_key:
                 output = subprocess.Popen(command_line, cwd=self._working_dir,
                                           stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+                                          stderr=subprocess.STDOUT,
+                                          stdin=subprocess.PIPE,
+                                          shell=shell_option)
                 output_lines, err = output.communicate(" ")
             else:
                 output_lines = subprocess.check_output(
                     command_line,
                     cwd=self._working_dir,
                     stderr=subprocess.STDOUT,
-                    stdin=subprocess.PIPE)
+                    stdin=subprocess.PIPE,
+                    shell=shell_option)
 
             for line in output_lines.splitlines():
                 print("    > {line}".format(line=line))
