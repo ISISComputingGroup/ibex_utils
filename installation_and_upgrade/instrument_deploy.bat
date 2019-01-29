@@ -26,5 +26,3 @@ start /wait cmd /c "%START_IBEX%"
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_post_start
 IF ERRORLEVEL 1 EXIT /b %errorlevel%
-
-python IBEX_upgrade.py --release_dir \\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases --confirm_step liam_test
