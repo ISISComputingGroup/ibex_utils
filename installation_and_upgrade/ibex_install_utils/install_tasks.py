@@ -98,12 +98,6 @@ class UpgradeInstrument(object):
         """
         return not os.path.exists(LABVIEW_DAE_DIR)
 
-    def liam_test(self):
-        """
-        Run just the useful parts for the updating improvements
-        """
-        self._upgrade_tasks.copy_third_party_installs()
-
     def run_test_update(self):
         """
         Run a complete test upgrade on the current system
@@ -207,6 +201,7 @@ class UpgradeInstrument(object):
             Current the server can not be started or stopped in this python script.
         """
         self._upgrade_tasks.copy_third_party_installs()
+        self._upgrade_tasks.configure_git()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
@@ -465,15 +460,7 @@ class UpgradeTasks(object):
 
         """
         inst_name = self._machine_name
-
-        subprocess.call("git config --global core.autocrlf true")
-        subprocess.call("git config --global credential.helper wincred")
-        subprocess.call("git config --global user.name spudulike")
-        set_user_email = "git config --global user.email spudulike@{}.isis.cclrc.ac.uk"
-        subprocess.call(set_user_email.format(inst_name.lower()))
-
-        if not os.path.exists(SETTINGS_CONFIG_PATH):
-            os.makedirs(SETTINGS_CONFIG_PATH)
+        self.git_configs(inst_name)
 
         subprocess.call(
             "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
@@ -611,6 +598,25 @@ class UpgradeTasks(object):
                 else:
                     # Note that there is apparently no way to do a quiet install of NPort
                     RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer).run(shell_option=True)
+
+    def git_configs(self, machine_name):
+        inst_name = machine_name
+
+        subprocess.call("git config --global core.autocrlf true")
+        subprocess.call("git config --global credential.helper wincred")
+        subprocess.call("git config --global core.autocrlf input")
+        subprocess.call("git config --global push.recurseSubmodules check")
+        subprocess.call("git config --global user.name spudulike")
+        set_user_email = "git config --global user.email spudulike@{}.isis.cclrc.ac.uk"
+        subprocess.call(set_user_email.format(inst_name.lower()))
+
+        if not os.path.exists(SETTINGS_CONFIG_PATH):
+            os.makedirs(SETTINGS_CONFIG_PATH)
+
+    @task("Configure git")
+    def configure_git(self):
+        self.git_configs(self._machine_name)
+
 
     @task("Configure COM ports")
     def configure_com_ports(self):
