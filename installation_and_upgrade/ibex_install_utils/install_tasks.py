@@ -11,9 +11,9 @@ import socket
 import subprocess
 from datetime import date, datetime
 from os.path import isfile, join
+from time import sleep
 
 import psutil
-import git
 
 
 from ibex_install_utils.ca_utils import CaWrapper
@@ -45,7 +45,7 @@ SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resou
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
-THIRD_PARTY_INSTALLERS_REL_DIR = "..\\..\\third_party_installers"
+THIRD_PARTY_INSTALLERS_REL_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "third_party_installers")
 THIRD_PARTY_LATEST = os.path.join(THIRD_PARTY_INSTALLERS_REL_DIR, "latest_versions")
 
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
@@ -65,7 +65,10 @@ AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI
 STAGE_DELETED = os.path.join(r"\\isis", "inst$", "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
 
-GIT_INSTALL_ARGS = ["/SILENT", "/CLOSEAPPLICATIONS"]
+GIT_INSTALL_DIR = os.path.join("C:\\", "Users", "spudulike", "AppData", "Local", "Programs", "Git", "cmd")
+GIT_EXE = os.path.join(GIT_INSTALL_DIR, "git.exe")
+os.environ["GIT_PYTHON_GIT_EXECUTABLE"] = GIT_EXE
+GIT_INSTALL_ARGS = ["/SILENT", "/CLOSEAPPLICATIONS", '/PATH="{}"'.format(GIT_INSTALL_DIR)]
 JRE_INSTALL_ARGS = ["/s"]
 
 RAM_MIN = 8e+9
@@ -463,25 +466,25 @@ class UpgradeTasks(object):
         self.git_configs(inst_name)
 
         subprocess.call(
-            "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
-                inst_name), cwd=SETTINGS_CONFIG_PATH)
+            "{} clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+                GIT_EXE, inst_name), cwd=SETTINGS_CONFIG_PATH)
 
         inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
-        subprocess.call("git pull", cwd=inst_config_path)
+        subprocess.call("{} pull".format(GIT_EXE), cwd=inst_config_path)
 
-        branch_exists = subprocess.call("git checkout {}".format(inst_name), cwd=inst_config_path) == 0
+        branch_exists = subprocess.call("{} checkout {}".format(GIT_EXE, inst_name), cwd=inst_config_path) == 0
         if not branch_exists:
-            subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)
+            subprocess.call("{} checkout -b {}".format(GIT_EXE, inst_name), cwd=inst_config_path)
 
         inst_scripts_path = os.path.join(inst_config_path, "Python")
         if not os.path.exists(os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower()))):
             try:
                 os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
                           os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower())))
-                subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
-                subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
-                subprocess.call('git commit -m"create initial python"'.format(inst_name), cwd=inst_config_path)
-                subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+                subprocess.call("{} add init_{}.py".format(GIT_EXE, inst_name.lower()), cwd=inst_scripts_path)
+                subprocess.call("{} rm init_inst_name.py".format(GIT_EXE), cwd=inst_scripts_path)
+                subprocess.call('{} commit -m"create initial python"'.format(GIT_EXE, inst_name), cwd=inst_config_path)
+                subprocess.call("{} push --set-upstream origin {}".format(GIT_EXE, inst_name), cwd=inst_config_path)
             except Exception as e:
                 self.prompt.prompt_and_raise_if_not_yes(
                     "Something went wrong setting up the configurations repository. Please resolve manually, "
@@ -504,6 +507,7 @@ class UpgradeTasks(object):
                         "    6. git push\n"
         automatic_prompt = "Attempt automatic configuration merge?"
         if self.prompt.confirm_step(automatic_prompt):
+            import git
             try:
                 repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, self._machine_name))
                 if repo.active_branch.name != self._machine_name:
@@ -559,8 +563,8 @@ class UpgradeTasks(object):
                            ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
-            exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                            "C:\Instrument\Settings\config\common")
+            exit_code = subprocess.call("{} clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
+                            "C:\Instrument\Settings\config\common".format(GIT_EXE))
             if exit_code is not 0:
                 raise ErrorInRun("Failed to set up common calibration directory.")
 
@@ -569,6 +573,7 @@ class UpgradeTasks(object):
         """
         Update the calibration repository
         """
+        import git
         try:
             repo = git.Repo(CALIBRATION_PATH)
             repo.git.pull()
@@ -588,12 +593,13 @@ class UpgradeTasks(object):
         for installer in installers:
             if "Git" in installer:
                 RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer, prog_args=GIT_INSTALL_ARGS).run()
-                # TODO update git config
+                sleep(10)  # For installer to fully finish
+                self.configure_git()
             elif "jre" in installer:
                 # TODO uninstall old java and install latest version
                 RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer, prog_args=JRE_INSTALL_ARGS).run(shell_option=True)
             elif "Npadm" in installer:
-                if os.path.isdir("C:\\Program Files\\NPortAdminSuite"):
+                if os.path.isdir(os.path.join("C:\\", "Program Files", "NPortAdminSuite")):
                     print("NPort already installed")
                 else:
                     # Note that there is apparently no way to do a quiet install of NPort
@@ -602,13 +608,13 @@ class UpgradeTasks(object):
     def git_configs(self, machine_name):
         inst_name = machine_name
 
-        subprocess.call("git config --global core.autocrlf true")
-        subprocess.call("git config --global credential.helper wincred")
-        subprocess.call("git config --global core.autocrlf input")
-        subprocess.call("git config --global push.recurseSubmodules check")
-        subprocess.call("git config --global user.name spudulike")
-        set_user_email = "git config --global user.email spudulike@{}.isis.cclrc.ac.uk"
-        subprocess.call(set_user_email.format(inst_name.lower()))
+        subprocess.call("{} config --global core.autocrlf true".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global credential.helper wincred".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global core.autocrlf input".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global push.recurseSubmodules check".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global user.name spudulike".format(GIT_EXE), shell=True)
+        set_user_email = "{} config --global user.email spudulike@{}.isis.cclrc.ac.uk"
+        subprocess.call(set_user_email.format(GIT_EXE, inst_name.lower()), shell=True)
 
         if not os.path.exists(SETTINGS_CONFIG_PATH):
             os.makedirs(SETTINGS_CONFIG_PATH)
@@ -844,6 +850,7 @@ class UpgradeTasks(object):
         """
         Test that the server works
         """
+        import git
         server_release_tests_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
                                    "Server-Release-Tests"
 
