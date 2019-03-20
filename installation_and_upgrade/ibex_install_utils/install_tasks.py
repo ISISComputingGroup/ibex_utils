@@ -15,8 +15,9 @@ from time import sleep
 
 import psutil
 import git
+import six
 
-from ibex_install_utils.admin_runner import AdminRunner
+from ibex_install_utils.admin_runner import AdminRunner, AdminCommandBuilder
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
 from ibex_install_utils.file_utils import FileUtils
@@ -145,17 +146,17 @@ class UpgradeInstrument(object):
                                     "on a new instrument. Proceed?")
 
         self._upgrade_tasks.check_resources()
-
         self._upgrade_tasks.check_java_installation()
-        self._upgrade_tasks.install_mysql()
+
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_seci_one()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_mysql()
+        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.setup_calibrations_repository()
@@ -209,13 +210,14 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_mysql()
+        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
-        self._upgrade_tasks.upgrade_mysql()
         self._upgrade_tasks.reapply_hotfixes()
 
     def run_instrument_deploy_pre_stop(self):
@@ -237,6 +239,10 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
+
+    def run_force_upgrade_mysql(self):
+        self._upgrade_tasks.install_mysql(force=True)
+        self._upgrade_tasks.configure_mysql()
 
 
 class UpgradeTasks(object):
@@ -740,14 +746,6 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
-    @task("Install MySQL")
-    def install_mysql(self):
-        """
-        Prompt user to install MySQL and opens browser with instructions.
-
-        """
-        self._install_latest_mysql8()
-
     @task("Configure MySQL")
     def configure_mysql(self):
         """
@@ -772,35 +770,51 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
                                                 "Are you sure you want to continue?")
 
-        admin_runner = AdminRunner()
-        admin_runner.run_bat("sc stop MYSQL80")
-        admin_runner.run_bat("sc delete MYSQL80")
+        admin_commands = AdminCommandBuilder()
+        admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
+        admin_commands.add_command("sc", "delete MYSQL80", expected_return_val=None)
+        admin_commands.run_all()
+
         sleep(5)  # Time for service to stop
-        shutil.rmtree(MYSQL8_INSTALL_DIR)
-        shutil.rmtree(MYSQL_FILES_DIR)
+
+        if os.path.exists(MYSQL8_INSTALL_DIR):
+            shutil.rmtree(MYSQL8_INSTALL_DIR)
+
+        if os.path.exists(MYSQL_FILES_DIR):
+            shutil.rmtree(MYSQL_FILES_DIR)
 
     def _install_latest_mysql8(self):
         os.makedirs(MYSQL8_INSTALL_DIR)
 
+        mysql_unzip_temp = os.path.join(APPS_BASE_DIR, "temp-mysql-unzip")
+
         with closing(zipfile.ZipFile(MYSQL_ZIP)) as f:
-            f.extractall(MYSQL8_INSTALL_DIR)
+            f.extractall(mysql_unzip_temp)
+
+        mysql_unzip_temp_release = os.path.join(mysql_unzip_temp, "mysql-{}-winx64".format(MYSQL_LATEST_VERSION))
+        for item in os.listdir(mysql_unzip_temp_release):
+            shutil.move(os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR)
+
+        shutil.rmtree(mysql_unzip_temp)
 
         os.makedirs(os.path.join(MYSQL_FILES_DIR, "data"))
 
         mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
-        admin_runner = AdminRunner()
-        admin_runner.run_bat('{} --datadir=\\"{}\\" --initialize-insecure --console --log-error-verbosity=3'
-                             .format(mysqld, os.path.join(MYSQL_FILES_DIR, "data")))
+        admin_commands = AdminCommandBuilder()
 
-        admin_runner.run_bat('{} --install MYSQL80 --datadir=\\"{}\\"'
-                             .format(mysqld, os.path.join(MYSQL_FILES_DIR, "data")))
+        admin_commands.add_command(mysqld, '--datadir="{}" --initialize-insecure --console --log-error-verbosity=3'
+                                   .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
-        sleep(1)  # Time for install to be ready
+        # Wait for initialize since admin runner can't wait for completion. Maybe we can detect completion another way?
+        admin_commands.add_command(mysqld, '--install MYSQL80 --datadir="{}"'
+                                   .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
-        admin_runner.run_bat("sc start MYSQL80")
-        admin_runner.run_bat("sc config MYSQL80 start=auto")
+        admin_commands.add_command("sc", "start MYSQL80")
+        admin_commands.add_command("sc", "config MYSQL80 start=auto")
+
+        admin_commands.run_all()
 
         sleep(5)  # Time for service to start
 
@@ -811,8 +825,8 @@ class UpgradeTasks(object):
                               'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
                               .format(mysql, sql_password))
 
-    @task("Upgrade MySQL")
-    def upgrade_mysql(self):
+    @task("Install latest MySQL")
+    def install_mysql(self, force=False):
         """
         Upgrade mysql step
         """
@@ -825,11 +839,11 @@ class UpgradeTasks(object):
 
         if os.path.exists(mysql_8_exe):
             version = subprocess.check_output("{} --version".format(mysql_8_exe))
-            if MYSQL_LATEST_VERSION in version:
+            if MYSQL_LATEST_VERSION in version and not force:
                 print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
                 return
-            else:
-                self._remove_old_versions_of_mysql8()
+
+            self._remove_old_versions_of_mysql8()
 
         self._install_latest_mysql8()
 
