@@ -4,10 +4,10 @@ call "%~dp0\define_latest_genie_python.bat"
 
 git --version
 
-IF ERRORLEVEL 1 (
-    echo No installation of Git found on machine. Please download Git from https://git-scm.com/downloads before proceeding.
-    EXIT /b %errorlevel%
-)
+REM IF ERRORLEVEL 1 (
+REM     echo No installation of Git found on machine. Please download Git from https://git-scm.com/downloads before proceeding.
+REM     EXIT /b %errorlevel%
+REM )
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"

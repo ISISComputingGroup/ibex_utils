@@ -10,8 +10,10 @@ import shutil
 import socket
 import subprocess
 from datetime import date, datetime
+from os.path import isfile, join
+from time import sleep
+
 import psutil
-import git
 
 
 from ibex_install_utils.ca_utils import CaWrapper
@@ -43,6 +45,9 @@ SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resou
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
+THIRD_PARTY_INSTALLERS_REL_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "third_party_installers")
+THIRD_PARTY_LATEST = os.path.join(THIRD_PARTY_INSTALLERS_REL_DIR, "latest_versions")
+
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
 MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
 PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
@@ -59,6 +64,12 @@ AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI
 
 STAGE_DELETED = os.path.join(r"\\isis", "inst$", "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
+
+GIT_INSTALL_DIR = os.path.join("C:\\", "Users", "spudulike", "AppData", "Local", "Programs", "Git", "cmd")
+GIT_EXE = os.path.join(GIT_INSTALL_DIR, "git.exe")
+os.environ["GIT_PYTHON_GIT_EXECUTABLE"] = GIT_EXE
+GIT_INSTALL_ARGS = ["/SILENT", "/CLOSEAPPLICATIONS", '/PATH="{}"'.format(GIT_INSTALL_DIR)]
+JRE_INSTALL_ARGS = ["/s"]
 
 RAM_MIN = 8e+9
 FREE_DISK_MIN = 3e+10
@@ -137,7 +148,6 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.check_resources()
 
-        self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_seci_one()
@@ -158,7 +168,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.configure_motion()
         self._upgrade_tasks.add_nagios_checks()
         self._upgrade_tasks.update_instlist()
-        self._upgrade_tasks.update_web_dashboard()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
 
     def run_instrument_deploy(self):
@@ -194,7 +203,8 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
-        self._upgrade_tasks.check_java_installation()
+        self._upgrade_tasks.copy_third_party_installs()
+        self._upgrade_tasks.configure_git()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
@@ -453,36 +463,28 @@ class UpgradeTasks(object):
 
         """
         inst_name = self._machine_name
-
-        subprocess.call("git config --global core.autocrlf true")
-        subprocess.call("git config --global credential.helper wincred")
-        subprocess.call("git config --global user.name spudulike")
-        set_user_email = "git config --global user.email spudulike@{}.isis.cclrc.ac.uk"
-        subprocess.call(set_user_email.format(inst_name.lower()))
-
-        if not os.path.exists(SETTINGS_CONFIG_PATH):
-            os.makedirs(SETTINGS_CONFIG_PATH)
+        self.git_configs(inst_name)
 
         subprocess.call(
-            "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
-                inst_name), cwd=SETTINGS_CONFIG_PATH)
+            "{} clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+                GIT_EXE, inst_name), cwd=SETTINGS_CONFIG_PATH)
 
         inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
-        subprocess.call("git pull", cwd=inst_config_path)
+        subprocess.call("{} pull".format(GIT_EXE), cwd=inst_config_path)
 
-        branch_exists = subprocess.call("git checkout {}".format(inst_name), cwd=inst_config_path) == 0
+        branch_exists = subprocess.call("{} checkout {}".format(GIT_EXE, inst_name), cwd=inst_config_path) == 0
         if not branch_exists:
-            subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)
+            subprocess.call("{} checkout -b {}".format(GIT_EXE, inst_name), cwd=inst_config_path)
 
         inst_scripts_path = os.path.join(inst_config_path, "Python")
         if not os.path.exists(os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower()))):
             try:
                 os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
                           os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower())))
-                subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
-                subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
-                subprocess.call('git commit -m"create initial python"'.format(inst_name), cwd=inst_config_path)
-                subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+                subprocess.call("{} add init_{}.py".format(GIT_EXE, inst_name.lower()), cwd=inst_scripts_path)
+                subprocess.call("{} rm init_inst_name.py".format(GIT_EXE), cwd=inst_scripts_path)
+                subprocess.call('{} commit -m"create initial python"'.format(GIT_EXE, inst_name), cwd=inst_config_path)
+                subprocess.call("{} push --set-upstream origin {}".format(GIT_EXE, inst_name), cwd=inst_config_path)
             except Exception as e:
                 self.prompt.prompt_and_raise_if_not_yes(
                     "Something went wrong setting up the configurations repository. Please resolve manually, "
@@ -505,6 +507,7 @@ class UpgradeTasks(object):
                         "    6. git push\n"
         automatic_prompt = "Attempt automatic configuration merge?"
         if self.prompt.confirm_step(automatic_prompt):
+            import git
             try:
                 repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, self._machine_name))
                 if repo.active_branch.name != self._machine_name:
@@ -560,8 +563,8 @@ class UpgradeTasks(object):
                            ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
-            exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                            "C:\Instrument\Settings\config\common")
+            exit_code = subprocess.call("{} clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
+                            "C:\Instrument\Settings\config\common".format(GIT_EXE))
             if exit_code is not 0:
                 raise ErrorInRun("Failed to set up common calibration directory.")
 
@@ -570,6 +573,7 @@ class UpgradeTasks(object):
         """
         Update the calibration repository
         """
+        import git
         try:
             repo = git.Repo(CALIBRATION_PATH)
             repo.git.pull()
@@ -577,25 +581,48 @@ class UpgradeTasks(object):
             self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
                                                     "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
 
-    @task("Install java")
-    def check_java_installation(self):
+    @task("Copy third party installs")
+    def copy_third_party_installs(self):
         """
-        Checks Java installation
+        Reminds the user to copy the third party installs from the share
         """
-        java_url = "/<Public Share>/third_party_installers/"
-        try:
-            subprocess.call(["java", "-version"])
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Confirm that the java version above is the desired version or that you have "
-                "upgraded to the desired 64-bit version from {}".format(java_url))
-        except (subprocess.CalledProcessError, WindowsError):
-            self.prompt.prompt_and_raise_if_not_yes(
-                    "No installation of Java found on this machine. You can find an installer for the java"
-                    "version used in the current release in {}.".format(java_url))
+        print("This is a new feature. If you find problems, add them to #3492, or open a new one and reference #3492")
+        # enumerate files in directory
+        installers = [f for f in os.listdir(THIRD_PARTY_LATEST) if isfile(join(THIRD_PARTY_LATEST, f))]
+        # for each file
+        for installer in installers:
+            if "Git" in installer:
+                RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer, prog_args=GIT_INSTALL_ARGS).run()
+                sleep(10)  # For installer to fully finish
+                self.configure_git()
+            elif "jre" in installer:
+                # TODO uninstall old java and install latest version
+                RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer, prog_args=JRE_INSTALL_ARGS).run(shell_option=True)
+            elif "Npadm" in installer:
+                if os.path.isdir(os.path.join("C:\\", "Program Files", "NPortAdminSuite")):
+                    print("NPort already installed")
+                else:
+                    # Note that there is apparently no way to do a quiet install of NPort
+                    RunProcess(working_dir=THIRD_PARTY_LATEST, executable_file=installer).run(shell_option=True)
 
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Is auto-update turned off? This can be checked from the Java control panel in "
-            "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
+    def git_configs(self, machine_name):
+        inst_name = machine_name
+
+        subprocess.call("{} config --global core.autocrlf true".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global credential.helper wincred".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global core.autocrlf input".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global push.recurseSubmodules check".format(GIT_EXE), shell=True)
+        subprocess.call("{} config --global user.name spudulike".format(GIT_EXE), shell=True)
+        set_user_email = "{} config --global user.email spudulike@{}.isis.cclrc.ac.uk"
+        subprocess.call(set_user_email.format(GIT_EXE, inst_name.lower()), shell=True)
+
+        if not os.path.exists(SETTINGS_CONFIG_PATH):
+            os.makedirs(SETTINGS_CONFIG_PATH)
+
+    @task("Configure git")
+    def configure_git(self):
+        self.git_configs(self._machine_name)
+
 
     @task("Configure COM ports")
     def configure_com_ports(self):
@@ -823,6 +850,7 @@ class UpgradeTasks(object):
         """
         Test that the server works
         """
+        import git
         server_release_tests_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
                                    "Server-Release-Tests"
 
@@ -834,7 +862,7 @@ class UpgradeTasks(object):
         repo.git.fetch()
         status = repo.git.status()
         print("Current repository status is: {}".format(status))
-        if "up-to-date with 'origin/{}".format(self._get_machine_name()) in status:
+        if "up to date with 'origin/{}".format(self._get_machine_name()) in status:
             print("Configurations updating correctly")
         else:
             self.prompt.prompt_and_raise_if_not_yes(
@@ -853,22 +881,6 @@ class UpgradeTasks(object):
         """
         self.prompt.prompt_and_raise_if_not_yes(
             "Add the host name of the instrument to the list saved in the CS:INSTLIST PV")
-
-    @task("Update web dashboard")
-    def update_web_dashboard(self):
-        """
-        Prompt user to add the instrument to the web dashboard
-        """
-        redirect_page = os.path.join("C:", "inetpub", "wwwroot", "DataWeb", "Dashboards", "redirect.html")
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Add the host name of the instrument to NDX_INSTS or ALL_INSTS in webserver.py in the JSON_bourne "
-            "repository.")
-        self.prompt.prompt_and_raise_if_not_yes(
-            "On NDAEXTWEB1, pull the updated code and add a link to the instrument dashboard on the main "
-            "dataweb page under {}".format(redirect_page))
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Restart JSON_bourne on NDAEXTWEB1 when appropriate. "
-            "(WARNING: This will kill all existing sessions!)")
 
     @task("Install wiring tables")
     def install_wiring_tables(self):
@@ -1039,7 +1051,7 @@ class UpgradeTasks(object):
         autostart_script_name = "ibex_system_boot.bat"
 
         from_path = os.path.join(EPICS_PATH, autostart_script_name)
-        to_path = os.path.join(PC_START_MENU, "Programs", "Startup", autostart_script_name)
+        to_path = os.path.join(USER_START_MENU, "Programs", "Startup", autostart_script_name)
 
         # Remove old version if exists
         if os.path.exists(to_path):
