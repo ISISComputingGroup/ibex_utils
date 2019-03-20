@@ -761,10 +761,19 @@ class UpgradeTasks(object):
                                                     "Please do this manually confirm when complete."
                                                     .format(my_ini_file, MYSQL8_INSTALL_DIR, e))
 
+        # Restart to pick up new my.ini
+        admin_commands = AdminCommandBuilder()
+        admin_commands.add_command("sc", "stop MYSQL80")
+        admin_commands.add_command("sc", "start MYSQL80")
+        admin_commands.run_all()
+
+
         self.prompt.prompt_and_raise_if_not_yes(
             "Run config_mysql.bat in {} now. \n"
             "WARNING: performing this step will wipe all existing historical data. \n"
             "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
+
+
 
     def _remove_old_versions_of_mysql8(self):
         self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
@@ -780,10 +789,16 @@ class UpgradeTasks(object):
         if os.path.exists(MYSQL8_INSTALL_DIR):
             shutil.rmtree(MYSQL8_INSTALL_DIR)
 
+        self._remove_old_mysql_data_dir()
+
+    def _remove_old_mysql_data_dir(self):
         if os.path.exists(MYSQL_FILES_DIR):
             shutil.rmtree(MYSQL_FILES_DIR)
 
     def _install_latest_mysql8(self):
+
+        self._remove_old_mysql_data_dir()
+
         os.makedirs(MYSQL8_INSTALL_DIR)
 
         mysql_unzip_temp = os.path.join(APPS_BASE_DIR, "temp-mysql-unzip")
@@ -797,7 +812,7 @@ class UpgradeTasks(object):
 
         shutil.rmtree(mysql_unzip_temp)
 
-        os.makedirs(os.path.join(MYSQL_FILES_DIR, "data"))
+        os.makedirs(MYSQL_FILES_DIR)
 
         mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
@@ -812,7 +827,7 @@ class UpgradeTasks(object):
                                    .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
         admin_commands.add_command("sc", "start MYSQL80")
-        admin_commands.add_command("sc", "config MYSQL80 start=auto")
+        admin_commands.add_command("sc", "config MYSQL80 start= auto")
 
         admin_commands.run_all()
 
