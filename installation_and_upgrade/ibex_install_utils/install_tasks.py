@@ -753,8 +753,6 @@ class UpgradeTasks(object):
         """
         my_ini_file = os.path.join(EPICS_PATH, "systemsetup", "my.ini")
         try:
-            if os.path.exists(my_ini_file):
-                os.remove(my_ini_file)
             shutil.copy(my_ini_file, MYSQL8_INSTALL_DIR)
         except (OSError, IOError) as e:
             self.prompt.prompt_and_raise_if_not_yes("Couldn't copy my.ini from {} to {} because {}. "
