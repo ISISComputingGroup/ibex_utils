@@ -47,16 +47,21 @@ SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resou
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
+INST_SHARE_AREA = os.path.join(r"\\isis.cclrc.ac.uk", "inst$")
+
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
 MYSQL_LATEST_VERSION = "8.0.15"
-MYSQL_ZIP = os.path.join(r"\\isis", "inst$", "kits$", "CompGroup", "ICP", "MySQL",
+MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          "mysql-{}-winx64.zip".format(MYSQL_LATEST_VERSION))
 
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
 MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
 PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
 SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
+
+VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140.dll")
+VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer", "vc_redist.x64.exe")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -67,7 +72,7 @@ SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
 
-STAGE_DELETED = os.path.join(r"\\isis", "inst$", "backups$", "stage-deleted")
+STAGE_DELETED = os.path.join(INST_SHARE_AREA, "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
 
 RAM_MIN = 8e+9
@@ -840,6 +845,12 @@ class UpgradeTasks(object):
                               'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
                               .format(mysql, sql_password))
 
+    def _install_vcruntime140(self):
+        if not os.path.exists(VCRUNTIME140):
+            self.prompt.prompt_and_raise_if_not_yes(
+                "MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
+                "Install it from {} and confirm when complete".format(VCRUNTIME140_INSTALLER))
+
     @task("Install latest MySQL")
     def install_mysql(self, force=False):
         """
@@ -860,6 +871,7 @@ class UpgradeTasks(object):
 
             self._remove_old_versions_of_mysql8()
 
+        self._install_vcruntime140()
         self._install_latest_mysql8()
 
     @task("Reapply Hotfixes")
