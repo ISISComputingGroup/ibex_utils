@@ -3,17 +3,21 @@ Tasks associated with install
 """
 
 import pprint
-from contextlib import contextmanager
+import zipfile
+from contextlib import contextmanager, closing
 
 import os
 import shutil
 import socket
 import subprocess
 from datetime import date, datetime
+from time import sleep
+
 import psutil
 import git
+import six
 
-
+from ibex_install_utils.admin_runner import AdminRunner, AdminCommandBuilder
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
 from ibex_install_utils.file_utils import FileUtils
@@ -43,10 +47,21 @@ SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resou
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
+INST_SHARE_AREA = os.path.join(r"\\isis.cclrc.ac.uk", "inst$")
+
+MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
+MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
+MYSQL_LATEST_VERSION = "8.0.15"
+MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
+                         "mysql-{}-winx64.zip".format(MYSQL_LATEST_VERSION))
+
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
 MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
 PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
 SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
+
+VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140.dll")
+VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer", "vc_redist.x64.exe")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -57,7 +72,7 @@ SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
                        os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
 
-STAGE_DELETED = os.path.join(r"\\isis", "inst$", "backups$", "stage-deleted")
+STAGE_DELETED = os.path.join(INST_SHARE_AREA, "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
 
 RAM_MIN = 8e+9
@@ -136,17 +151,17 @@ class UpgradeInstrument(object):
                                     "on a new instrument. Proceed?")
 
         self._upgrade_tasks.check_resources()
-
         self._upgrade_tasks.check_java_installation()
-        self._upgrade_tasks.install_mysql()
+
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_seci_one()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_mysql()
+        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.setup_calibrations_repository()
@@ -200,13 +215,14 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_mysql()
+        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
-        self._upgrade_tasks.upgrade_mysql()
         self._upgrade_tasks.reapply_hotfixes()
 
     def run_instrument_deploy_pre_stop(self):
@@ -228,6 +244,10 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
+
+    def run_force_upgrade_mysql(self):
+        self._upgrade_tasks.install_mysql(force=True)
+        self._upgrade_tasks.configure_mysql()
 
 
 class UpgradeTasks(object):
@@ -681,19 +701,7 @@ class UpgradeTasks(object):
                 "manually".format(BACKUP_DATA_DIR))
 
     def _get_mysql_dir(self):
-        mysql_base_dir = os.path.join("C:\\", "Program Files", "MySQL")
-        if not os.path.exists(mysql_base_dir):
-            raise OSError
-        else:
-            mysql_versions = [d for d in os.listdir(mysql_base_dir) if os.path.isdir(os.path.join(mysql_base_dir, d))]
-            if len(mysql_versions) == 0:
-                raise OSError
-            else:
-                if len(mysql_versions) > 1:
-                    print("Warning, more than 1 version of MySQL detected. Using {}".format(mysql_versions[0]))
-                mysql_dir = os.path.join(mysql_base_dir, mysql_versions[0], "bin")
-
-        return mysql_dir
+        return os.path.join(MYSQL8_INSTALL_DIR, "bin")
 
     @task("Backup database")
     def backup_database(self):
@@ -743,50 +751,128 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
-    @task("Install MySQL")
-    def install_mysql(self):
-        """
-        Prompt user to install MySQL and opens browser with instructions.
-
-        """
-        url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Installing-and-Upgrading-MySQL"
-        if self.prompt.prompt("Please install MySQL following the instructions on the developer wiki. "
-                              "Open instructions in browser now?", ["Y", "N"], "N") == "Y":
-            subprocess.call("explorer {}".format(url))
-        self.prompt.prompt_and_raise_if_not_yes("Confirm MySQL has been successfully installed.")
-
     @task("Configure MySQL")
     def configure_mysql(self):
         """
-        Run the MySQL configuration script
+        Copy mysql settings and run the MySQL configuration script
         """
+        my_ini_file = os.path.join(EPICS_PATH, "systemsetup", "my.ini")
+        try:
+            shutil.copy(my_ini_file, MYSQL8_INSTALL_DIR)
+        except (OSError, IOError) as e:
+            self.prompt.prompt_and_raise_if_not_yes("Couldn't copy my.ini from {} to {} because {}. "
+                                                    "Please do this manually confirm when complete."
+                                                    .format(my_ini_file, MYSQL8_INSTALL_DIR, e))
+
+        # Restart to pick up new my.ini
+        admin_commands = AdminCommandBuilder()
+        admin_commands.add_command("sc", "stop MYSQL80")
+        # Sleep to wait for service to stop so we can restart it.
+        admin_commands.add_command("ping", "-n 10 127.0.0.1 >nul", expected_return_val=None)
+        admin_commands.add_command("sc", "start MYSQL80")
+        admin_commands.run_all()
+
+
         self.prompt.prompt_and_raise_if_not_yes(
             "Run config_mysql.bat in {} now. \n"
             "WARNING: performing this step will wipe all existing historical data. \n"
             "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
 
-    @task("Upgrade MySQL")
-    def upgrade_mysql(self):
+
+
+    def _remove_old_versions_of_mysql8(self):
+        self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
+                                                "Are you sure you want to continue?")
+
+        admin_commands = AdminCommandBuilder()
+        admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
+        admin_commands.add_command("sc", "delete MYSQL80", expected_return_val=None)
+        admin_commands.run_all()
+
+        sleep(5)  # Time for service to stop
+
+        if os.path.exists(MYSQL8_INSTALL_DIR):
+            shutil.rmtree(MYSQL8_INSTALL_DIR)
+
+        self._remove_old_mysql_data_dir()
+
+    def _remove_old_mysql_data_dir(self):
+        if os.path.exists(MYSQL_FILES_DIR):
+            shutil.rmtree(MYSQL_FILES_DIR)
+
+    def _install_latest_mysql8(self):
+
+        self._remove_old_mysql_data_dir()
+
+        os.makedirs(MYSQL8_INSTALL_DIR)
+
+        mysql_unzip_temp = os.path.join(APPS_BASE_DIR, "temp-mysql-unzip")
+
+        with closing(zipfile.ZipFile(MYSQL_ZIP)) as f:
+            f.extractall(mysql_unzip_temp)
+
+        mysql_unzip_temp_release = os.path.join(mysql_unzip_temp, "mysql-{}-winx64".format(MYSQL_LATEST_VERSION))
+        for item in os.listdir(mysql_unzip_temp_release):
+            shutil.move(os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR)
+
+        shutil.rmtree(mysql_unzip_temp)
+
+        os.makedirs(MYSQL_FILES_DIR)
+
+        mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
+        mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
+
+        admin_commands = AdminCommandBuilder()
+
+        admin_commands.add_command(mysqld, '--datadir="{}" --initialize-insecure --console --log-error-verbosity=3'
+                                   .format(os.path.join(MYSQL_FILES_DIR, "data")))
+
+        # Wait for initialize since admin runner can't wait for completion. Maybe we can detect completion another way?
+        admin_commands.add_command(mysqld, '--install MYSQL80 --datadir="{}"'
+                                   .format(os.path.join(MYSQL_FILES_DIR, "data")))
+
+        admin_commands.add_command("sc", "start MYSQL80")
+        admin_commands.add_command("sc", "config MYSQL80 start= auto")
+
+        admin_commands.run_all()
+
+        sleep(5)  # Time for service to start
+
+        sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
+                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"))
+
+        subprocess.check_call('{} -u root -e "ALTER USER \'root\'@\'localhost\' '
+                              'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
+                              .format(mysql, sql_password))
+
+    def _install_vcruntime140(self):
+        if not os.path.exists(VCRUNTIME140):
+            self.prompt.prompt_and_raise_if_not_yes(
+                "MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
+                "Install it from {} and confirm when complete".format(VCRUNTIME140_INSTALLER))
+
+    @task("Install latest MySQL")
+    def install_mysql(self, force=False):
         """
         Upgrade mysql step
         """
-        install_mysql_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
-                            "Installing-and-Upgrading-MySQL"
-        try:
-            mysql_path = os.path.join(self._get_mysql_dir(), "mysql.exe")
-            if not os.path.exists(mysql_path):
-                raise OSError()
-            subprocess.call([mysql_path, "--version"])
-            self.prompt.prompt_and_raise_if_not_yes(
-                "If required, upgrade MySQL as per {}".format(install_mysql_url))
-        except OSError:
-            self.prompt.prompt_and_raise_if_not_yes(
-                "MySQL not detected on system. Please verify and install if necessary via the instructions at "
-                "{}".format(install_mysql_url))
-        finally:
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Confirm that the MySQL catalog auto-update has been switched off as described at {}"
-                .format(install_mysql_url))
+        if os.path.exists(os.path.join(MYSQL57_INSTALL_DIR, "bin", "mysql.exe")):
+            self.prompt.prompt_and_raise_if_not_yes("MySQL 5.7 detected. Please use the MySQL installer application"
+                                                    "to remove MySQL 5.7. When it asks you whether to remove data"
+                                                    "directories, answer yes. Type 'Y' when complete.")
+
+        mysql_8_exe = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
+
+        if os.path.exists(mysql_8_exe):
+            version = subprocess.check_output("{} --version".format(mysql_8_exe))
+            if MYSQL_LATEST_VERSION in version and not force:
+                print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
+                return
+
+            self._remove_old_versions_of_mysql8()
+
+        self._install_vcruntime140()
+        self._install_latest_mysql8()
 
     @task("Reapply Hotfixes")
     def reapply_hotfixes(self):
