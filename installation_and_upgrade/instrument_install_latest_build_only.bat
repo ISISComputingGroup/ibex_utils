@@ -9,8 +9,6 @@ IF EXIST "C:\Instrument\Apps\EPICS" (call "%STOP_IBEX%")
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  --quiet install_latest
 IF ERRORLEVEL 1 GOTO :ERROR
 
-echo "Starting IBEX server"
-call "%START_IBEX%"
 popd
 GOTO :EOF
 
