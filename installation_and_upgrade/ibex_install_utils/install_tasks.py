@@ -401,7 +401,7 @@ class UpgradeTasks(object):
 
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
-        RunProcess(self._server_source_dir, "install_to_inst.bat").run()
+        RunProcess(self._server_source_dir, "install_to_inst.bat", prog_args="NOLOG").run()
         if with_utils and self.prompt.confirm_step("install icp binaries"):
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
