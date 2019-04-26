@@ -405,7 +405,7 @@ class UpgradeTasks(object):
         if with_utils and self.prompt.confirm_step("install icp binaries"):
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
-    @task("Installing IBEX Client (Old E3)")
+    @task("Installing IBEX Client")
     def install_ibex_client(self):
         """
         Install the ibex client (which also installs genie python).
@@ -602,20 +602,10 @@ class UpgradeTasks(object):
         """
         Checks Java installation
         """
-        java_url = "/<Public Share>/third_party_installers/"
-        try:
-            subprocess.call(["java", "-version"])
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Confirm that the java version above is the desired version or that you have "
-                "upgraded to the desired 64-bit version from {}".format(java_url))
-        except (subprocess.CalledProcessError, WindowsError):
-            self.prompt.prompt_and_raise_if_not_yes(
-                    "No installation of Java found on this machine. You can find an installer for the java"
-                    "version used in the current release in {}.".format(java_url))
 
         self.prompt.prompt_and_raise_if_not_yes(
-            "Is auto-update turned off? This can be checked from the Java control panel in "
-            "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
+            "Upgrade openJDK installation by following"
+            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java")
 
     @task("Configure COM ports")
     def configure_com_ports(self):
