@@ -701,7 +701,16 @@ class UpgradeTasks(object):
                 "manually".format(BACKUP_DATA_DIR))
 
     def _get_mysql_dir(self):
-        return os.path.join(MYSQL8_INSTALL_DIR, "bin")
+        """
+        Returns the mysql 8 default install directory if it exists, else 5.7.
+
+        """
+        if os.path.exists(MYSQL8_INSTALL_DIR):
+            mysql_bin_dir = self._get_mysql_dir()
+        else:
+            mysql_bin_dir = os.path.join(MYSQL57_INSTALL_DIR, "bin")
+
+        return mysql_bin_dir
 
     @task("Backup database")
     def backup_database(self):
@@ -711,10 +720,7 @@ class UpgradeTasks(object):
         result_file = os.path.join(self._get_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
 
-        if os.path.exists(MYSQL8_INSTALL_DIR):
-            mysql_bin_dir = self._get_mysql_dir()
-        else:
-            mysql_bin_dir = os.path.join(MYSQL57_INSTALL_DIR, "bin")
+        mysql_bin_dir = self._get_mysql_dir()
 
         dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
                         "--result-file={}".format(result_file)]
