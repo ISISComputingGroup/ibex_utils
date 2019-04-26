@@ -711,7 +711,11 @@ class UpgradeTasks(object):
         result_file = os.path.join(self._get_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
 
-        mysql_bin_dir = self._get_mysql_dir()
+        if os.path.exists(MYSQL8_INSTALL_DIR):
+            mysql_bin_dir = self._get_mysql_dir()
+        else:
+            mysql_bin_dir = os.path.join(MYSQL57_INSTALL_DIR, "bin")
+
         dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
                         "--result-file={}".format(result_file)]
         RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
