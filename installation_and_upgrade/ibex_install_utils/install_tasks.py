@@ -213,10 +213,12 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
+        self._upgrade_tasks.backup_data()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.configure_mysql()
+        self._upgrade_tasks.reload_backup_data()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
@@ -701,7 +703,12 @@ class UpgradeTasks(object):
                 "manually".format(BACKUP_DATA_DIR))
 
     def _get_mysql_dir(self):
-        return os.path.join(MYSQL8_INSTALL_DIR, "bin")
+        mysql_path = os.path.join(MYSQL8_INSTALL_DIR, "bin")
+
+        if os.path.exists(mysql_path):
+            return mysql_path
+
+        return os.path.join(MYSQL57_INSTALL_DIR, "bin")
 
     @task("Backup database")
     def backup_database(self):
@@ -724,6 +731,42 @@ class UpgradeTasks(object):
 
         self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
                                    self.prompt)
+
+    @task("Backup data")
+    def backup_data(self):
+        """
+        Backup the data for transfer
+        """
+        result_file = os.path.join(self._get_backup_dir(),
+                                   SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
+
+        mysql_bin_dir = self._get_mysql_dir()
+        dump_command = ["-u", "root", "-p", "--single-transaction",
+                        "--result-file={}".format(result_file), "--no-create-db", "--no-create-info", "--skip-triggers",
+                        "--databases", "alarm", "archive", "exp_data", "iocdb", "journal", "msg_log"]
+        RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
+                   prog_args=dump_command,
+                   capture_pipes=False).run()
+
+        if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Dump file '{}' seems to be small is it correct? ".format(result_file))
+
+    @task("Reload backup data")
+    def reload_backup_data(self):
+        """
+        Reload backup the data
+        """
+        result_file = os.path.join(self._get_backup_dir(),
+                                   SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
+
+        mysql_bin_dir = self._get_mysql_dir()
+        read_dump_command = ["-u", "root", "-p", "--force"]
+        RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
+                   prog_args=read_dump_command,
+                   capture_pipes=False, std_in=open(result_file)).run()
+        print("We expect to get 16 errors from mysql. These are 1062 error fail to insert primary key. "
+              "These are for constants added by the creation script, e.g. archive severity.")
 
     @task("Truncate database")
     def truncate_database(self):

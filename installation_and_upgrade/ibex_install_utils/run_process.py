@@ -14,7 +14,7 @@ class RunProcess(object):
     Create a process runner to run a process.
     """
     def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None,
-                 capture_pipes=True):
+                 capture_pipes=True, std_in=None):
         """
         Create a process that needs running
 
@@ -25,12 +25,16 @@ class RunProcess(object):
             press_any_key: if true then press a key to finish the run process
             prog_args(list[string]): arguments to pass to the program
             capture_pipes: whether to capture pipes and manage in python or let the process access the console
+            std_in: std_in sets the stdin pipe to be this
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
         self._press_any_key = press_any_key
         self._prog_args = prog_args
         self._capture_pipes = capture_pipes
+        self._stdin = std_in
+        if std_in is not None and self._capture_pipes:
+            raise NotImplementedError("Capturing pipes and set standard in is not implemented.")
         if executable_directory is None:
             self._full_path_to_process_file = os.path.join(working_dir, executable_file)
         else:
@@ -51,7 +55,10 @@ class RunProcess(object):
                 command_line.extend(self._prog_args)
 
             if not self._capture_pipes:
-                error_code = subprocess.call(command_line, cwd=self._working_dir)
+                if self._stdin:
+                    error_code = subprocess.call(command_line, cwd=self._working_dir, stdin=self._stdin)
+                else:
+                    error_code = subprocess.call(command_line, cwd=self._working_dir)
                 if error_code != 0:
                     raise ErrorInRun("Command failed with error code: {0}".format(error_code))
                 output_lines = ""
