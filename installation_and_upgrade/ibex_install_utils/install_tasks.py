@@ -15,9 +15,8 @@ from time import sleep
 
 import psutil
 import git
-import six
 
-from ibex_install_utils.admin_runner import AdminRunner, AdminCommandBuilder
+from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
 from ibex_install_utils.file_utils import FileUtils
@@ -61,7 +60,8 @@ PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
 SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 
 VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140.dll")
-VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer", "vc_redist.x64.exe")
+VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer",
+                                      "vc_redist.x64.exe")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -248,6 +248,9 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
 
     def run_force_upgrade_mysql(self):
+        """
+         Do upgrade of mysql, no data dump.
+        """
         self._upgrade_tasks.install_mysql(force=True)
         self._upgrade_tasks.configure_mysql()
 
@@ -407,7 +410,7 @@ class UpgradeTasks(object):
         if with_utils and self.prompt.confirm_step("install icp binaries"):
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
-    @task("Installing IBEX Client (Old E3)")
+    @task("Installing IBEX Client")
     def install_ibex_client(self):
         """
         Install the ibex client (which also installs genie python).
@@ -579,11 +582,11 @@ class UpgradeTasks(object):
         """
         if os.path.isdir(CALIBRATION_PATH):
             if self.prompt.prompt("Calibrations directory already exists. Update calibrations repository?",
-                           ["Y", "N"], "N") == "Y":
+                                  ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
             exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                            "C:\Instrument\Settings\config\common")
+                                        "C:\Instrument\Settings\config\common")
             if exit_code is not 0:
                 raise ErrorInRun("Failed to set up common calibration directory.")
 
@@ -604,20 +607,10 @@ class UpgradeTasks(object):
         """
         Checks Java installation
         """
-        java_url = "/<Public Share>/third_party_installers/"
-        try:
-            subprocess.call(["java", "-version"])
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Confirm that the java version above is the desired version or that you have "
-                "upgraded to the desired 64-bit version from {}".format(java_url))
-        except (subprocess.CalledProcessError, WindowsError):
-            self.prompt.prompt_and_raise_if_not_yes(
-                    "No installation of Java found on this machine. You can find an installer for the java"
-                    "version used in the current release in {}.".format(java_url))
 
         self.prompt.prompt_and_raise_if_not_yes(
-            "Is auto-update turned off? This can be checked from the Java control panel in "
-            "C:\\Program Files\\Java\\jre\\bin\\javacpl.exe")
+            "Upgrade openJDK installation by following"
+            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java")
 
     @task("Configure COM ports")
     def configure_com_ports(self):
@@ -703,12 +696,16 @@ class UpgradeTasks(object):
                 "manually".format(BACKUP_DATA_DIR))
 
     def _get_mysql_dir(self):
-        mysql_path = os.path.join(MYSQL8_INSTALL_DIR, "bin")
+        """
+        Returns the mysql 8 default install directory if it exists, else 5.7.
 
-        if os.path.exists(mysql_path):
-            return mysql_path
+        """
+        if os.path.exists(MYSQL8_INSTALL_DIR):
+            mysql_bin_dir = os.path.join(MYSQL8_INSTALL_DIR, "bin")
+        else:
+            mysql_bin_dir = os.path.join(MYSQL57_INSTALL_DIR, "bin")
 
-        return os.path.join(MYSQL57_INSTALL_DIR, "bin")
+        return mysql_bin_dir
 
     @task("Backup database")
     def backup_database(self):
@@ -719,6 +716,7 @@ class UpgradeTasks(object):
                                    SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
 
         mysql_bin_dir = self._get_mysql_dir()
+
         dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
                         "--result-file={}".format(result_file)]
         RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
@@ -815,13 +813,10 @@ class UpgradeTasks(object):
         admin_commands.add_command("sc", "start MYSQL80")
         admin_commands.run_all()
 
-
         self.prompt.prompt_and_raise_if_not_yes(
             "Run config_mysql.bat in {} now. \n"
             "WARNING: performing this step will wipe all existing historical data. \n"
             "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
-
-
 
     def _remove_old_versions_of_mysql8(self):
         self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
@@ -943,7 +938,8 @@ class UpgradeTasks(object):
             "Check that the version displayed in the client is as expected after the deployment")
         self.prompt.prompt_and_raise_if_not_yes(
             "Confirm that genie_python works from within the client and via genie_python.bat (this includes"
-            "verifying that the 'g.' and 'inst.' prefixes work as expected)")
+            "verifying that the 'g.' and 'inst.' prefixes work as expected)"
+            "If the font cannot be seen in the genie_python.bat change default terminal colours to white on black.")
         self.prompt.prompt_and_raise_if_not_yes(
             "Verify that the current configuration is consistent with the system prior to upgrade")
 
@@ -1182,4 +1178,3 @@ class UpgradeTasks(object):
         except (OSError, IOError):
             self.prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
                                                     .format(from_path, to_path))
-

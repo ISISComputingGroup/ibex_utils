@@ -16,8 +16,7 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
   call C:\Instrument\Apps\EPICS\config_env.bat
   call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_pre_stop
   IF ERRORLEVEL 1 EXIT /b %errorlevel%
-
-  start /wait cmd /c "%STOP_IBEX%"
+  start /wait cmd /c "%STOP_IBEX%")
 )
 
 REM Set python as share just for script call
