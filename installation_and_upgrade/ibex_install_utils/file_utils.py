@@ -19,14 +19,20 @@ class FileUtils(object):
         Delete a file path if it exists
         Args:
             path: path to delete
+            use_robocopy: use robocopy to delete the directory this allows us to remove particularly long paths
         """
         if use_robocopy:
-            empty_dir = r"\\isis\inst$\Kits$\CompGroup\ICP\empty_dir_for_robocopy"
+            empty_dir = os.path.join(os.path.dirname(path), "empty_dir_for_robocopy")
+            os.mkdir(empty_dir)
             if os.path.isdir(path):
                 os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".
                           format(empty_dir, path))
+            os.rmdir(empty_dir)
+            os.rmdir(path)
         else:
             shutil.rmtree(path)
+        if os.path.exists(path):
+            raise IOError('Path could not be deleted, please do this manually. Path: "{}"'.format(path))
 
     def mkdir_recursive(self, path):
         """
