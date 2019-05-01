@@ -733,7 +733,7 @@ class UpgradeTasks(object):
     @task("Backup data")
     def backup_data(self):
         """
-        Backup the data for transfer
+        Backup the data for transfer. This dumps just the data not the schema.
         """
         result_file = os.path.join(self._get_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
@@ -763,8 +763,9 @@ class UpgradeTasks(object):
         RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
                    prog_args=read_dump_command,
                    capture_pipes=False, std_in=open(result_file)).run()
-        print("We expect to get 16 errors from mysql. These are 1062 error fail to insert primary key. "
-              "These are for constants added by the creation script, e.g. archive severity.")
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Check that there are only 16 errors from mysql. These are 1062 error fail to insert primary key. "
+            "These are for constants added by the creation script, e.g. archive severity.")
 
     @task("Truncate database")
     def truncate_database(self):
