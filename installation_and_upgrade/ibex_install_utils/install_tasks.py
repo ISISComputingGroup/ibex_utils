@@ -264,7 +264,7 @@ class UpgradeTasks(object):
         """
         Initializer.
         Args:
-            user_prompt: a object to allow prompting of the user
+            user_prompt (ibex_install_utils.user_prompt.UserPrompt): a object to allow prompting of the user
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
@@ -333,7 +333,7 @@ class UpgradeTasks(object):
 
         """
         for path in (EPICS_PATH, PYTHON_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH):
-            self._file_utils.remove_tree(path)
+            self._file_utils.remove_tree(path, self.prompt)
 
     @task("Removing training folder on desktop ...")
     def clean_up_desktop_ibex_training_folder(self):
@@ -342,7 +342,7 @@ class UpgradeTasks(object):
         Returns:
 
         """
-        self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH)
+        self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH, self.prompt)
 
     @task("Removing old settings file")
     def remove_settings(self):
@@ -351,7 +351,7 @@ class UpgradeTasks(object):
         Returns:
 
         """
-        self._file_utils.remove_tree(SETTINGS_CONFIG_PATH)
+        self._file_utils.remove_tree(SETTINGS_CONFIG_PATH, self.prompt)
 
     @task("Install settings")
     def install_settings(self):
@@ -569,7 +569,7 @@ class UpgradeTasks(object):
         """
         if os.path.exists(SECI_ONE_PATH):
             try:
-                self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
+                self._file_utils.remove_tree(SECI_ONE_PATH, self.prompt, use_robocopy=False)
             except (IOError, WindowsError) as e:
                 self.prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
                                                         "'{}'. Please remove it manually and type 'Y' to "
@@ -659,7 +659,7 @@ class UpgradeTasks(object):
                 shutil.copytree(src, backup_dir)
             else:
                 print("Moving {} to {}".format(src, backup_dir))
-                self._file_utils.move_dir(src, backup_dir)
+                self._file_utils.move_dir(src, backup_dir, self.prompt)
 
     @task("Backup old directories")
     def backup_old_directories(self):
@@ -681,7 +681,7 @@ class UpgradeTasks(object):
 
             for d in backups_to_delete:
                 print("Removing backup {}".format(d))
-                self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d))
+                self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d), self.prompt)
 
             # Move the folders
             for app_path in [EPICS_PATH, EPICS_UTILS_PATH, GUI_PATH, PYTHON_PATH, GUI_PATH_E4]:
