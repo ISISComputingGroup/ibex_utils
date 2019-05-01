@@ -15,9 +15,8 @@ from time import sleep
 
 import psutil
 import git
-import six
 
-from ibex_install_utils.admin_runner import AdminRunner, AdminCommandBuilder
+from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.exceptions import UserStop, ErrorInRun, ErrorInTask
 from ibex_install_utils.file_utils import FileUtils
@@ -61,7 +60,8 @@ PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
 SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 
 VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140.dll")
-VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer", "vc_redist.x64.exe")
+VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer",
+                                      "vc_redist.x64.exe")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -213,10 +213,12 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
+        self._upgrade_tasks.backup_data()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.configure_mysql()
+        self._upgrade_tasks.reload_backup_data()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
@@ -246,6 +248,9 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
 
     def run_force_upgrade_mysql(self):
+        """
+         Do upgrade of mysql, no data dump.
+        """
         self._upgrade_tasks.install_mysql(force=True)
         self._upgrade_tasks.configure_mysql()
 
@@ -259,7 +264,7 @@ class UpgradeTasks(object):
         """
         Initializer.
         Args:
-            user_prompt: a object to allow prompting of the user
+            user_prompt (ibex_install_utils.user_prompt.UserPrompt): a object to allow prompting of the user
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
@@ -328,7 +333,7 @@ class UpgradeTasks(object):
 
         """
         for path in (EPICS_PATH, PYTHON_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH):
-            self._file_utils.remove_tree(path)
+            self._file_utils.remove_tree(path, self.prompt)
 
     @task("Removing training folder on desktop ...")
     def clean_up_desktop_ibex_training_folder(self):
@@ -337,7 +342,7 @@ class UpgradeTasks(object):
         Returns:
 
         """
-        self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH)
+        self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH, self.prompt)
 
     @task("Removing old settings file")
     def remove_settings(self):
@@ -346,7 +351,7 @@ class UpgradeTasks(object):
         Returns:
 
         """
-        self._file_utils.remove_tree(SETTINGS_CONFIG_PATH)
+        self._file_utils.remove_tree(SETTINGS_CONFIG_PATH, self.prompt)
 
     @task("Install settings")
     def install_settings(self):
@@ -564,7 +569,7 @@ class UpgradeTasks(object):
         """
         if os.path.exists(SECI_ONE_PATH):
             try:
-                self._file_utils.remove_tree(SECI_ONE_PATH, use_robocopy=False)
+                self._file_utils.remove_tree(SECI_ONE_PATH, self.prompt, use_robocopy=False)
             except (IOError, WindowsError) as e:
                 self.prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
                                                         "'{}'. Please remove it manually and type 'Y' to "
@@ -577,11 +582,11 @@ class UpgradeTasks(object):
         """
         if os.path.isdir(CALIBRATION_PATH):
             if self.prompt.prompt("Calibrations directory already exists. Update calibrations repository?",
-                           ["Y", "N"], "N") == "Y":
+                                  ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
             exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                            "C:\Instrument\Settings\config\common")
+                                        "C:\Instrument\Settings\config\common")
             if exit_code is not 0:
                 raise ErrorInRun("Failed to set up common calibration directory.")
 
@@ -654,7 +659,7 @@ class UpgradeTasks(object):
                 shutil.copytree(src, backup_dir)
             else:
                 print("Moving {} to {}".format(src, backup_dir))
-                self._file_utils.move_dir(src, backup_dir)
+                self._file_utils.move_dir(src, backup_dir, self.prompt)
 
     @task("Backup old directories")
     def backup_old_directories(self):
@@ -676,7 +681,7 @@ class UpgradeTasks(object):
 
             for d in backups_to_delete:
                 print("Removing backup {}".format(d))
-                self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d))
+                self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d), self.prompt)
 
             # Move the folders
             for app_path in [EPICS_PATH, EPICS_UTILS_PATH, GUI_PATH, PYTHON_PATH, GUI_PATH_E4]:
@@ -696,7 +701,7 @@ class UpgradeTasks(object):
 
         """
         if os.path.exists(MYSQL8_INSTALL_DIR):
-            mysql_bin_dir = self._get_mysql_dir()
+            mysql_bin_dir = os.path.join(MYSQL8_INSTALL_DIR, "bin")
         else:
             mysql_bin_dir = os.path.join(MYSQL57_INSTALL_DIR, "bin")
 
@@ -724,6 +729,43 @@ class UpgradeTasks(object):
 
         self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
                                    self.prompt)
+
+    @task("Backup data")
+    def backup_data(self):
+        """
+        Backup the data for transfer. This dumps just the data not the schema.
+        """
+        result_file = os.path.join(self._get_backup_dir(),
+                                   SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
+
+        mysql_bin_dir = self._get_mysql_dir()
+        dump_command = ["-u", "root", "-p", "--single-transaction",
+                        "--result-file={}".format(result_file), "--no-create-db", "--no-create-info", "--skip-triggers",
+                        "--databases", "alarm", "archive", "exp_data", "iocdb", "journal", "msg_log"]
+        RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
+                   prog_args=dump_command,
+                   capture_pipes=False).run()
+
+        if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Dump file '{}' seems to be small is it correct? ".format(result_file))
+
+    @task("Reload backup data")
+    def reload_backup_data(self):
+        """
+        Reload backup the data
+        """
+        result_file = os.path.join(self._get_backup_dir(),
+                                   SQLDUMP_FILE_TEMPLATE.format(UpgradeTasks._today_date_for_filenames()))
+
+        mysql_bin_dir = self._get_mysql_dir()
+        read_dump_command = ["-u", "root", "-p", "--force"]
+        RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
+                   prog_args=read_dump_command,
+                   capture_pipes=False, std_in=open(result_file)).run()
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Check that there are only 16 errors from mysql. These are 1062 error fail to insert primary key. "
+            "These are for constants added by the creation script, e.g. archive severity.")
 
     @task("Truncate database")
     def truncate_database(self):
@@ -772,13 +814,10 @@ class UpgradeTasks(object):
         admin_commands.add_command("sc", "start MYSQL80")
         admin_commands.run_all()
 
-
         self.prompt.prompt_and_raise_if_not_yes(
             "Run config_mysql.bat in {} now. \n"
             "WARNING: performing this step will wipe all existing historical data. \n"
             "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
-
-
 
     def _remove_old_versions_of_mysql8(self):
         self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
@@ -1140,4 +1179,3 @@ class UpgradeTasks(object):
         except (OSError, IOError):
             self.prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
                                                     .format(from_path, to_path))
-

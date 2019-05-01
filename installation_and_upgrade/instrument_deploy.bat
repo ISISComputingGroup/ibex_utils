@@ -19,8 +19,15 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
   start /wait cmd /c "%STOP_IBEX%")
 )
 
+REM Set python as share just for script call
+SETLOCAL
+set PYTHONDIR=%LATEST_PYTHON_DIR%
+set PYTHONHOME=%LATEST_PYTHON_DIR%
+set PYTHONPATH=%LATEST_PYTHON_DIR%
+
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_main
 IF ERRORLEVEL 1 EXIT /b %errorlevel%
+ENDLOCAL
 
 start /wait cmd /c "%START_IBEX%"
 

@@ -9,7 +9,8 @@ set KITS_ICP_PATH=%cd%
 
 if exist "%KITS_ICP_PATH%\genie_python\LATEST_BUILD.txt" (
 	for /f %%i in ( %KITS_ICP_PATH%\genie_python\LATEST_BUILD.txt ) do (
-	    set LATEST_PYTHON="%KITS_ICP_PATH%\genie_python\BUILD-%%i\Python\python.exe"
+	    set LATEST_PYTHON_DIR=%KITS_ICP_PATH%\genie_python\BUILD-%%i\Python\
+	    set LATEST_PYTHON=%KITS_ICP_PATH%\genie_python\BUILD-%%i\Python\python.exe
 	)
 ) else (
 	@echo Could not access LATEST_BUILD.txt
