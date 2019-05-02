@@ -1,7 +1,7 @@
 """
 Tasks associated with install
 """
-
+from __future__ import division, unicode_literals, print_function
 import pprint
 import zipfile
 from contextlib import contextmanager, closing
@@ -399,7 +399,7 @@ class UpgradeTasks(object):
         """
         RunProcess(working_dir=APPS_BASE_DIR,
                    executable_file="GUP.exe",
-                   executable_directory=r"C:\Program Files (x86)\Notepad++\updater").run()
+                   executable_directory=os.path.join("C:\\", "Program Files (x86)", "Notepad++", "updater")).run()
 
     @task("Installing IBEX Server")
     def install_ibex_server(self, with_utils):
@@ -1139,9 +1139,7 @@ class UpgradeTasks(object):
         self.check_virtual_memory()
         self._check_disk_usage()
 
-    @task("Check virtual machine memory"
-
-          )
+    @task("Check virtual machine memory")
     def check_virtual_memory(self):
         ram = psutil.virtual_memory().total
 
