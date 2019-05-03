@@ -1159,7 +1159,7 @@ class UpgradeTasks(object):
             self.prompt.prompt_and_raise_if_not_yes(
                 "Current machine memory is {:.1f}GB, the recommended amount for this machine is {:.1f}GB.\n\n"
                 "If appropriate, upgrade this machine's memory allowance by following the instructions in "
-                "https://github.com/ISISComputingGroup/ControlsWork/issues/613.\n\n"
+                "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Increase-VM-memory.\n\n"
                 "Note, this will require a machine restart.".format(ram/GIGABYTE, min_memory/GIGABYTE)
             )
 
