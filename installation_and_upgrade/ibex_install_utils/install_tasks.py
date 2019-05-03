@@ -1,7 +1,7 @@
 """
 Tasks associated with install
 """
-
+from __future__ import division, unicode_literals, print_function
 import pprint
 import zipfile
 from contextlib import contextmanager, closing
@@ -75,8 +75,11 @@ AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI
 STAGE_DELETED = os.path.join(INST_SHARE_AREA, "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
 
-RAM_MIN = 8e+9
-FREE_DISK_MIN = 3e+10
+GIGABYTE = 1024 ** 3
+
+RAM_MIN = 7.5 * GIGABYTE  # 8 GB minus a small tolerance.
+RAM_NORMAL_INSTRUMENT = 13 * GIGABYTE  # Should be 14GB ideally, but allow anything over 13GB.
+FREE_DISK_MIN = 30 * GIGABYTE
 
 
 class UpgradeInstrument(object):
@@ -147,8 +150,8 @@ class UpgradeInstrument(object):
         """
         Do a first installation of IBEX on a new instrument.
         """
-        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client "
-                                    "on a new instrument. Proceed?")
+        self._upgrade_tasks.confirm("This script performs a first-time full installation of the IBEX server and client"
+                                    " on a new instrument. Proceed?")
 
         self._upgrade_tasks.check_resources()
         self._upgrade_tasks.check_java_installation()
@@ -233,6 +236,7 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
+        self._upgrade_tasks.check_virtual_memory()
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.record_running_vis()
         self._upgrade_tasks.save_motor_parameters_to_file()
@@ -395,7 +399,7 @@ class UpgradeTasks(object):
         """
         RunProcess(working_dir=APPS_BASE_DIR,
                    executable_file="GUP.exe",
-                   executable_directory=r"C:\Program Files (x86)\Notepad++\updater").run()
+                   executable_directory=os.path.join("C:\\", "Program Files (x86)", "Notepad++", "updater")).run()
 
     @task("Installing IBEX Server")
     def install_ibex_server(self, with_utils):
@@ -1135,15 +1139,32 @@ class UpgradeTasks(object):
         self.check_virtual_memory()
         self._check_disk_usage()
 
-    @task("Check virtual memory is above {:.1e}B".format(RAM_MIN))
+    @task("Check virtual machine memory")
     def check_virtual_memory(self):
         """
         Checks the machine's virtual memory meet minimum requirements.
         """
-        ram = psutil.virtual_memory()
-        if ram.total < RAM_MIN:
+        ram = psutil.virtual_memory().total
+
+        machine_type = self.prompt.prompt(
+            "Is this machine an instrument (e.g. NDXALF) or a test machine (e.g. NDXSELAB)? (instrument/test) ",
+            possibles=["instrument", "test"], default="test")
+
+        if machine_type == "instrument":
+            min_memory = RAM_NORMAL_INSTRUMENT
+        else:
+            min_memory = RAM_MIN
+
+        if ram >= min_memory:
+            print("Virtual memory ({:.1f}GB) is already at or above the recommended level for this machine type "
+                  "({:.1f}GB). Nothing to do in this step.".format(ram/GIGABYTE, min_memory/GIGABYTE))
+        else:
             self.prompt.prompt_and_raise_if_not_yes(
-                "The machine requires at least {:.1e}B of RAM to run IBEX.".format(RAM_MIN))
+                "Current machine memory is {:.1f}GB, the recommended amount for this machine is {:.1f}GB.\n\n"
+                "If appropriate, upgrade this machine's memory allowance by following the instructions in "
+                "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Increase-VM-memory.\n\n"
+                "Note, this will require a machine restart.".format(ram/GIGABYTE, min_memory/GIGABYTE)
+            )
 
     @task("Check there is {:.1e}B free disk space".format(FREE_DISK_MIN))
     def _check_disk_usage(self):
@@ -1151,9 +1172,11 @@ class UpgradeTasks(object):
         Checks the machine's free disk space meets minimum requirements.
         """
         disk_space = psutil.disk_usage("/")
+
         if disk_space.free < FREE_DISK_MIN:
             self.prompt.prompt_and_raise_if_not_yes(
-                "The machine requires at least {:.1e}B of free disk space to run IBEX.".format(FREE_DISK_MIN))
+                "The machine requires at least {:.1f}GB of free disk space to run IBEX."
+                .format(FREE_DISK_MIN/GIGABYTE))
 
     @task("Put IBEX autostart into pc start menu")
     def put_autostart_script_in_startup_area(self):
