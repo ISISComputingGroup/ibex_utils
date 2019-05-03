@@ -1141,6 +1141,9 @@ class UpgradeTasks(object):
 
     @task("Check virtual machine memory")
     def check_virtual_memory(self):
+        """
+        Checks the machine's virtual memory meet minimum requirements.
+        """
         ram = psutil.virtual_memory().total
 
         machine_type = self.prompt.prompt(
