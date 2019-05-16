@@ -158,6 +158,7 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_seci_one()
+        self._upgrade_tasks.remove_treesize_shortcuts()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
@@ -218,6 +219,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
         self._upgrade_tasks.backup_data()
         self._upgrade_tasks.remove_seci_shortcuts()
+        self._upgrade_tasks.remove_treesize_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.configure_mysql()
@@ -565,6 +567,17 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
+
+    @task("Remove Treesize shortcuts")
+    def remove_treesize_shortcuts(self):
+        """
+        Remove (or at least ask the user to remove) all Treesize shortcuts.
+
+        For justification see https://github.com/ISISComputingGroup/IBEX/issues/4214
+        """
+        self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to Treesize if it exists")
+        self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to Treesize if it exists")
+        self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to Treesize if it exists")
 
     @task("Remove SECI 1 Path")
     def remove_seci_one(self):
