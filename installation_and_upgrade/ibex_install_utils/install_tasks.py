@@ -614,7 +614,9 @@ class UpgradeTasks(object):
 
         self.prompt.prompt_and_raise_if_not_yes(
             "Upgrade openJDK installation by following"
-            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java")
+            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java\r\n\r\n"
+            "After following the installer, ensure you close and then re-open your remote desktop session (This "
+            "is a workaround for windows not immediately picking up new environment variables)")
 
     @task("Configure COM ports")
     def configure_com_ports(self):
