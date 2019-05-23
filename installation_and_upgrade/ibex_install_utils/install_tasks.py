@@ -24,6 +24,7 @@ from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.motor_params import get_params_and_save_to_file
+from ibex_install_utils.kafka_utils import add_required_topics
 
 BACKUP_DATA_DIR = os.path.join("C:\\", "data")
 BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
@@ -178,6 +179,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.add_nagios_checks()
         self._upgrade_tasks.update_instlist()
         self._upgrade_tasks.update_web_dashboard()
+        self._upgrade_tasks.update_kafka_topics()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
 
     def run_instrument_deploy(self):
@@ -1017,6 +1019,13 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Restart JSON_bourne on NDAEXTWEB1 when appropriate. "
             "(WARNING: This will kill all existing sessions!)")
+
+    @task("Update kafka topics")
+    def update_kafka_topics(self):
+        """
+        Adds the required kafka topics to the cluster.
+        """
+        add_required_topics("livedata.isis.cclrc.ac.uk:9092", self._get_instrument_name())
 
     @task("Install wiring tables")
     def install_wiring_tables(self):
