@@ -17,7 +17,7 @@ def add_required_topics(kafka_broker, instrument):
         instrument: the name of the instrument for which to add the topics
     """
     required_topics = set(instrument + suffix for suffix in REQUIRED_SUFFIXES)
-    existing_topics = set(filter(lambda topic: topic.startswith(instrument), get_existing_topics()))
+    existing_topics = set(filter(lambda topic: topic.startswith(instrument), get_existing_topics(kafka_broker)))
 
     if required_topics != existing_topics:
         topic_names_to_add = required_topics - existing_topics
