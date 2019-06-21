@@ -893,6 +893,7 @@ class UpgradeTasks(object):
 
         admin_commands.add_command("sc", "start MYSQL80")
         admin_commands.add_command("sc", "config MYSQL80 start= auto")
+        admin_commands.add_command("sc", "failure MYSQL80 reset= 900 actions= restart/10000/restart/60000")
         admin_commands.add_command("netsh", "advfirewall firewall delete rule name=mysqld.exe", None)  # remove old firewall rules
         admin_commands.add_command("netsh", "advfirewall firewall delete rule name=MYSQL8", None)   # remove old firewall rules
         admin_commands.add_command("netsh", "advfirewall firewall add rule name=MYSQL8 dir=in action=allow program=C:\Instrument\Apps\MySQL\Bin\mysqld.exe enable=yes")  
