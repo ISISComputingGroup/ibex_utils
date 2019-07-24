@@ -171,7 +171,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.setup_calibrations_repository()
         self._upgrade_tasks.update_calibrations_repository()
-        self._upgrade_tasks.apply_changes_noted_in_release_notes()
+        self._upgrade_tasks.apply_manual_config_changes()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.install_wiring_tables()
@@ -230,7 +230,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
-        self._upgrade_tasks.apply_changes_noted_in_release_notes()
+        self._upgrade_tasks.apply_manual_config_changes()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.reapply_hotfixes()
 
@@ -1067,14 +1067,21 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Inform the instrument scientists that the upgrade has been completed")
 
-    @task("Apply changes in release notes")
-    def apply_changes_noted_in_release_notes(self):
+    @task("Apply manual config changes")
+    def apply_manual_config_changes(self):
         """
-        Apply any changes noted in the release notes.
+        Apply manual upgrade steps. These were previously written in the release notes.
         """
-        # For future reference, genie_python can send emails!
+
+        if self._get_instrument_name() == "GEM":
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Copy jaws.cmd from EPICS\support\motorExtensions\gem_jaws\ to C:\Instrument\settings"
+                )
+
         self.prompt.prompt_and_raise_if_not_yes(
-            "Look in the IBEX wiki at the release notes for the version you are deploying. Apply needed fixes.")
+            "All applicable steps performed. "
+            "Please remove manual upgrade steps from this script which have been completed."
+        )
 
     @task("Create journal table SQL schema if it doesn't exist")
     def create_journal_sql_schema(self):
