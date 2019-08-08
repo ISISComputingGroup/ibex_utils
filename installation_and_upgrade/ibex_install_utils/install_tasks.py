@@ -24,6 +24,7 @@ from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.motor_params import get_params_and_save_to_file
+from ibex_install_utils.kafka_utils import add_required_topics
 
 BACKUP_DATA_DIR = os.path.join("C:\\", "data")
 BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
@@ -158,6 +159,7 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_seci_one()
+        self._upgrade_tasks.remove_treesize_shortcuts()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
@@ -177,6 +179,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.add_nagios_checks()
         self._upgrade_tasks.update_instlist()
         self._upgrade_tasks.update_web_dashboard()
+        self._upgrade_tasks.update_kafka_topics()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
 
     def run_instrument_deploy(self):
@@ -218,6 +221,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
         self._upgrade_tasks.backup_data()
         self._upgrade_tasks.remove_seci_shortcuts()
+        self._upgrade_tasks.remove_treesize_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.configure_mysql()
@@ -566,6 +570,17 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
+    @task("Remove Treesize shortcuts")
+    def remove_treesize_shortcuts(self):
+        """
+        Remove (or at least ask the user to remove) all Treesize shortcuts.
+
+        For justification see https://github.com/ISISComputingGroup/IBEX/issues/4214
+        """
+        self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to Treesize if it exists")
+        self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to Treesize if it exists")
+        self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to Treesize if it exists")
+
     @task("Remove SECI 1 Path")
     def remove_seci_one(self):
         """
@@ -614,7 +629,9 @@ class UpgradeTasks(object):
 
         self.prompt.prompt_and_raise_if_not_yes(
             "Upgrade openJDK installation by following"
-            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java")
+            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java\r\n\r\n"
+            "After following the installer, ensure you close and then re-open your remote desktop session (This "
+            "is a workaround for windows not immediately picking up new environment variables)")
 
     @task("Configure COM ports")
     def configure_com_ports(self):
@@ -876,7 +893,11 @@ class UpgradeTasks(object):
 
         admin_commands.add_command("sc", "start MYSQL80")
         admin_commands.add_command("sc", "config MYSQL80 start= auto")
-
+        admin_commands.add_command("sc", "failure MYSQL80 reset= 900 actions= restart/10000/restart/60000")
+        admin_commands.add_command("netsh", "advfirewall firewall delete rule name=mysqld.exe", None)  # remove old firewall rules
+        admin_commands.add_command("netsh", "advfirewall firewall delete rule name=MYSQL8", None)   # remove old firewall rules
+        admin_commands.add_command("netsh", "advfirewall firewall add rule name=MYSQL8 dir=in action=allow program=C:\Instrument\Apps\MySQL\Bin\mysqld.exe enable=yes")  
+        
         admin_commands.run_all()
 
         sleep(5)  # Time for service to start
@@ -999,6 +1020,13 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Restart JSON_bourne on NDAEXTWEB1 when appropriate. "
             "(WARNING: This will kill all existing sessions!)")
+
+    @task("Update kafka topics")
+    def update_kafka_topics(self):
+        """
+        Adds the required kafka topics to the cluster.
+        """
+        add_required_topics("livedata.isis.cclrc.ac.uk:9092", self._get_instrument_name())
 
     @task("Install wiring tables")
     def install_wiring_tables(self):

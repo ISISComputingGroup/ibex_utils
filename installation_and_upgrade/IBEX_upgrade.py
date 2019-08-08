@@ -46,6 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--release_suffix", dest="release_suffix", default="",
                         help="Suffix for specifying non-standard releases "
                              "(such as those including hot fixes)")
+    parser.add_argument("--server_build_prefix", default="EPICS", help="Prefix for build directory name")
     parser.add_argument("--server_dir", default=None, help="Directory from which IBEX server should be installed")
     parser.add_argument("--client_dir", default=None, help="Directory from which IBEX client should be installed")
     parser.add_argument("--client_e4_dir", default=None, help="Directory from which IBEX E4 client should be installed")
@@ -90,9 +91,9 @@ if __name__ == "__main__":
             print("When specifying kits_icp_dir you choose the install latest deployment type.")
             sys.exit(2)
         if args.deployment_type == 'install_latest_incr':
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", "EPICS_win7_x64")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
         else:
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", "EPICS_CLEAN_win7_x64")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")
         server_dir = _get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
 
         client_build_dir = os.path.join(args.kits_icp_dir, "Client")
