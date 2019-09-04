@@ -910,7 +910,10 @@ class UpgradeTasks(object):
         """
         Upgrade mysql step
         """
+        backup_data = False
         if os.path.exists(os.path.join(MYSQL57_INSTALL_DIR, "bin", "mysql.exe")):
+            self._backup_data()
+            backup_data = True
             self.prompt.prompt_and_raise_if_not_yes("MySQL 5.7 detected. Please use the MySQL installer application"
                                                     "to remove MySQL 5.7. When it asks you whether to remove data"
                                                     "directories, answer yes. Type 'Y' when complete.")
@@ -923,12 +926,14 @@ class UpgradeTasks(object):
                 print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
                 return
             self._backup_data()
+            backup_data = True
             self._remove_old_versions_of_mysql8()
 
         self._install_vcruntime140()
         self._install_latest_mysql8()
         self._configure_mysql()
-        self._reload_backup_data()
+        if backup_data:
+            self._reload_backup_data()
 
     @task("Reapply Hotfixes")
     def reapply_hotfixes(self):
