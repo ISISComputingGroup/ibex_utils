@@ -137,7 +137,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
 
     def run_instrument_tests(self):
         """
@@ -163,11 +162,9 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
-        self._upgrade_tasks.configure_mysql()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.configure_com_ports()
         self._upgrade_tasks.setup_calibrations_repository()
         self._upgrade_tasks.update_calibrations_repository()
@@ -219,16 +216,13 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
-        self._upgrade_tasks.backup_data()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_treesize_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_mysql()
-        self._upgrade_tasks.configure_mysql()
-        self._upgrade_tasks.reload_backup_data()
+
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.create_journal_sql_schema()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
@@ -257,10 +251,9 @@ class UpgradeInstrument(object):
 
     def run_force_upgrade_mysql(self):
         """
-         Do upgrade of mysql, no data dump.
+         Do upgrade of mysql, with data dump.
         """
         self._upgrade_tasks.install_mysql(force=True)
-        self._upgrade_tasks.configure_mysql()
 
 
 class UpgradeTasks(object):
@@ -751,8 +744,7 @@ class UpgradeTasks(object):
         self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
                                    self.prompt)
 
-    @task("Backup data")
-    def backup_data(self):
+    def _backup_data(self):
         """
         Backup the data for transfer. This dumps just the data not the schema.
         """
@@ -771,8 +763,7 @@ class UpgradeTasks(object):
             self.prompt.prompt_and_raise_if_not_yes(
                 "Dump file '{}' seems to be small is it correct? ".format(result_file))
 
-    @task("Reload backup data")
-    def reload_backup_data(self):
+    def _reload_backup_data(self):
         """
         Reload backup the data
         """
@@ -814,8 +805,7 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
 
-    @task("Configure MySQL")
-    def configure_mysql(self):
+    def _configure_mysql(self):
         """
         Copy mysql settings and run the MySQL configuration script
         """
@@ -920,7 +910,10 @@ class UpgradeTasks(object):
         """
         Upgrade mysql step
         """
+        backup_data = False
         if os.path.exists(os.path.join(MYSQL57_INSTALL_DIR, "bin", "mysql.exe")):
+            self._backup_data()
+            backup_data = True
             self.prompt.prompt_and_raise_if_not_yes("MySQL 5.7 detected. Please use the MySQL installer application"
                                                     "to remove MySQL 5.7. When it asks you whether to remove data"
                                                     "directories, answer yes. Type 'Y' when complete.")
@@ -932,11 +925,15 @@ class UpgradeTasks(object):
             if MYSQL_LATEST_VERSION in version and not force:
                 print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
                 return
-
+            self._backup_data()
+            backup_data = True
             self._remove_old_versions_of_mysql8()
 
         self._install_vcruntime140()
         self._install_latest_mysql8()
+        self._configure_mysql()
+        if backup_data:
+            self._reload_backup_data()
 
     @task("Reapply Hotfixes")
     def reapply_hotfixes(self):
@@ -1075,15 +1072,6 @@ class UpgradeTasks(object):
         # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes(
             "Look in the IBEX wiki at the release notes for the version you are deploying. Apply needed fixes.")
-
-    @task("Create journal table SQL schema if it doesn't exist")
-    def create_journal_sql_schema(self):
-        """
-        Create the journal schema if it doesn't exist.
-        """
-        sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
-                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"))
-        RunProcess(SYSTEM_SETUP_PATH, "add_journal_table.bat", prog_args=[sql_password]).run()
 
     @contextmanager
     def timestamped_pv_backups_file(self, name, directory, extension="txt"):
