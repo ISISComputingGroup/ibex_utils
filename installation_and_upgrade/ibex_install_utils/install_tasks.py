@@ -51,7 +51,7 @@ INST_SHARE_AREA = os.path.join(r"\\isis.cclrc.ac.uk", "inst$")
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.15"
+MYSQL_LATEST_VERSION = "8.0.17"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          "mysql-{}-winx64.zip".format(MYSQL_LATEST_VERSION))
 
@@ -925,8 +925,6 @@ class UpgradeTasks(object):
             if MYSQL_LATEST_VERSION in version and not force:
                 print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
                 return
-            self._backup_data()
-            backup_data = True
             self._remove_old_versions_of_mysql8()
 
         self._install_vcruntime140()
