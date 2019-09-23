@@ -925,8 +925,6 @@ class UpgradeTasks(object):
             if MYSQL_LATEST_VERSION in version and not force:
                 print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
                 return
-            self._backup_data()
-            backup_data = True
             self._remove_old_versions_of_mysql8()
 
         self._install_vcruntime140()
