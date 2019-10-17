@@ -5,7 +5,7 @@ REM   LATEST_PYTHON is set to a version on genie_python that can be run
 
 pushd \\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP
 
-set KITS_ICP_PATH=%cd%
+set "KITS_ICP_PATH=%cd%"
 
 if exist "%KITS_ICP_PATH%\genie_python\LATEST_BUILD.txt" (
 	for /f %%i in ( %KITS_ICP_PATH%\genie_python\LATEST_BUILD.txt ) do (
