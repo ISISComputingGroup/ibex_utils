@@ -27,9 +27,11 @@ class FileUtils(object):
             if use_robocopy:
                 empty_dir = os.path.join(os.path.dirname(path), "empty_dir_for_robocopy")
                 if os.path.exists(empty_dir):
+                    os.rmdir(empty_dir) # in case left over from previous aborted run
+                os.mkdir(empty_dir)
+                if not os.path.exists(empty_dir):
                     prompt.prompt_and_raise_if_not_yes('Error creating empty dir for robocopy "{}". '
                                                        'Please do this manually'.format(empty_dir))
-                os.mkdir(empty_dir)
                 if os.path.isdir(path):
                     os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".
                               format(empty_dir, path))

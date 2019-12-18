@@ -14,6 +14,9 @@ set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 
 IF EXIST "C:\Instrument\Apps\EPICS" (
   call C:\Instrument\Apps\EPICS\config_env.bat
+  set PYTHONDIR=%LATEST_PYTHON_DIR%
+  set PYTHONHOME=%LATEST_PYTHON_DIR%
+  set PYTHONPATH=%LATEST_PYTHON_DIR%
   call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_pre_stop
   IF ERRORLEVEL 1 EXIT /b %errorlevel%
   start /wait cmd /c "%STOP_IBEX%")
