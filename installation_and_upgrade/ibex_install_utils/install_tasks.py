@@ -263,6 +263,41 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.configure_mysql()
 
 
+# All possible upgrade tasks
+UPGRADE_TYPES = {
+    'training_update': (
+        UpgradeInstrument.run_test_update,
+        "update a training machine"),
+    'instrument_install': (
+        UpgradeInstrument.run_instrument_install,
+        "full IBEX installation on a new instrument"),
+    'instrument_test': (
+        UpgradeInstrument.run_instrument_tests,
+        "run through tests for IBEX client and server."),
+    'instrument_deploy_pre_stop': (
+        UpgradeInstrument.run_instrument_deploy_pre_stop,
+        "instrument_deploy part before the stop of instrument"),
+    'instrument_deploy_main': (
+        UpgradeInstrument.run_instrument_deploy_main,
+        "instrument_deploy after stop but before starting it,"),
+    'instrument_deploy_post_start': (
+        UpgradeInstrument.run_instrument_deploy_post_start,
+        "instrument_deploy part after the start of instrument"),
+    'install_latest_incr': (
+        UpgradeInstrument.remove_all_and_install_client_and_server,
+        "install just the latest incremental build of the server, client and genie_python"),
+    'install_latest': (
+        UpgradeInstrument.remove_all_and_install_client_and_server,
+        "install just the latest clean build of the server, client and genie_python"),
+    'truncate_database': (
+        UpgradeInstrument.run_truncate_database,
+        "backup and truncate the sql database on the instrument"),
+    'force_upgrade_mysql': (
+        UpgradeInstrument.run_force_upgrade_mysql,
+        "upgrade mysql version to latest")
+}
+
+
 class UpgradeTasks(object):
     """
     Class containing separate upgrade tasks.

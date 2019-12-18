@@ -7,7 +7,7 @@ import os
 import re
 import sys
 
-from ibex_install_utils.install_tasks import UpgradeInstrument
+from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
 from ibex_install_utils.exceptions import UserStop, ErrorInTask
 from ibex_install_utils.user_prompt import UserPrompt
 
@@ -39,7 +39,7 @@ def _get_latest_release_path(release_dir):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Upgrade the instrument.')
+    parser = argparse.ArgumentParser(description='Upgrade the instrument.', formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("--release_dir", dest="release_dir", default=None,
                         help="directory from which the client and server should be installed")
@@ -56,21 +56,9 @@ if __name__ == "__main__":
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
 
-    upgrade_types = ['training_update', 'instrument_install', 'instrument_test', 'instrument_deploy_pre_stop',
-                     'instrument_deploy_main', 'instrument_deploy_post_start', 'install_latest_incr', 'install_latest',
-                     'truncate_database', 'force_upgrade_mysql']
-    parser.add_argument('deployment_type', choices=upgrade_types,
-                        help="What upgrade should be performed. ("
-                             "training_update: update a training machine', "
-                             "install_latest_incr: install just the latest incremental build of the server, client and genie_python, "
-                             "install_latest: install just the latest clean build of the server, client and genie_python, "
-                             "instrument_install: full IBEX installation on a new instrument, "
-                             "instrument_test: run through tests for IBEX client and server."
-                             "instrument_deploy_pre_stop: instrument_deploy part before the stop of instrument,"
-                             "instrument_deploy_main: instrument_deploy after stop but before starting it,"
-                             "instrument_deploy_post_start: instrument_deploy part after the start of instrument,"
-                             "truncate_database: backup and truncate the sql database on the instrument, "
-                             "force_upgrade_mysql: upgrade mysql version to latest, ")
+    deployment_types = ["{}: {}".format(choice, deployment_types) for choice, (_, deployment_types) in UPGRADE_TYPES.items()]
+    parser.add_argument('deployment_type', choices=UPGRADE_TYPES.keys(),
+                        help="What upgrade should be performed. ( {})".format(", \n".join(deployment_types)))
 
     args = parser.parse_args()
     client_e4_dir = args.client_e4_dir
@@ -87,7 +75,7 @@ if __name__ == "__main__":
         print("You must specify BOTH the server and client directories.")
         sys.exit(2)
     elif args.kits_icp_dir is not None:
-        if args.deployment_type not in ['install_latest_incr','install_latest']:
+        if args.deployment_type not in ['install_latest_incr', 'install_latest']:
             print("When specifying kits_icp_dir you choose the install latest deployment type.")
             sys.exit(2)
         if args.deployment_type == 'install_latest_incr':
@@ -106,30 +94,11 @@ if __name__ == "__main__":
               "BOTH the server and client directories.")
         sys.exit(2)
 
-    prompt = UserPrompt(args.quiet, args.confirm_step)
-    upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir)
-
     try:
-        if args.deployment_type == "training_update":
-            upgrade_instrument.run_test_update()
-        elif args.deployment_type in ['install_latest_incr', 'install_latest']:
-            upgrade_instrument.remove_all_and_install_client_and_server()
-        elif args.deployment_type == "instrument_install":
-            upgrade_instrument.run_instrument_install()
-        elif args.deployment_type == "instrument_deploy":
-            upgrade_instrument.run_instrument_deploy()
-        elif args.deployment_type == "instrument_deploy_pre_stop":
-            upgrade_instrument.run_instrument_deploy_pre_stop()
-        elif args.deployment_type == "instrument_deploy_main":
-            upgrade_instrument.run_instrument_deploy_main()
-        elif args.deployment_type == "instrument_deploy_post_start":
-            upgrade_instrument.run_instrument_deploy_post_start()
-        elif args.deployment_type == "instrument_test":
-            upgrade_instrument.run_instrument_tests()
-        elif args.deployment_type == "truncate_database":
-            upgrade_instrument.run_truncate_database()
-        elif args.deployment_type == "force_upgrade_mysql":
-            upgrade_instrument.run_force_upgrade_mysql()
+        prompt = UserPrompt(args.quiet, args.confirm_step)
+        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir)
+        upgrade_function = UPGRADE_TYPES[args.deployment_type][0]
+        upgrade_function(upgrade_instrument)
 
     except UserStop:
         print ("User stopped upgrade")
