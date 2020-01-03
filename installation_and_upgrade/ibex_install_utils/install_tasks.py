@@ -37,6 +37,7 @@ SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
 GUI_PATH_E4 = os.path.join(APPS_BASE_DIR, "Client_E4")
 PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
+PYTHON_3_PATH = os.path.join(APPS_BASE_DIR, "Python3")
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 EPICS_UTILS_PATH = os.path.join(APPS_BASE_DIR, "EPICS_UTILS")
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
@@ -76,6 +77,8 @@ AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI
 STAGE_DELETED = os.path.join(INST_SHARE_AREA, "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
 
+ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH)
+
 GIGABYTE = 1024 ** 3
 
 RAM_MIN = 7.5 * GIGABYTE  # 8 GB minus a small tolerance.
@@ -87,7 +90,8 @@ class UpgradeInstrument(object):
     """
     Class to upgrade the instrument installation to the given version of IBEX.
     """
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils=FileUtils()):
+    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
+                 file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -95,10 +99,11 @@ class UpgradeInstrument(object):
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
+            genie_python3_dir: directory to install genie_python 3 from
             file_utils : collection of file utilities
         """
         self._upgrade_tasks = UpgradeTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
 
     @staticmethod
     def _should_install_utils():
@@ -120,6 +125,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_settings()
         self._upgrade_tasks.install_settings()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
 
@@ -135,6 +141,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
 
@@ -161,6 +168,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_treesize_shortcuts()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_mysql()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
@@ -219,6 +227,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_treesize_shortcuts()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_mysql()
 
         self._upgrade_tasks.install_ibex_client()
@@ -256,12 +265,48 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_mysql(force=True)
 
 
+# All possible upgrade tasks
+UPGRADE_TYPES = {
+    'training_update': (
+        UpgradeInstrument.run_test_update,
+        "update a training machine"),
+    'instrument_install': (
+        UpgradeInstrument.run_instrument_install,
+        "full IBEX installation on a new instrument"),
+    'instrument_test': (
+        UpgradeInstrument.run_instrument_tests,
+        "run through tests for IBEX client and server."),
+    'instrument_deploy_pre_stop': (
+        UpgradeInstrument.run_instrument_deploy_pre_stop,
+        "instrument_deploy part before the stop of instrument"),
+    'instrument_deploy_main': (
+        UpgradeInstrument.run_instrument_deploy_main,
+        "instrument_deploy after stop but before starting it,"),
+    'instrument_deploy_post_start': (
+        UpgradeInstrument.run_instrument_deploy_post_start,
+        "instrument_deploy part after the start of instrument"),
+    'install_latest_incr': (
+        UpgradeInstrument.remove_all_and_install_client_and_server,
+        "install just the latest incremental build of the server, client and genie_python"),
+    'install_latest': (
+        UpgradeInstrument.remove_all_and_install_client_and_server,
+        "install just the latest clean build of the server, client and genie_python"),
+    'truncate_database': (
+        UpgradeInstrument.run_truncate_database,
+        "backup and truncate the sql database on the instrument"),
+    'force_upgrade_mysql': (
+        UpgradeInstrument.run_force_upgrade_mysql,
+        "upgrade mysql version to latest")
+}
+
+
 class UpgradeTasks(object):
     """
     Class containing separate upgrade tasks.
     """
 
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, file_utils=FileUtils()):
+    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
+                 file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -269,12 +314,14 @@ class UpgradeTasks(object):
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
+            genie_python3_dir: directory to install genie python from
             file_utils : collection of file utilities
         """
         self.prompt = user_prompt  # This is needed to allow @tasks to work
         self._server_source_dir = server_source_dir
         self._client_source_dir = client_source_dir
         self._client_e4_source_dir = client_e4_source_dir
+        self._genie_python_3_source_dir = genie_python3_dir
         self._file_utils = file_utils
 
         self._machine_name = self._get_machine_name()
@@ -333,7 +380,8 @@ class UpgradeTasks(object):
         Returns:
 
         """
-        for path in (EPICS_PATH, PYTHON_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH):
+
+        for path in ALL_INSTALL_DIRECTORIES:
             self._file_utils.remove_tree(path, self.prompt)
 
     @task("Removing training folder on desktop ...")
@@ -410,6 +458,14 @@ class UpgradeTasks(object):
         RunProcess(self._server_source_dir, "install_to_inst.bat", prog_args=["NOLOG"]).run()
         if with_utils and self.prompt.confirm_step("install icp binaries"):
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
+
+    @task("Installing Genie Python 3")
+    def install_genie_python3(self):
+        """
+        Install ibex server.
+        """
+        self._file_utils.mkdir_recursive(APPS_BASE_DIR)
+        RunProcess(self._genie_python_3_source_dir, "genie_python_install.bat").run()
 
     @task("Installing IBEX Client")
     def install_ibex_client(self):
@@ -698,7 +754,7 @@ class UpgradeTasks(object):
                 self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d), self.prompt)
 
             # Move the folders
-            for app_path in [EPICS_PATH, EPICS_UTILS_PATH, GUI_PATH, PYTHON_PATH, GUI_PATH_E4]:
+            for app_path in ALL_INSTALL_DIRECTORIES:
                 self._backup_dir(app_path, copy=False)
 
             # Backup settings and autosave

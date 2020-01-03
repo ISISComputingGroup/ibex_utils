@@ -23,5 +23,5 @@ goto :EOF
 
 :ERROR
 popd
-@echo update_genie_python failed
+@echo define_latest_genie_python failed
 exit /b 1
