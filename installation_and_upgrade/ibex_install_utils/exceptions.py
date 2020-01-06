@@ -16,10 +16,7 @@ class ErrorInTask(Exception):
     """
 
     def __init__(self, message):
-        self.message = message
-
-    def __repr__(self):
-        return "{}: {}".format(self.__class__.__name__, self.message)
+        super(ErrorInTask, self).__init__(message)
 
 
 class ErrorInRun(ErrorInTask):

@@ -87,7 +87,7 @@ if __name__ == "__main__":
         client_e4_dir = _get_latest_directory_path(client_e4_build_dir, "BUILD")
 
         genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
-        genie_python3_dir = _get_latest_directory_path(genie_python3_build_dir, "BUILD")
+        genie_python3_dir = _get_latest_directory_path(genie_python3_build_dir, "BUILD-")
 
     elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
             args.client_e4_dir is not None:
