@@ -524,6 +524,7 @@ class UpgradeTasks(object):
         print("Upgrade {0} as a {1}".format(self._machine_name, machine_type))
         print("    Server source: {0}".format(self._server_source_dir))
         print("    Client source: {0}".format(self._client_source_dir))
+        print("    Python 3 source: {0}".format(self._genie_python_3_source_dir))
         answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()
