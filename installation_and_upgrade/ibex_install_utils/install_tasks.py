@@ -876,7 +876,7 @@ class UpgradeTasks(object):
 
         # Restart to pick up new my.ini
         admin_commands = AdminCommandBuilder()
-        admin_commands.add_command("sc", "stop MYSQL80")
+        admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
         # Sleep to wait for service to stop so we can restart it.
         admin_commands.add_command("ping", "-n 10 127.0.0.1 >nul", expected_return_val=None)
         admin_commands.add_command("sc", "start MYSQL80")
