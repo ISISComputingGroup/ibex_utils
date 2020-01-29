@@ -930,7 +930,7 @@ class UpgradeTasks(object):
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         admin_commands = AdminCommandBuilder()
-        if not clean_install:
+        if clean_install:
             os.makedirs(MYSQL_FILES_DIR)
 
             admin_commands.add_command(mysqld, '--datadir="{}" --initialize-insecure --console --log-error-verbosity=3'
@@ -952,7 +952,7 @@ class UpgradeTasks(object):
 
         sleep(5)  # Time for service to start
 
-        if not clean_install:
+        if clean_install:
             sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
                                               os.getenv("MYSQL_PASSWORD", "environment variable not set"))
 
