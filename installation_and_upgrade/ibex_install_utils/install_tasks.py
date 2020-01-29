@@ -52,7 +52,7 @@ INST_SHARE_AREA = os.path.join(r"\\isis.cclrc.ac.uk", "inst$")
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.17"
+MYSQL_LATEST_VERSION = "8.0.19"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          "mysql-{}-winx64.zip".format(MYSQL_LATEST_VERSION))
 
@@ -61,7 +61,7 @@ MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
 PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
 SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 
-VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140.dll")
+VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140_1.dll")
 VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer",
                                       "vc_redist.x64.exe")
 
@@ -882,14 +882,11 @@ class UpgradeTasks(object):
         admin_commands.add_command("sc", "start MYSQL80")
         admin_commands.run_all()
 
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Run config_mysql.bat in {} now. \n"
-            "WARNING: performing this step will wipe all existing historical data. \n"
-            "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
-
-    def _remove_old_versions_of_mysql8(self):
-        self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
+    def _remove_old_versions_of_mysql8(self, clean_install):
+        if clean_install:
+            self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
                                                 "Are you sure you want to continue?")
+
 
         admin_commands = AdminCommandBuilder()
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
@@ -901,16 +898,21 @@ class UpgradeTasks(object):
         if os.path.exists(MYSQL8_INSTALL_DIR):
             shutil.rmtree(MYSQL8_INSTALL_DIR)
 
-        self._remove_old_mysql_data_dir()
+        if clean_install:
+            self._remove_old_mysql_data_dir()
+
 
     def _remove_old_mysql_data_dir(self):
         if os.path.exists(MYSQL_FILES_DIR):
             shutil.rmtree(MYSQL_FILES_DIR)
 
-    def _install_latest_mysql8(self):
-
-        self._remove_old_mysql_data_dir()
-
+    def _install_latest_mysql8(self, clean_install):
+        """
+        Install the latest mysql. If this is a clean install remove old data directories first and create a new
+        database
+        Args:
+            clean_install: True to destroy and recreate data directories
+        """
         os.makedirs(MYSQL8_INSTALL_DIR)
 
         mysql_unzip_temp = os.path.join(APPS_BASE_DIR, "temp-mysql-unzip")
@@ -924,19 +926,20 @@ class UpgradeTasks(object):
 
         shutil.rmtree(mysql_unzip_temp)
 
-        os.makedirs(MYSQL_FILES_DIR)
-
         mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         admin_commands = AdminCommandBuilder()
+        if clean_install:
+            os.makedirs(MYSQL_FILES_DIR)
 
-        admin_commands.add_command(mysqld, '--datadir="{}" --initialize-insecure --console --log-error-verbosity=3'
+            admin_commands.add_command(mysqld, '--datadir="{}" --initialize-insecure --console --log-error-verbosity=3'
                                    .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
-        # Wait for initialize since admin runner can't wait for completion. Maybe we can detect completion another way?
+        # Wait for initialize since admin runner can't wait for completion.
+        # Maybe we can detect completion another way?
         admin_commands.add_command(mysqld, '--install MYSQL80 --datadir="{}"'
-                                   .format(os.path.join(MYSQL_FILES_DIR, "data")))
+                               .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
         admin_commands.add_command("sc", "start MYSQL80")
         admin_commands.add_command("sc", "config MYSQL80 start= auto")
@@ -949,12 +952,18 @@ class UpgradeTasks(object):
 
         sleep(5)  # Time for service to start
 
-        sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
-                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"))
+        if clean_install:
+            sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
+                                              os.getenv("MYSQL_PASSWORD", "environment variable not set"))
 
-        subprocess.check_call('{} -u root -e "ALTER USER \'root\'@\'localhost\' '
-                              'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
-                              .format(mysql, sql_password))
+            subprocess.check_call('{} -u root -e "ALTER USER \'root\'@\'localhost\' '
+                                  'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
+                                  .format(mysql, sql_password))
+
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Run config_mysql.bat in {} now. \n"
+                "WARNING: performing this step will wipe all existing historical data. \n"
+                "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
 
     def _install_vcruntime140(self):
         if not os.path.exists(VCRUNTIME140):
@@ -965,9 +974,12 @@ class UpgradeTasks(object):
     @task("Install latest MySQL")
     def install_mysql(self, force=False):
         """
-        Upgrade mysql step
+        Install mysql and the ibex database schemas
+        Args:
+            force: True delete old data and update
         """
         backup_data = False
+        clean_install = True
         if os.path.exists(os.path.join(MYSQL57_INSTALL_DIR, "bin", "mysql.exe")):
             self._backup_data()
             backup_data = True
@@ -982,10 +994,11 @@ class UpgradeTasks(object):
             if MYSQL_LATEST_VERSION in version and not force:
                 print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
                 return
-            self._remove_old_versions_of_mysql8()
+            clean_install = force
+            self._remove_old_versions_of_mysql8(clean_install=clean_install)
 
         self._install_vcruntime140()
-        self._install_latest_mysql8()
+        self._install_latest_mysql8(clean_install=clean_install)
         self._configure_mysql()
         if backup_data:
             self._reload_backup_data()
