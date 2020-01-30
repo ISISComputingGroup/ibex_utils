@@ -137,6 +137,8 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.check_java_installation()
 
         self._upgrade_tasks.create_desktop_ibex_training_material()
+
+        # settings include common directories which can not be got from the git repo on training machine
         self._upgrade_tasks.install_settings()
         self._upgrade_tasks.install_ibex_server(True)
         self._upgrade_tasks.register_isis_icp()
@@ -145,9 +147,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.setup_script_generator_config()
         self._upgrade_tasks.install_mysql(force_no_backup_data=True)
         self._upgrade_tasks.install_ibex_client()
-
-        self._upgrade_tasks.setup_calibrations_repository()
-        self._upgrade_tasks.update_calibrations_repository()
 
         self._upgrade_tasks.update_kafka_topics()
 
