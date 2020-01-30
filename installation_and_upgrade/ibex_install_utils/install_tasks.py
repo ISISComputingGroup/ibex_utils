@@ -166,6 +166,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_seci_one()
         self._upgrade_tasks.remove_treesize_shortcuts()
+        self._upgrade_tasks.restrict_ie()
 
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_genie_python3()
@@ -226,6 +227,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_treesize_shortcuts()
+        self._upgrade_tasks.restrict_ie()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_mysql()
@@ -1033,6 +1035,8 @@ class UpgradeTasks(object):
             "If the font cannot be seen in the genie_python.bat change default terminal colours to white on black.")
         self.prompt.prompt_and_raise_if_not_yes(
             "Verify that the current configuration is consistent with the system prior to upgrade")
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Verify that all the links from the 'Weblinks' perspective still work (i.e. the address gets resolved)")
 
     @task("Server release tests")
     def perform_server_tests(self):
@@ -1286,3 +1290,15 @@ class UpgradeTasks(object):
         except (OSError, IOError):
             self.prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
                                                     .format(from_path, to_path))
+
+    @task("Restrict Internet Explorer")
+    def restrict_ie(self):
+        """
+        Restrict access of external websites to address a security vulnerability in Internet Explorer.
+        """
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Configure Internet Explorer to restrict access to the web except for select whitelisted sites:\n"
+            "- Open 'Internet Options' (from the gear symbol in the top right corner of the window).\n"
+            "- Go to the 'Connections' tab and open 'Lan Settings'\n"
+            "- Check 'Use Automatic configuration script' and enter http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
+            "- Click 'Ok' on all dialogs.")
