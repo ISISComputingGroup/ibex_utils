@@ -75,9 +75,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     client_e4_dir = args.client_e4_dir
     if args.release_dir is not None:
-        current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
-        if args.release_suffix is not "":
-            current_release_dir += "-{}".format(args.release_suffix)
+        if args.release_suffix is None or args.release_suffix is "":
+            current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
+        else:
+            current_release_dir = os.path.join(args.release_dir, args.release_suffix)
+            
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
     elif args.server_dir is not None and args.client_dir is not None:
