@@ -1283,7 +1283,6 @@ class UpgradeTasks(object):
         """
         Restrict access of external websites to address a security vulnerability in Internet Explorer.
         """
-        # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes(
             "Configure Internet Explorer to restrict access to the web except for select whitelisted sites:\n"
             "- Open 'Internet Options' (from the gear symbol in the top right corner of the window).\n"
