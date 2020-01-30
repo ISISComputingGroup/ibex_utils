@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<banner xmlns="http://epics.isis.rl.ac.uk/schema/banner/1.0" xmlns:ioc="http://www.w3.org/2001/XMLSchema-instance" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <items>
+    <item>
+      <button>
+        <name>Stop All Motors</name>
+        <pv>CS:MOT:STOP:ALL</pv>
+        <local>true</local>
+        <pvValue>1</pvValue>
+        <textColour>#000000</textColour>
+        <buttonColour>#e0e0e0</buttonColour>
+        <fontSize>9</fontSize>
+        <width>100</width>
+        <height>25</height>
+      </button>
+    </item>
+    <item>
+      <display>
+        <name>Motors are</name>
+        <pv>CS:MOT:MOVING:STR</pv>
+        <local>true</local>
+        <width>170</width>
+      </display>
+    </item>
+    <item>
+      <display>
+        <name>Manager mode</name>
+        <pv>CS:MANAGER</pv>
+        <local>true</local>
+        <width>250</width>
+      </display>
+    </item>
+    <item>
+      <display>
+        <name>Config</name>
+        <pv>CS:BLOCKSERVER:CURR_CONFIG_NAME</pv>
+        <local>true</local>
+        <width>360</width>
+      </display>
+    </item>
+  </items>
+</banner>

@@ -1,0 +1,165 @@
+record(scalcout, "$(P)CS:DASHBOARD:BANNER:LEFT:_CALC") {
+    field(INPA, "$(P)DAE:RUNSTATE CP MS")
+    field(BB, "Run:")
+    field(CC, "Next run:")
+    field(CALC, "(A=2||A=3||A=4||A=5)?BB:CC")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:BANNER:LEFT:LABEL") {
+    field(INP, "$(P)CS:DASHBOARD:BANNER:LEFT:_CALC.SVAL CP MS")
+	info(archive, "VAL")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:BANNER:LEFT:VALUE") {
+    field(INP, "$(P)DAE:RUNNUMBER CP MS")
+	info(archive, "VAL")
+}
+
+record(scalcout, "$(P)CS:DASHBOARD:BANNER:MIDDLE:_LCAL") {
+    field(INPA, "$(P)DAE:SIM_MODE CP MS")
+    field(BB, "Simulated")
+    field(CC, "")
+    field(CALC, "(A=1)?BB:CC")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:BANNER:MIDDLE:LABEL") {
+    field(INP, "$(P)CS:DASHBOARD:BANNER:MIDDLE:_LCAL.SVAL CP MS")
+	info(archive, "VAL")
+}
+
+record(scalcout, "$(P)CS:DASHBOARD:BANNER:MIDDLE:_VCAL") {
+    field(INPA, "$(P)DAE:SIM_MODE CP MS")
+    field(BB, "DAE")
+    field(CC, "")
+    field(CALC, "(A=1)?BB:CC")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:BANNER:MIDDLE:VALUE") {
+    field(INP, "$(P)CS:DASHBOARD:BANNER:MIDDLE:_VCAL.SVAL CP MS")
+	info(archive, "VAL")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:BANNER:RIGHT:LABEL") {
+    field(VAL, "Kicker:")
+    field(PINI, "YES")
+	info(archive, "VAL")
+}
+
+record(bi, "$(P)CS:DASHBOARD:BANNER:RIGHT:_CALC") {
+    field(INP, "BL:MUON:KICKR CP MS")
+    field(ZNAM, "Off")
+    field(ONAM, "On")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:BANNER:RIGHT:VALUE") {
+    field(INP, "$(P)CS:DASHBOARD:BANNER:RIGHT:_CALC CP MS")
+	info(archive, "VAL")
+}
+
+
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:1:1:LABEL") {
+    field(VAL, "Good / Raw Frames:")
+    field(PINI, "YES")
+	info(archive, "VAL")
+}
+
+record(scalcout, "$(P)CS:DASHBOARD:TAB:1:1:_CALC") {
+    field(INAA, "$(P)DAE:GOODFRAMES CP MS")
+    field(BB, " / ")
+    field(INCC, "$(P)DAE:RAWFRAMES CP MS")
+    field(CALC, "PRINTF('%d', AA)+STR(BB)+PRINTF('%d', CC)")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:1:1:VALUE") {
+    field(INP, "$(P)CS:DASHBOARD:TAB:1:1:_CALC.SVAL CP MS")
+	info(archive, "VAL")
+}
+
+
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:2:1:LABEL") {
+    field(VAL, "MEvents:")
+    field(PINI, "YES")
+	info(archive, "VAL")
+}
+
+record(scalcout, "$(P)CS:DASHBOARD:TAB:2:1:_CALC") {
+    field(INAA, "$(P)DAE:MEVENTS CP MS")
+    field(CALC, "PRINTF('%.4f', AA)")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:2:1:VALUE") {
+    field(INP, "$(P)CS:DASHBOARD:TAB:2:1:_CALC.SVAL CP MS")
+	info(archive, "VAL")
+}
+
+
+
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:3:1:LABEL") {
+    field(VAL, "Count Rate:")
+    field(PINI, "YES")
+	info(archive, "VAL")
+}
+
+record(scalcout, "$(P)CS:DASHBOARD:TAB:3:1:_CALC") {
+    field(INAA, "$(P)DAE:COUNTRATE CP MS")
+    field(CALC, "PRINTF('%4f', AA)")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:3:1:VALUE") {
+    field(INP, "$(P)CS:DASHBOARD:TAB:3:1:_CALC.SVAL CP MS")
+	info(archive, "VAL")
+}
+
+
+
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:1:2:LABEL") {
+    field(VAL, "Inst. Time:")
+    field(PINI, "YES")
+	info(archive, "VAL")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:1:2:VALUE") {
+    field(INP, "$(P)CS:IOC:INSTETC_01:DEVIOS:TOD CP MS")
+	info(archive, "VAL")
+}
+
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:2:2:LABEL") {
+    field(VAL, "Run Time:")
+    field(PINI, "YES")
+	info(archive, "VAL")
+}
+
+record(scalcout, "$(P)CS:DASHBOARD:TAB:2:2:_CALC") {
+    field(INAA, "$(P)DAE:RUNDURATION CP MS")
+    field(BB, " s")
+    field(CALC, "PRINTF('%d', AA)+BB")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:2:2:VALUE") {
+    field(INP, "$(P)CS:DASHBOARD:TAB:2:2:_CALC.SVAL CP MS")
+	info(archive, "VAL")
+}
+
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:3:2:LABEL") {
+    field(VAL, "Period:")
+    field(PINI, "YES")
+	info(archive, "VAL")
+}
+
+record(scalcout, "$(P)CS:DASHBOARD:TAB:3:2:_CALC") {
+    field(INAA, "$(P)DAE:PERIOD CP MS")
+    field(BB, " / ")
+    field(INCC, "$(P)DAE:NUMPERIODS CP MS")
+    field(CALC, "PRINTF('%d', AA)+BB+PRINTF('%d', CC)")
+}
+
+record(stringin, "$(P)CS:DASHBOARD:TAB:3:2:VALUE") {
+    field(INP, "$(P)CS:DASHBOARD:TAB:3:2:_CALC.SVAL CP MS")
+	info(archive, "VAL")
+}

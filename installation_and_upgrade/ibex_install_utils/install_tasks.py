@@ -32,6 +32,8 @@ BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
+SCRIPT_GENERATOR_PATH = os.path.join(APPS_BASE_DIR, "script_generator")
+SCRIPT_GENREATOR_CONFIG_PATH = os.path.join("C:\\", "ScriptGeneratorConfigs")
 
 SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
@@ -40,11 +42,13 @@ PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
 PYTHON_3_PATH = os.path.join(APPS_BASE_DIR, "Python3")
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 EPICS_UTILS_PATH = os.path.join(APPS_BASE_DIR, "EPICS_UTILS")
-DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
+OLD_DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
+DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "IBEX training")
+SOURCE_DESKTOP_TRAINING_FOLDER_PATH = os.path.join(r"\\isis", "shares", "ISIS_Experimental_Controls_Public", "training", "2020-01-31")
 SETTINGS_CONFIG_FOLDER = os.path.join("Settings", "config")
 SETTINGS_CONFIG_PATH = os.path.join(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER)
 CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
-SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
+SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
@@ -66,6 +70,7 @@ VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "IC
                                       "vc_redist.x64.exe")
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
+ICP_BINARIES_DAE=os.path.join(EPICS_PATH, "ICP_Binaries", "isisdae", "x64", "Release")
 
 USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
 PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
@@ -77,7 +82,8 @@ AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI
 STAGE_DELETED = os.path.join(INST_SHARE_AREA, "backups$", "stage-deleted")
 SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES = 100
 
-ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH)
+ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH,
+                           SCRIPT_GENERATOR_PATH)
 
 GIGABYTE = 1024 ** 3
 
@@ -91,7 +97,7 @@ class UpgradeInstrument(object):
     Class to upgrade the instrument installation to the given version of IBEX.
     """
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
-                 file_utils=FileUtils()):
+                 script_generator_source_dir, file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -100,10 +106,12 @@ class UpgradeInstrument(object):
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie_python 3 from
+            script_generator_source_dir: directory to install script generator from
             file_utils : collection of file utilities
         """
         self._upgrade_tasks = UpgradeTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
+            script_generator_source_dir, file_utils=file_utils)
 
     @staticmethod
     def _should_install_utils():
@@ -114,19 +122,35 @@ class UpgradeInstrument(object):
         """
         return not os.path.exists(LABVIEW_DAE_DIR)
 
-    def run_test_update(self):
+    def run_training_update(self):
         """
-        Run a complete test upgrade on the current system
+        Create a training machine on the current system
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
         self._upgrade_tasks.stop_ibex_server()
+
         self._upgrade_tasks.remove_old_ibex()
+
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
         self._upgrade_tasks.remove_settings()
+
+        self._upgrade_tasks.check_java_installation()
+
+        self._upgrade_tasks.create_desktop_ibex_training_material()
         self._upgrade_tasks.install_settings()
-        self._upgrade_tasks.install_ibex_server(self._should_install_utils())
+        self._upgrade_tasks.install_ibex_server(True)
+        self._upgrade_tasks.register_isis_icp()
         self._upgrade_tasks.install_genie_python3()
+        self._upgrade_tasks.install_script_generator()
+        self._upgrade_tasks.setup_script_generator_config()
+        self._upgrade_tasks.install_mysql(force_no_backup_data=True)
         self._upgrade_tasks.install_ibex_client()
+
+        self._upgrade_tasks.setup_calibrations_repository()
+        self._upgrade_tasks.update_calibrations_repository()
+
+        self._upgrade_tasks.update_kafka_topics()
+
         self._upgrade_tasks.upgrade_notepad_pp()
 
     def remove_all_and_install_client_and_server(self):
@@ -268,7 +292,7 @@ class UpgradeInstrument(object):
 # All possible upgrade tasks
 UPGRADE_TYPES = {
     'training_update': (
-        UpgradeInstrument.run_test_update,
+        UpgradeInstrument.run_training_update,
         "update a training machine"),
     'instrument_install': (
         UpgradeInstrument.run_instrument_install,
@@ -306,7 +330,7 @@ class UpgradeTasks(object):
     """
 
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
-                 file_utils=FileUtils()):
+                 script_generator_source_dir, file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -315,6 +339,7 @@ class UpgradeTasks(object):
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie python from
+            script_generator_source_dir: directory to install script generator from
             file_utils : collection of file utilities
         """
         self.prompt = user_prompt  # This is needed to allow @tasks to work
@@ -322,6 +347,7 @@ class UpgradeTasks(object):
         self._client_source_dir = client_source_dir
         self._client_e4_source_dir = client_e4_source_dir
         self._genie_python_3_source_dir = genie_python3_dir
+        self._script_generator_source_dir = script_generator_source_dir
         self._file_utils = file_utils
 
         self._machine_name = self._get_machine_name()
@@ -391,7 +417,17 @@ class UpgradeTasks(object):
         Returns:
 
         """
+        self._file_utils.remove_tree(OLD_DESKTOP_TRAINING_FOLDER_PATH, self.prompt)
         self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH, self.prompt)
+
+    @task("Creating training folder on desktop ...")
+    def create_desktop_ibex_training_material(self):
+        """
+        Copy training folder to the desktop
+        Returns:
+
+        """
+        shutil.copytree(SOURCE_DESKTOP_TRAINING_FOLDER_PATH, DESKTOP_TRAINING_FOLDER_PATH)
 
     @task("Removing old settings file")
     def remove_settings(self):
@@ -459,6 +495,21 @@ class UpgradeTasks(object):
         if with_utils and self.prompt.confirm_step("install icp binaries"):
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
+    @task("Register ISIS ICP")
+    def register_isis_icp(self):
+        """
+        register the isis icp program
+        """
+        admin_commands = AdminCommandBuilder()
+        if os.path.exists(LABVIEW_DAE_DIR):
+            admin_commands.add_command("cd", LABVIEW_DAE_DIR)
+            admin_commands.add_command("register_programs.cmd", "")
+        else:
+            admin_commands.add_command("cd", ICP_BINARIES_DAE)
+            admin_commands.add_command("isisicp.exe", r"/RegServer")
+            admin_commands.add_command("isisdatasvr.exe", r"/RegServer")
+        admin_commands.run_all()
+
     @task("Installing Genie Python 3")
     def install_genie_python3(self):
         """
@@ -466,6 +517,16 @@ class UpgradeTasks(object):
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
         RunProcess(self._genie_python_3_source_dir, "genie_python_install.bat").run()
+
+    @task("Installing Script Generator")
+    def install_script_generator(self):
+        """
+        Install ibex server.
+        """
+        self._file_utils.mkdir_recursive(APPS_BASE_DIR)
+        RunProcess(self._script_generator_source_dir, "install_script_generator.bat").run()
+
+
 
     @task("Installing IBEX Client")
     def install_ibex_client(self):
@@ -525,6 +586,7 @@ class UpgradeTasks(object):
         print("    Server source: {0}".format(self._server_source_dir))
         print("    Client source: {0}".format(self._client_source_dir))
         print("    Python 3 source: {0}".format(self._genie_python_3_source_dir))
+        print("    Script generator source: {0}".format(self._script_generator_source_dir))
         answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()
@@ -649,27 +711,56 @@ class UpgradeTasks(object):
         """
         Set up the calibration repository
         """
-        if os.path.isdir(CALIBRATION_PATH):
-            if self.prompt.prompt("Calibrations directory already exists. Update calibrations repository?",
-                                  ["Y", "N"], "N") == "Y":
-                self.update_calibrations_repository()
-        else:
-            exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                                        "C:\Instrument\Settings\config\common")
-            if exit_code is not 0:
-                raise ErrorInRun("Failed to set up common calibration directory.")
+
+        self._upgrade_or_create_git_dir(
+            "Calibration",
+            "http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git",
+            CALIBRATION_PATH)
+
+    @task("Set up script generator config repository")
+    def setup_script_generator_config(self):
+        self._upgrade_or_create_git_dir(
+            "Script generator",
+            "https://github.com/ISISComputingGroup/ScriptGeneratorConfigs.git",
+            SCRIPT_GENREATOR_CONFIG_PATH)
 
     @task("Updating calibrations repository")
     def update_calibrations_repository(self):
         """
         Update the calibration repository
         """
+        self._upgrade_git_repo("Calibration", CALIBRATION_PATH)
+
+    def _upgrade_or_create_git_dir(self, what, repo, destination):
+        """
+        Create, or if exists update, the git repo at the given destination
+        Args:
+            what: what the repo is for messages
+            repo: the repo path
+            destination: where the repo should be cloned to
+        """
+        if os.path.isdir(destination):
+            if self.prompt.prompt("{} directory already exists. Update calibrations repository?".format(what),
+                                  ["Y", "N"], "N") == "Y":
+                self._upgrade_git_repo(what, destination)
+        else:
+            exit_code = subprocess.call("git clone {} {}".format(repo, destination))
+            if exit_code is not 0:
+                raise ErrorInRun("Failed to set up {} directory.".format(what))
+
+    def _upgrade_git_repo(self, what, destination):
+        """
+        Updates an existing git repo
+        Args:
+            what: what the repo is for messages
+            destination: where the repo is cloned
+        """
         try:
-            repo = git.Repo(CALIBRATION_PATH)
+            repo = git.Repo(destination)
             repo.git.pull()
         except git.GitCommandError:
-            self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the calibrations repo.\n"
-                                                    "Manually pull it. Path='{}'".format(CALIBRATION_PATH))
+            self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the {} repo.\n"
+                                                    "Manually pull it. Path='{}'".format(what, destination))
 
     @task("Install java")
     def check_java_installation(self):
@@ -972,17 +1063,20 @@ class UpgradeTasks(object):
                 "Install it from {} and confirm when complete".format(VCRUNTIME140_INSTALLER))
 
     @task("Install latest MySQL")
-    def install_mysql(self, force=False):
+    def install_mysql(self, force=False, force_no_backup_data=False):
         """
         Install mysql and the ibex database schemas
         Args:
             force: True delete old data and update
+            force_no_backup_data: If True even if the backuped data should be taken it isn't
         """
         backup_data = False
         clean_install = True
         if os.path.exists(os.path.join(MYSQL57_INSTALL_DIR, "bin", "mysql.exe")):
-            self._backup_data()
-            backup_data = True
+            
+            backup_data = not force_no_backup_data
+            if backup_data:
+                self._backup_data()
             self.prompt.prompt_and_raise_if_not_yes("MySQL 5.7 detected. Please use the MySQL installer application"
                                                     "to remove MySQL 5.7. When it asks you whether to remove data"
                                                     "directories, answer yes. Type 'Y' when complete.")
@@ -996,6 +1090,9 @@ class UpgradeTasks(object):
                 return
             clean_install = force
             self._remove_old_versions_of_mysql8(clean_install=clean_install)
+
+        if clean_install:
+            self._remove_old_mysql_data_dir()
 
         self._install_vcruntime140()
         self._install_latest_mysql8(clean_install=clean_install)
