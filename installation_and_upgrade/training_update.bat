@@ -1,12 +1,29 @@
 REM Upgrade a training machine
+set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
+call "%~dp0\define_latest_genie_python.bat"
 
-set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases
+git --version
+
+IF ERRORLEVEL 1 (
+    echo No installation of Git found on machine. Please download Git from https://git-scm.com/downloads before proceeding.
+    EXIT /b %errorlevel%
+)
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
+
 IF EXIST "C:\Instrument\Apps\EPICS" (start /wait cmd /c "%STOP_IBEX%")
 
-call "%SOURCE%\genie_python\Python\python.exe" IBEX_upgrade.py --release_dir "%SOURCE%" --quiet training_update
-IF ERRORLEVEL 1 GOTO :EOF
+
+REM Set python as share just for script call
+SETLOCAL
+set PYTHONDIR=%LATEST_PYTHON_DIR%
+set PYTHONHOME=%LATEST_PYTHON_DIR%
+set PYTHONPATH=%LATEST_PYTHON_DIR%
+
+call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --confirm_step training_update
+IF ERRORLEVEL 1 EXIT /b %errorlevel%
+ENDLOCAL
+
 
 start /wait cmd /c "%START_IBEX%"

@@ -53,6 +53,8 @@ if __name__ == "__main__":
     parser.add_argument("--client_e4_dir", default=None, help="Directory from which IBEX E4 client should be installed")
     parser.add_argument("--genie_python3_dir", default=None,
                         help="Directory from which genie_python_3 should be installed")
+    parser.add_argument("--script_generator_source_dir", default=None,
+                        help="Directory from which script generator should be installed")
     parser.add_argument("--confirm_step", default=False, action="store_true",
                         help="Confirm each major action before performing it")
     parser.add_argument("--quiet", default=False, action="store_true",
@@ -73,6 +75,11 @@ if __name__ == "__main__":
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
+
+        print("The script generator build is not yet in release so it gets the latest build!!")
+        # Should be: script_generator_source_dir = os.path.join(current_release_dir, "script_generator")
+        script_generator_build_dir = os.path.join(os.path.join(current_release_dir, os.pardir, os.pardir), "script_generator")
+        script_generator_source_dir = _get_latest_directory_path(script_generator_build_dir, "BUILD")
     elif args.kits_icp_dir is not None:
         if args.deployment_type == 'install_latest_incr':
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
@@ -89,20 +96,25 @@ if __name__ == "__main__":
         genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
         genie_python3_dir = _get_latest_directory_path(genie_python3_build_dir, "BUILD-")
 
+        script_generator_build_dir = os.path.join(args.kits_icp_dir, "script_generator")
+        script_generator_source_dir = _get_latest_directory_path(script_generator_build_dir, "BUILD")
+
     elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
-            args.client_e4_dir is not None:
+            args.client_e4_dir is not None and args.script_generator_source_dir is not None:
         server_dir = args.server_dir
         client_dir = args.client_dir
         client_e4_dir = args.client_e4_dir
         genie_python3_dir = args.genie_python3_dir
+        script_generator_source_dir = args.script_generator_source_dir
     else:
         print("You must specify either the release directory or kits_icp_dir or "
-              "ALL of the server, client, client e4 and genie python 3 directories.")
+              "ALL of the server, client, client e4, genie python 3 and script generator directories.")
         sys.exit(2)
 
     try:
         prompt = UserPrompt(args.quiet, args.confirm_step)
-        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir, genie_python3_dir)
+        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir, genie_python3_dir,
+                                               script_generator_source_dir)
         upgrade_function = UPGRADE_TYPES[args.deployment_type][0]
         upgrade_function(upgrade_instrument)
 
