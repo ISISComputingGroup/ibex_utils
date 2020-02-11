@@ -1037,7 +1037,9 @@ class UpgradeTasks(object):
             "Verify that the current configuration is consistent with the system prior to upgrade")
         self.prompt.prompt_and_raise_if_not_yes(
             "Verify that all the links from the 'Weblinks' perspective still work (i.e. the address gets resolved)")
-
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Verify that the dashboard gives the instrument name with no NDX prefix (if it does switch to the current instrument)")
+			
     @task("Server release tests")
     def perform_server_tests(self):
         """
