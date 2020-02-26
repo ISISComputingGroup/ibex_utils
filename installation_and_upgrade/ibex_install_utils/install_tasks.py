@@ -119,6 +119,7 @@ class UpgradeInstrument(object):
         Run a complete test upgrade on the current system
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
@@ -161,6 +162,7 @@ class UpgradeInstrument(object):
                                     " on a new instrument. Proceed?")
 
         self._upgrade_tasks.check_resources()
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.check_java_installation()
 
         self._upgrade_tasks.remove_seci_shortcuts()
@@ -221,6 +223,7 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
