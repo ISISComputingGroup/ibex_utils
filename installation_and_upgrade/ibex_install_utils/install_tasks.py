@@ -119,6 +119,7 @@ class UpgradeInstrument(object):
         Run a complete test upgrade on the current system
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
@@ -161,6 +162,7 @@ class UpgradeInstrument(object):
                                     " on a new instrument. Proceed?")
 
         self._upgrade_tasks.check_resources()
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.check_java_installation()
 
         self._upgrade_tasks.remove_seci_shortcuts()
@@ -221,6 +223,7 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
@@ -261,10 +264,20 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
 
     def run_force_upgrade_mysql(self):
-        """
+        """:key
          Do upgrade of mysql, with data dump.
         """
         self._upgrade_tasks.install_mysql(force=True)
+
+    def run_developer_update(self):
+        """
+        Update all the developer tools to latest version
+        """
+        self._upgrade_tasks.install_mysql(force=False)
+        self._upgrade_tasks.check_java_installation()
+        self._upgrade_tasks.install_or_upgrade_git()
+
+
 
 
 # All possible upgrade tasks
@@ -298,7 +311,10 @@ UPGRADE_TYPES = {
         "backup and truncate the sql database on the instrument"),
     'force_upgrade_mysql': (
         UpgradeInstrument.run_force_upgrade_mysql,
-        "upgrade mysql version to latest")
+        "upgrade mysql version to latest"),
+    'developer_update': (
+        UpgradeInstrument.run_developer_update,
+        "install latest developer tools"),
 }
 
 
@@ -1304,3 +1320,15 @@ class UpgradeTasks(object):
             "- Go to the 'Connections' tab and open 'Lan Settings'\n"
             "- Check 'Use Automatic configuration script' and enter http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
             "- Click 'Ok' on all dialogs.")
+
+    @task("Update Git")
+    def install_or_upgrade_git(self):
+        """
+        Install the latest git version
+        """
+        git_path = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Programs", "Git", "cmd", "git.exe")
+        if os.path.exists(git_path):
+            os.system("{} update-git-for-windows".format(git_path))
+            self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly")
+        else:
+            self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
