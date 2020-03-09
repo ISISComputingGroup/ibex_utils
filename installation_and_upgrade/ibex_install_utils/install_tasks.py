@@ -622,6 +622,15 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
+    @task("Update script generator script definitions")
+    def update_script_definitions(self):
+        """
+        Update (or at least ask the user to update) the script definitions used by the script generator.
+        """
+        self.prompt.prompt("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
+            "Check with the scientists that it is ok to do this." + \
+            "You can do it by git pull, you may need to merge changes made on the instrument.")
+
     @task("Remove Treesize shortcuts")
     def remove_treesize_shortcuts(self):
         """
