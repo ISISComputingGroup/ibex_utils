@@ -204,7 +204,6 @@ class UpgradeInstrument(object):
 
             Current the server can not be started in this python script.
         """
-        self._upgrade_tasks.start_ibex_server()
         self._upgrade_tasks.start_ibex_gui()
         self._upgrade_tasks.restart_vis()
         self._upgrade_tasks.perform_client_tests()
@@ -225,9 +224,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
-        self._upgrade_tasks.remove_seci_shortcuts()
-        self._upgrade_tasks.remove_treesize_shortcuts()
-        self._upgrade_tasks.restrict_ie()
         self._upgrade_tasks.install_ibex_server(self._should_install_utils())
         self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_mysql()
@@ -245,7 +241,6 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
-        self._upgrade_tasks.check_virtual_memory()
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._upgrade_tasks.record_running_vis()
         self._upgrade_tasks.save_motor_parameters_to_file()
@@ -498,15 +493,6 @@ class UpgradeTasks(object):
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
 
         RunProcess(source_dir, "install_client.bat", press_any_key=True).run()
-
-    # @task("Starting IBEX server")
-    def start_ibex_server(self):
-        """
-        Start the ibex server. Can not do this because it would kill the current python process.
-        Returns:
-
-        """
-        pass
 
     @task("Starting IBEX gui")
     def start_ibex_gui(self):
@@ -881,14 +867,13 @@ class UpgradeTasks(object):
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
         # Sleep to wait for service to stop so we can restart it.
         admin_commands.add_command("ping", "-n 10 127.0.0.1 >nul", expected_return_val=None)
-        admin_commands.add_command("sc", "start MYSQL80")
+        admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
         admin_commands.run_all()
 
     def _remove_old_versions_of_mysql8(self, clean_install):
         if clean_install:
             self.prompt.prompt_and_raise_if_not_yes("Warning: this will erase all data held in the MySQL database. "
-                                                "Are you sure you want to continue?")
-
+                                                    "Are you sure you want to continue?")
 
         admin_commands = AdminCommandBuilder()
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
@@ -941,14 +926,15 @@ class UpgradeTasks(object):
         # Wait for initialize since admin runner can't wait for completion.
         # Maybe we can detect completion another way?
         admin_commands.add_command(mysqld, '--install MYSQL80 --datadir="{}"'
-                               .format(os.path.join(MYSQL_FILES_DIR, "data")))
+                                   .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
-        admin_commands.add_command("sc", "start MYSQL80")
+        admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
         admin_commands.add_command("sc", "config MYSQL80 start= auto")
         admin_commands.add_command("sc", "failure MYSQL80 reset= 900 actions= restart/10000/restart/60000")
         admin_commands.add_command("netsh", "advfirewall firewall delete rule name=mysqld.exe", None)  # remove old firewall rules
         admin_commands.add_command("netsh", "advfirewall firewall delete rule name=MYSQL8", None)   # remove old firewall rules
-        admin_commands.add_command("netsh", "advfirewall firewall add rule name=MYSQL8 dir=in action=allow program=C:\Instrument\Apps\MySQL\Bin\mysqld.exe enable=yes")  
+        admin_commands.add_command("netsh", r"advfirewall firewall add rule name=MYSQL8 dir=in action=allow "
+                                            r"program=C:\Instrument\Apps\MySQL\Bin\mysqld.exe enable=yes")
         
         admin_commands.run_all()
 
@@ -994,8 +980,13 @@ class UpgradeTasks(object):
         if os.path.exists(mysql_8_exe):
             version = subprocess.check_output("{} --version".format(mysql_8_exe))
             if MYSQL_LATEST_VERSION in version and not force:
-                print("MySQL already on latest version ({}) - nothing to do.".format(MYSQL_LATEST_VERSION))
-                return
+                answer = self.prompt.prompt("MySQL already appears to be on the latest version ({}) - would you like to"
+                                            " force a reinstall anyway? [Y/N]".format(MYSQL_LATEST_VERSION),
+                                            possibles=["Y", "N"], default="N")
+                if answer == "Y":
+                    force = True
+                else:
+                    return
             clean_install = force
             self._remove_old_versions_of_mysql8(clean_install=clean_install)
 
@@ -1039,7 +1030,7 @@ class UpgradeTasks(object):
             "Verify that all the links from the 'Weblinks' perspective still work (i.e. the address gets resolved)")
         self.prompt.prompt_and_raise_if_not_yes(
             "Verify that the dashboard gives the instrument name with no NDX prefix (if it does switch to the current instrument)")
-			
+
     @task("Server release tests")
     def perform_server_tests(self):
         """

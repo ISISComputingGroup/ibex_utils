@@ -56,6 +56,9 @@ class AdminCommandBuilder(object):
         with open(filename, "w") as f:
             f.write(bat_file)
 
+        print("Executing bat script as admin. Saved as {filename}. Check for an admin prompt. Contents:\r\n{content}"
+              .format(filename=filename, content=bat_file))
+
         sleep(1)  # Wait for file handle to be closed etc
         AdminRunner.run_command("cmd", "/c {}".format(filename))
         sleep(1)  # Wait for commands to fully die etc
