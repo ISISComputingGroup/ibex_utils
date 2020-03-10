@@ -189,6 +189,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_web_dashboard()
         self._upgrade_tasks.update_kafka_topics()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
+        self._upgrade_tasks.update_script_definitions()
 
     def run_instrument_deploy(self):
         """
@@ -241,6 +242,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.reapply_hotfixes()
+        self._upgrade_tasks.update_script_definitions()
 
     def run_instrument_deploy_pre_stop(self):
         """
@@ -637,6 +639,16 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
+
+    @task("Update script generator script definitions")
+    def update_script_definitions(self):
+        """
+        Update (or at least ask the user to update) the script definitions used by the script generator.
+        """
+        if os.path.exists("C:\\ScriptGeneratorConfigs") or os.path.exists("C:\\ScriptDefinitions"):
+            self.prompt.prompt("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
+                "Check with the scientists that it is ok to do this." + \
+                "You can do it by git pull, you may need to merge changes made on the instrument.")
 
     @task("Remove Treesize shortcuts")
     def remove_treesize_shortcuts(self):
