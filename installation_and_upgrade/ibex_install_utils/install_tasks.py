@@ -187,6 +187,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_web_dashboard()
         self._upgrade_tasks.update_kafka_topics()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
+        self._upgrade_tasks.update_script_definitions()
 
     def run_instrument_deploy(self):
         """
@@ -238,6 +239,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.reapply_hotfixes()
+        self._upgrade_tasks.update_script_definitions()
 
     def run_instrument_deploy_pre_stop(self):
         """
@@ -627,9 +629,10 @@ class UpgradeTasks(object):
         """
         Update (or at least ask the user to update) the script definitions used by the script generator.
         """
-        self.prompt.prompt("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
-            "Check with the scientists that it is ok to do this." + \
-            "You can do it by git pull, you may need to merge changes made on the instrument.")
+        if self._get_machine_name() == "NDXEMU":
+            self.prompt.prompt("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
+                "Check with the scientists that it is ok to do this." + \
+                "You can do it by git pull, you may need to merge changes made on the instrument.")
 
     @task("Remove Treesize shortcuts")
     def remove_treesize_shortcuts(self):
