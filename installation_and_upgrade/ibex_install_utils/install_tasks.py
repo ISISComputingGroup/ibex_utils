@@ -1041,6 +1041,10 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Have you applied any hotfixes listed that are not fixed by the release, as on the instrument "
             "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
+        if UpgradeTasks._get_machine_name() == "NDEMUONFE":
+            self.prompt.prompt_and_raise_if_not_yes(
+                "MUONFE requires the fix specified in https://github.com/ISISComputingGroup/IBEX/issues/5164, "
+                "which should be specified in the hotfixes, did you apply this?")
 
     @task("Restart VIs")
     def restart_vis(self):
