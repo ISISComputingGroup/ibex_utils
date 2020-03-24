@@ -33,7 +33,7 @@ class FileUtils(object):
                     prompt.prompt_and_raise_if_not_yes('Error creating empty dir for robocopy "{}". '
                                                        'Please do this manually'.format(empty_dir))
                 if os.path.isdir(path):
-                    os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".
+                    os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:1 /LOG:NUL".
                               format(empty_dir, path))
                 os.rmdir(empty_dir)
                 os.rmdir(path)
