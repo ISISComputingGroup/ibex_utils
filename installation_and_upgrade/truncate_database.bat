@@ -5,6 +5,7 @@ git --version
 
 IF ERRORLEVEL 1 (
     echo No installation of Git found on machine. Please download Git from https://git-scm.com/downloads before proceeding.
+    popd
     EXIT /b %errorlevel%
 )
 
