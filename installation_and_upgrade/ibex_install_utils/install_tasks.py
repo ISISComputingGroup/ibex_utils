@@ -129,6 +129,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
+        self._upgrade_tasks.change_shortcuts_to_python_3()
 
     def remove_all_and_install_client_and_server(self):
         """
@@ -145,6 +146,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.change_shortcuts_to_python_3()
 
     def run_instrument_tests(self):
         """
@@ -216,6 +218,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.save_blocks_to_file()
         self._upgrade_tasks.save_blockserver_pv_to_file()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
+        self._upgrade_tasks.change_shortcuts_to_python_3()
         self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_deploy_main(self):
@@ -1332,6 +1335,15 @@ class UpgradeTasks(object):
             "- Go to the 'Connections' tab and open 'Lan Settings'\n"
             "- Check 'Use Automatic configuration script' and enter http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
             "- Click 'Ok' on all dialogs.")
+
+    @task("Change genie_python shortcuts to python 3")
+    def change_shortcuts_to_python_3(self):
+        """
+        Prompt user to find shortcuts to genie_python and replace them with Python 3 shortcuts
+        """
+
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Relace any shortcuts to genie_python with those to python 3 in C:\\Instrument\\Apps\\Python3")
 
     @task("Update Git")
     def install_or_upgrade_git(self):
