@@ -5,10 +5,8 @@ git --version
 
 IF ERRORLEVEL 1 (
     echo No installation of Git found on machine. Please download Git from https://git-scm.com/downloads before proceeding.
-    popd
     EXIT /b %errorlevel%
 )
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step truncate_database
-popd
 IF ERRORLEVEL 1 EXIT /b %errorlevel%
