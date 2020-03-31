@@ -146,7 +146,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.change_shortcuts_to_python_3()
 
     def run_instrument_tests(self):
         """
