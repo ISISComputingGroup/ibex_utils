@@ -3,9 +3,7 @@ REM Get latest python build and kits icp path
 REM   KITS_ICP_PATH is set to ICP directory
 REM   LATEST_PYTHON is set to a version on genie_python that can be run
 
-pushd \\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP
-
-set KITS_ICP_PATH=%cd%
+set "KITS_ICP_PATH=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"
 
 if exist "%KITS_ICP_PATH%\genie_python\LATEST_BUILD.txt" (
 	for /f %%i in ( %KITS_ICP_PATH%\genie_python\LATEST_BUILD.txt ) do (
@@ -22,6 +20,5 @@ if exist "%KITS_ICP_PATH%\genie_python\LATEST_BUILD.txt" (
 goto :EOF
 
 :ERROR
-popd
 @echo define_latest_genie_python failed
 exit /b 1

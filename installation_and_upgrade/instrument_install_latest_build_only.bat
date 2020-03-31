@@ -24,10 +24,8 @@ if "%1" == "INCR" (
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --quiet %INSTALL_TYPE%
 IF ERRORLEVEL 1 GOTO :ERROR
 
-popd
 GOTO :EOF
 
 :ERROR
-popd
 echo "Error on Install"
 exit /b 2

@@ -9,5 +9,4 @@ IF ERRORLEVEL 1 (
 )
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step truncate_database
-popd
 IF ERRORLEVEL 1 EXIT /b %errorlevel%

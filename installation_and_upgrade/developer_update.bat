@@ -7,7 +7,6 @@ set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 start /wait cmd /c "%STOP_IBEX%"
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step developer_update
-popd
 IF ERRORLEVEL 1 EXIT /b %errorlevel%
 
 start /wait cmd /c "%START_IBEX%"
