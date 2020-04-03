@@ -3,6 +3,7 @@ Filesystem utility classes
 """
 
 import os
+import time
 import shutil
 
 from ibex_install_utils.exceptions import UserStop
@@ -32,12 +33,15 @@ class FileUtils(object):
                 if not os.path.exists(empty_dir):
                     prompt.prompt_and_raise_if_not_yes('Error creating empty dir for robocopy "{}". '
                                                        'Please do this manually'.format(empty_dir))
-                if os.path.isdir(path):
-                    for _ in range(0,2):
-                        os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:2 /LOG:NUL".
-                              format(empty_dir, path))
+                for _ in range(0,2):
+                    if os.path.isdir(path):
+                        try:
+                            os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:2 /LOG:NUL".
+                                format(empty_dir, path))
+                            os.rmdir(path)
+                        except (IOError, OSError, WindowsError):
+                            time.sleep(30)
                 os.rmdir(empty_dir)
-                os.rmdir(path)
             else:
                 shutil.rmtree(path)
         except (IOError, OSError, WindowsError):
