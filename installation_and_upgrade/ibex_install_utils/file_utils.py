@@ -33,6 +33,7 @@ class FileUtils(object):
                 if not os.path.exists(empty_dir):
                     prompt.prompt_and_raise_if_not_yes('Error creating empty dir for robocopy "{}". '
                                                        'Please do this manually'.format(empty_dir))
+                RETRY_TIME = 30
                 for _ in range(0,2):
                     if os.path.isdir(path):
                         try:
@@ -40,7 +41,8 @@ class FileUtils(object):
                                 format(empty_dir, path))
                             os.rmdir(path)
                         except (IOError, OSError, WindowsError):
-                            time.sleep(30)
+                            print("remove_tree: retrying delete in {} seconds".fortmat(RETRY_TIME))
+                            time.sleep(RETRY_TIME)
                 os.rmdir(empty_dir)
             else:
                 shutil.rmtree(path)
