@@ -868,23 +868,41 @@ class UpgradeTasks(object):
             "Check that there are only 16 errors from mysql. These are 1062 error fail to insert primary key. "
             "These are for constants added by the creation script, e.g. archive severity.")
 
-    @task("Truncate database")
-    def truncate_database(self):
+    def _truncate_tables(self, tables):
         """
-        Truncate the message log and sample tables
+        Truncates the tables with the supplied names
+
+        Args:
+            tables: List of table names to truncate
         """
         try:
             mysql_bin_dir = self._get_mysql_dir()
 
+            sql_command = "".join(["truncate table {};".format(table) for table in tables])
+
             RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
                        prog_args=["-u", "root", "-p",
-                                  "--execute", "truncate table msg_log.message;truncate table archive.sample"],
+                                  "--execute", sql_command],
                        capture_pipes=False).run()
 
         except ErrorInRun as ex:
             self.prompt.prompt_and_raise_if_not_yes(
                 "Unable to run mysql command, please truncate the database manually. "
                 "Error is {}".format(ex.message))
+
+    @task("Truncate database")
+    def truncate_database(self):
+        """
+        Truncate the message log and sample tables
+        """
+        self._truncate_tables(["msg_log.message", "archive.sample"])
+
+    @task("Truncate alarms table")
+    def truncate_alarms_table(self):
+        """
+        Truncate the alarm database to prevent alarm server crashing (see #4776)
+        """
+        self._truncate_tables(["alarm.pv"])
 
     @task("Update release notes")
     def update_release_notes(self):
