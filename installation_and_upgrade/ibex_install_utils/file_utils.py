@@ -36,7 +36,7 @@ class FileUtils(object):
                 for _ in range(0,2):
                     if os.path.isdir(path):
                         try:
-                            os.system("robocopy \"{}\" \"{}\" /PURGE /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:2 /LOG:NUL".
+                            os.system("robocopy \"{}\" \"{}\" /PURGE /NOCOPY /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:2 /LOG:NUL".
                                 format(empty_dir, path))
                             os.rmdir(path)
                         except (IOError, OSError, WindowsError):
