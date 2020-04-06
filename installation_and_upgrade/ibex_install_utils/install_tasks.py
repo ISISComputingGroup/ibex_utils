@@ -231,6 +231,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
+        self._upgrade_tasks.truncate_alarms_table()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_treesize_shortcuts()
         self._upgrade_tasks.restrict_ie()
@@ -266,6 +267,7 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
+        self._upgrade_tasks.truncate_alarms_table()
 
     def run_force_upgrade_mysql(self):
         """:key
