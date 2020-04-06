@@ -41,7 +41,7 @@ class FileUtils(object):
                                 format(empty_dir, path))
                             os.rmdir(path)
                         except (IOError, OSError, WindowsError):
-                            print("remove_tree: retrying delete in {} seconds".fortmat(RETRY_TIME))
+                            print("remove_tree: retrying delete in {} seconds".format(RETRY_TIME))
                             time.sleep(RETRY_TIME)
                 os.rmdir(empty_dir)
             else:
