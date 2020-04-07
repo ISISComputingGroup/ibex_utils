@@ -34,7 +34,7 @@ class FileUtils(object):
                     prompt.prompt_and_raise_if_not_yes('Error creating empty dir for robocopy "{}". '
                                                        'Please do this manually'.format(empty_dir))
                 retry_time = 30
-                for _ in range(0,2):
+                for _ in range(2):
                     if os.path.isdir(path):
                         try:
                             os.system("robocopy \"{}\" \"{}\" /PURGE /NOCOPY /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:2 "
