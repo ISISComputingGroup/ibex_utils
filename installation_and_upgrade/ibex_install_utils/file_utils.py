@@ -37,8 +37,8 @@ class FileUtils(object):
                 for _ in range(0,2):
                     if os.path.isdir(path):
                         try:
-                            os.system("robocopy \"{}\" \"{}\" /PURGE /NOCOPY /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:2 /LOG:NUL".
-                                format(empty_dir, path))
+                            os.system("robocopy \"{}\" \"{}\" /PURGE /NOCOPY /NJH /NJS /MT /NP /NFL /NDL /NS /NC /R:2 "
+                                      "/LOG:NUL".format(empty_dir, path))
                             os.rmdir(path)
                         except (IOError, OSError, WindowsError):
                             print("remove_tree: retrying delete in {} seconds".format(retry_time))
