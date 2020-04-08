@@ -119,6 +119,7 @@ class UpgradeInstrument(object):
         Run a complete test upgrade on the current system
         """
         self._upgrade_tasks.user_confirm_upgrade_type_on_machine('Training Machine')
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.stop_ibex_server()
         self._upgrade_tasks.remove_old_ibex()
         self._upgrade_tasks.clean_up_desktop_ibex_training_folder()
@@ -128,6 +129,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.upgrade_notepad_pp()
+        self._upgrade_tasks.change_shortcuts_to_python_3()
 
     def remove_all_and_install_client_and_server(self):
         """
@@ -161,6 +163,7 @@ class UpgradeInstrument(object):
                                     " on a new instrument. Proceed?")
 
         self._upgrade_tasks.check_resources()
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.check_java_installation()
 
         self._upgrade_tasks.remove_seci_shortcuts()
@@ -187,6 +190,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_web_dashboard()
         self._upgrade_tasks.update_kafka_topics()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
+        self._upgrade_tasks.update_script_definitions()
 
     def run_instrument_deploy(self):
         """
@@ -212,6 +216,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.save_blocks_to_file()
         self._upgrade_tasks.save_blockserver_pv_to_file()
         self._upgrade_tasks.put_autostart_script_in_startup_area()
+        self._upgrade_tasks.change_shortcuts_to_python_3()
         self._upgrade_tasks.inform_instrument_scientists()
 
     def run_instrument_deploy_main(self):
@@ -220,6 +225,7 @@ class UpgradeInstrument(object):
 
             Current the server can not be started or stopped in this python script.
         """
+        self._upgrade_tasks.install_or_upgrade_git()
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
@@ -234,6 +240,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.apply_changes_noted_in_release_notes()
         self._upgrade_tasks.update_release_notes()
         self._upgrade_tasks.reapply_hotfixes()
+        self._upgrade_tasks.update_script_definitions()
 
     def run_instrument_deploy_pre_stop(self):
         """
@@ -256,10 +263,20 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.truncate_database()
 
     def run_force_upgrade_mysql(self):
-        """
+        """:key
          Do upgrade of mysql, with data dump.
         """
         self._upgrade_tasks.install_mysql(force=True)
+
+    def run_developer_update(self):
+        """
+        Update all the developer tools to latest version
+        """
+        self._upgrade_tasks.install_mysql(force=False)
+        self._upgrade_tasks.check_java_installation()
+        self._upgrade_tasks.install_or_upgrade_git()
+
+
 
 
 # All possible upgrade tasks
@@ -293,7 +310,10 @@ UPGRADE_TYPES = {
         "backup and truncate the sql database on the instrument"),
     'force_upgrade_mysql': (
         UpgradeInstrument.run_force_upgrade_mysql,
-        "upgrade mysql version to latest")
+        "upgrade mysql version to latest"),
+    'developer_update': (
+        UpgradeInstrument.run_developer_update,
+        "install latest developer tools"),
 }
 
 
@@ -607,6 +627,16 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
+
+    @task("Update script generator script definitions")
+    def update_script_definitions(self):
+        """
+        Update (or at least ask the user to update) the script definitions used by the script generator.
+        """
+        if os.path.exists("C:\\ScriptGeneratorConfigs") or os.path.exists("C:\\ScriptDefinitions"):
+            self.prompt.prompt("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
+                "Check with the scientists that it is ok to do this." + \
+                "You can do it by git pull, you may need to merge changes made on the instrument.")
 
     @task("Remove Treesize shortcuts")
     def remove_treesize_shortcuts(self):
@@ -1004,6 +1034,10 @@ class UpgradeTasks(object):
         self.prompt.prompt_and_raise_if_not_yes(
             "Have you applied any hotfixes listed that are not fixed by the release, as on the instrument "
             "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
+        if UpgradeTasks._get_machine_name() == "NDEMUONFE":
+            self.prompt.prompt_and_raise_if_not_yes(
+                "MUONFE requires the fix specified in https://github.com/ISISComputingGroup/IBEX/issues/5164, "
+                "which should be specified in the hotfixes, did you apply this?")
 
     @task("Restart VIs")
     def restart_vis(self):
@@ -1295,3 +1329,24 @@ class UpgradeTasks(object):
             "- Go to the 'Connections' tab and open 'Lan Settings'\n"
             "- Check 'Use Automatic configuration script' and enter http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
             "- Click 'Ok' on all dialogs.")
+
+    @task("Change genie_python shortcuts to python 3")
+    def change_shortcuts_to_python_3(self):
+        """
+        Prompt user to find shortcuts to genie_python and replace them with Python 3 shortcuts
+        """
+
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Relace any shortcuts to genie_python with those to python 3 in C:\\Instrument\\Apps\\Python3")
+
+    @task("Update Git")
+    def install_or_upgrade_git(self):
+        """
+        Install the latest git version
+        """
+        git_path = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Programs", "Git", "cmd", "git.exe")
+        if os.path.exists(git_path):
+            os.system("{} update-git-for-windows".format(git_path))
+            self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly")
+        else:
+            self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
