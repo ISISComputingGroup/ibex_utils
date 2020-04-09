@@ -23,6 +23,7 @@ class FileUtils(object):
             path: path to delete
             prompt (ibex_install_utils.user_prompt.UserPrompt): prompt object to communicate with user
             use_robocopy: use robocopy to delete the directory this allows us to remove particularly long paths
+            retries: maximum number of attempts to delete file path
         """
         for _ in range(retries):
             try:
