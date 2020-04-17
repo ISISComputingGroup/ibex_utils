@@ -231,7 +231,6 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.backup_old_directories()
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
-        self._upgrade_tasks.truncate_alarms_table()
         self._upgrade_tasks.remove_seci_shortcuts()
         self._upgrade_tasks.remove_treesize_shortcuts()
         self._upgrade_tasks.restrict_ie()
@@ -267,7 +266,6 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.backup_database()
         self._upgrade_tasks.truncate_database()
-        self._upgrade_tasks.truncate_alarms_table()
 
     def run_force_upgrade_mysql(self):
         """:key
@@ -870,17 +868,15 @@ class UpgradeTasks(object):
             "Check that there are only 16 errors from mysql. These are 1062 error fail to insert primary key. "
             "These are for constants added by the creation script, e.g. archive severity.")
 
-    def _truncate_tables(self, tables):
+    @task("Truncate database")
+    def truncate_database(self):
         """
-        Truncates the tables with the supplied names
-
-        Args:
-            tables: List of table names to truncate
+        Truncate the message log, sample and alarms tables
         """
         try:
             mysql_bin_dir = self._get_mysql_dir()
 
-            sql_command = "".join(["truncate table {};".format(table) for table in tables])
+            sql_command = "truncate table msg_log.message;truncate table archive.sample;truncate table alarm.pv"
 
             RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
                        prog_args=["-u", "root", "-p",
@@ -891,20 +887,6 @@ class UpgradeTasks(object):
             self.prompt.prompt_and_raise_if_not_yes(
                 "Unable to run mysql command, please truncate the database manually. "
                 "Error is {}".format(ex.message))
-
-    @task("Truncate database")
-    def truncate_database(self):
-        """
-        Truncate the message log and sample tables
-        """
-        self._truncate_tables(["msg_log.message", "archive.sample"])
-
-    @task("Truncate alarms table")
-    def truncate_alarms_table(self):
-        """
-        Truncate the alarm database to prevent alarm server crashing (see #4776)
-        """
-        self._truncate_tables(["alarm.pv"])
 
     @task("Update release notes")
     def update_release_notes(self):
