@@ -857,14 +857,16 @@ class UpgradeTasks(object):
     @task("Truncate database")
     def truncate_database(self):
         """
-        Truncate the message log and sample tables
+        Truncate the message log, sample and alarms tables
         """
         try:
             mysql_bin_dir = self._get_mysql_dir()
 
+            sql_command = "truncate table msg_log.message;truncate table archive.sample;truncate table alarm.pv"
+
             RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
                        prog_args=["-u", "root", "-p",
-                                  "--execute", "truncate table msg_log.message;truncate table archive.sample"],
+                                  "--execute", sql_command],
                        capture_pipes=False).run()
 
         except ErrorInRun as ex:
