@@ -1164,7 +1164,11 @@ class UpgradeTasks(object):
         """
         # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes(
-            "Inform the instrument scientists that the upgrade has been completed")
+            "Please send the following email to your instrument scientists:\n"+\
+            "Hello,\n\n We have finished the upgrade of <inst name> to IBEX <X.X.x>."+\
+            "The release notes for this are at the following link: https://github.com/ISISComputingGroup/IBEX/wiki/Release-Notes-v<X.X.x>\n\n"+\
+            "Please let us know if you have any querries or find any problems with the upgrade.\n\n"+\
+            "Thank you,\n\n<your name>")
 
     @task("Apply changes in release notes")
     def apply_changes_noted_in_release_notes(self):
