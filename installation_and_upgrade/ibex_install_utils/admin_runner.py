@@ -48,7 +48,7 @@ class AdminCommandBuilder(object):
         for cmd, parameters, expected_return_val in self._commands:
             bat_file += "{} {}\r\n".format(cmd, parameters)
             if expected_return_val is not None:
-                bat_file += "if %errorlevel% neq {} exit / B 1\r\n".format(expected_return_val)
+                bat_file += "if %errorlevel% neq {} exit /B 1\r\n".format(expected_return_val)
 
         bat_file += "exit /B 0\r\n"
 

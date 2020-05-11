@@ -3,6 +3,7 @@ Tasks associated with install
 """
 from __future__ import division, unicode_literals, print_function
 import pprint
+import tempfile
 import zipfile
 from contextlib import contextmanager, closing
 
@@ -64,6 +65,24 @@ SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140_1.dll")
 VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer",
                                       "vc_redist.x64.exe")
+
+REMOTE_VHD_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "chris")
+LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
+
+
+class Vhd(object):
+    def __init__(self, name, vhd_filename, mount_point):
+        self.name = name
+        self.vhd_filename = vhd_filename
+        self.mount_point = mount_point
+
+
+VHDS = [
+    # Key = VHD location, Value = Mount point
+    Vhd("Apps", "empty_apps.vhdx", APPS_BASE_DIR),
+    Vhd("Settings", "empty_settings.vhdx", SETTINGS_CONFIG_PATH),
+    Vhd("Var", "empty_var.vhdx", VAR_DIR),
+]
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -276,7 +295,10 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.check_java_installation()
         self._upgrade_tasks.install_or_upgrade_git()
 
-
+    def run_vhd_creation(self):
+        # self._upgrade_tasks.copy_vhds_to_local_area()
+        # self._upgrade_tasks.mount_vhds()
+        
 
 
 # All possible upgrade tasks
@@ -314,6 +336,9 @@ UPGRADE_TYPES = {
     'developer_update': (
         UpgradeInstrument.run_developer_update,
         "install latest developer tools"),
+    'create_vhds': (
+        UpgradeInstrument.run_vhd_creation,
+        "create a set of VHDS containing the latest IBEX release"),
 }
 
 
@@ -1353,3 +1378,49 @@ class UpgradeTasks(object):
             self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly")
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
+
+    @task("Copy VHDs to local area")
+    def copy_vhds_to_local_area(self):
+        if os.path.exists(LOCAL_VHD_DIR):
+            shutil.rmtree(LOCAL_VHD_DIR)
+        os.mkdir(LOCAL_VHD_DIR)
+        for vhd in VHDS:
+            shutil.copyfile(os.path.join(REMOTE_VHD_DIR, vhd.vhd_filename),
+                            os.path.join(LOCAL_VHD_DIR, vhd.vhd_filename))
+            
+    @task("Mount VHDs")
+    def mount_vhds(self):
+
+        for vhd in VHDS:
+            if os.path.exists(vhd.mount_point):
+                self.prompt.prompt_and_raise_if_not_yes(
+                    "{} mount point at {} exists, check and delete or move as appropriate. Press yes when complete."
+                        .format(vhd.name, vhd.mount_point))
+
+        admin_commands = AdminCommandBuilder()
+
+        for vhd in VHDS:
+            driveletter_file = os.path.join(tempfile.gettempdir(), "{}_driveletter.txt".format(vhd.name))
+            if os.path.exists(driveletter_file):
+                os.remove(driveletter_file)
+
+            # Mount the VHD and write it's assigned drive letter to a file.
+            admin_commands.add_command(
+                "powershell",
+                r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'
+                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.vhd_filename), name=vhd.name, driveletter_file=driveletter_file))
+
+            # Append :\\ to drive letter, e.g. E -> E:\\ (this is necessary so that directory junctions work correctly)
+            admin_commands.add_command(
+                "powershell",
+                r'-command "echo :\\ | out-file -filepath {driveletter_file} -Encoding ASCII -Append -NoNewline"'
+                    .format(driveletter_file=driveletter_file)
+            )
+
+            # Create a directory junction from the mount point to the disk's assigned drive letter
+            admin_commands.add_command(
+                "powershell",
+                r'-command "&cmd /c mklink /J /D {mount_point} @(cat {driveletter_file})"'
+                    .format(mount_point=vhd.mount_point, name=vhd.name, driveletter_file=driveletter_file))
+
+        admin_commands.run_all() \
