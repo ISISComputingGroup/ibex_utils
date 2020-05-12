@@ -296,12 +296,18 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_or_upgrade_git()
 
     def run_vhd_creation(self):
+        """
+        Automated job which creates a set of VHDs containing all IBEX components.
+
+        Note: this will run under jenkins, don't add interactive tasks to this list.
+        """
         # self._upgrade_tasks.copy_vhds_to_local_area()
         # self._upgrade_tasks.mount_vhds()
-        self._upgrade_tasks.install_ibex_server(True)
-        self._upgrade_tasks.install_genie_python3()
-        self._upgrade_tasks.install_mysql()
+        # self._upgrade_tasks.install_ibex_server(True)
+        # self._upgrade_tasks.install_genie_python3()
+        self._upgrade_tasks.install_mysql_for_vhd()
         self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.initialize_var_dir()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.setup_calibrations_repository()
@@ -952,7 +958,6 @@ class UpgradeTasks(object):
         if clean_install:
             self._remove_old_mysql_data_dir()
 
-
     def _remove_old_mysql_data_dir(self):
         if os.path.exists(MYSQL_FILES_DIR):
             shutil.rmtree(MYSQL_FILES_DIR)
@@ -971,6 +976,53 @@ class UpgradeTasks(object):
 
         shutil.rmtree(mysql_unzip_temp)
 
+    def _initialize_mysql_data_area_for_vhd(self):
+        os.makedirs(os.path.join(MYSQL_FILES_DIR, "data"))
+
+        RunProcess(
+            working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            executable_file="mysqld.exe",
+            executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            prog_args=[
+                '--datadir={}'.format(os.path.join(MYSQL_FILES_DIR, "data")),
+                '--initialize-insecure',
+                '--console',
+                '--log-error-verbosity=3'
+            ]
+        ).run()
+
+    def _setup_database_users_and_tables(self, manual=False):
+        mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
+
+        sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
+                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"))
+
+        subprocess.check_call('{} -u root -e "ALTER USER \'root\'@\'localhost\' '
+                              'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
+                              .format(mysql, sql_password))
+
+        if manual:
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Run config_mysql.bat in {} now. \n"
+                "WARNING: performing this step will wipe all existing historical data. \n"
+                "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
+        else:
+            mysql_password_file = os.path.join(tempfile.gettempdir(), "temp_mysql_pass.txt")
+
+            try:
+                with open(mysql_password_file, "w") as f:
+                    f.write(sql_password)
+
+                with open(mysql_password_file) as f:
+                    RunProcess(
+                        working_dir=SYSTEM_SETUP_PATH,
+                        executable_file="config_mysql.bat",
+                        std_in=f,
+                    ).run()
+            finally:
+                if os.path.exists(mysql_password_file):
+                    os.remove(mysql_password_file)
+
     def _install_latest_mysql8(self, clean_install):
         """
         Install the latest mysql. If this is a clean install remove old data directories first and create a new
@@ -980,7 +1032,6 @@ class UpgradeTasks(object):
         """
         self._create_mysql_binaries()
 
-        mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         admin_commands = AdminCommandBuilder()
@@ -1009,17 +1060,29 @@ class UpgradeTasks(object):
         sleep(5)  # Time for service to start
 
         if clean_install:
-            sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
-                                              os.getenv("MYSQL_PASSWORD", "environment variable not set"))
+            self._setup_database_users_and_tables(manual=True)
 
-            subprocess.check_call('{} -u root -e "ALTER USER \'root\'@\'localhost\' '
-                                  'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
-                                  .format(mysql, sql_password))
+    @task("Install latest MySQL for VHD deployment")
+    def install_mysql_for_vhd(self):
+        # Ensure we start from a clean slate. We are creating VHDs so we can assume that these files shouldn't exist
+        # and can be safely removed if so. This facilitates developer testing/resuming the script if it failed halfway
+        # through
+        for path in [MYSQL_FILES_DIR, MYSQL8_INSTALL_DIR]:
+            if os.path.exists(path):
+                shutil.rmtree(path)
 
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Run config_mysql.bat in {} now. \n"
-                "WARNING: performing this step will wipe all existing historical data. \n"
-                "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
+        self._create_mysql_binaries()
+        self._initialize_mysql_data_area_for_vhd()
+
+        my_ini_file = os.path.join(EPICS_PATH, "systemsetup", "my.ini")
+        try:
+            shutil.copy(my_ini_file, MYSQL8_INSTALL_DIR)
+        except (OSError, IOError) as e:
+            self.prompt.prompt_and_raise_if_not_yes("Couldn't copy my.ini from {} to {} because {}. "
+                                                    "Please do this manually confirm when complete."
+                                                    .format(my_ini_file, MYSQL8_INSTALL_DIR, e))
+
+        self._setup_database_users_and_tables(manual=False)
 
     def _install_vcruntime140(self):
         if not os.path.exists(VCRUNTIME140):
@@ -1389,6 +1452,14 @@ class UpgradeTasks(object):
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
 
+    @task("Initialize var dir")
+    def initialize_var_dir(self):
+        """
+        Creates the folder structure for the C:\instrument\var directory.
+        """
+        # config_env creates all the necessary directories for us
+        RunProcess(working_dir=EPICS_PATH, executable_file="config_env.bat").run()
+
     @task("Copy VHDs to local area")
     def copy_vhds_to_local_area(self):
         if os.path.exists(LOCAL_VHD_DIR):
@@ -1400,6 +1471,10 @@ class UpgradeTasks(object):
             
     @task("Mount VHDs")
     def mount_vhds(self):
+
+        # TODO sort this out this is a horrible hack. Mount var elsewhere?
+        if os.path.exists(VAR_DIR):
+            shutil.rmtree(VAR_DIR)
 
         for vhd in VHDS:
             if os.path.exists(vhd.mount_point):

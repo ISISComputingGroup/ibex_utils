@@ -47,12 +47,13 @@ class RunProcess(object):
         Returns:
         Raises ErrorInRun: if there is a known problem with the run
         """
+        output_lines = ""
         try:
-            print("    Running {0} ...".format(self._bat_file))
-
             command_line = [self._full_path_to_process_file]
             if self._prog_args is not None:
                 command_line.extend(self._prog_args)
+
+            print("    Running {0} ...".format(" ".join(command_line)))
 
             if not self._capture_pipes:
                 if self._stdin:
@@ -78,8 +79,15 @@ class RunProcess(object):
                 print("    > {line}".format(line=line))
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
-            traceback.print_exc()
-            raise ErrorInRun("Command failed with error: {0}".format(ex))
+            if ex.output:
+                print("Process failed with return code {}. Output was: ".format(ex.returncode))
+                for line in ex.output.splitlines():
+                    print("    > {line}".format(line=line))
+                print(" --- ")
+            else:
+                print("Process failed with return code {} and no output.".format(ex.returncode))
+
+            raise ErrorInRun("Command failed with return code {}".format(ex.returncode))
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
