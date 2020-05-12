@@ -71,17 +71,17 @@ LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
 
 
 class Vhd(object):
-    def __init__(self, name, vhd_filename, mount_point):
+    def __init__(self, name, filename, mount_point):
         self.name = name
-        self.vhd_filename = vhd_filename
+        self.filename = filename
         self.mount_point = mount_point
 
 
 VHDS = [
     # Key = VHD location, Value = Mount point
-    Vhd("Apps", "empty_apps.vhdx", APPS_BASE_DIR),
-    Vhd("Settings", "empty_settings.vhdx", SETTINGS_CONFIG_PATH),
-    Vhd("Var", "empty_var.vhdx", VAR_DIR),
+    Vhd(name="Apps", filename="empty_apps.vhdx", mount_point=APPS_BASE_DIR),
+    Vhd(name="Settings", filename="empty_settings.vhdx", mount_point=SETTINGS_CONFIG_PATH),
+    Vhd(name="Var", filename="empty_var.vhdx", mount_point=VAR_DIR),
 ]
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
@@ -298,7 +298,14 @@ class UpgradeInstrument(object):
     def run_vhd_creation(self):
         # self._upgrade_tasks.copy_vhds_to_local_area()
         # self._upgrade_tasks.mount_vhds()
-        
+        self._upgrade_tasks.install_ibex_server(True)
+        self._upgrade_tasks.install_genie_python3()
+        self._upgrade_tasks.install_mysql()
+        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.setup_config_repository()
+        self._upgrade_tasks.upgrade_instrument_configuration()
+        self._upgrade_tasks.setup_calibrations_repository()
+        self._upgrade_tasks.update_calibrations_repository()
 
 
 # All possible upgrade tasks
@@ -950,13 +957,7 @@ class UpgradeTasks(object):
         if os.path.exists(MYSQL_FILES_DIR):
             shutil.rmtree(MYSQL_FILES_DIR)
 
-    def _install_latest_mysql8(self, clean_install):
-        """
-        Install the latest mysql. If this is a clean install remove old data directories first and create a new
-        database
-        Args:
-            clean_install: True to destroy and recreate data directories
-        """
+    def _create_mysql_binaries(self):
         os.makedirs(MYSQL8_INSTALL_DIR)
 
         mysql_unzip_temp = os.path.join(APPS_BASE_DIR, "temp-mysql-unzip")
@@ -969,6 +970,15 @@ class UpgradeTasks(object):
             shutil.move(os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR)
 
         shutil.rmtree(mysql_unzip_temp)
+
+    def _install_latest_mysql8(self, clean_install):
+        """
+        Install the latest mysql. If this is a clean install remove old data directories first and create a new
+        database
+        Args:
+            clean_install: True to destroy and recreate data directories
+        """
+        self._create_mysql_binaries()
 
         mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
@@ -1385,8 +1395,8 @@ class UpgradeTasks(object):
             shutil.rmtree(LOCAL_VHD_DIR)
         os.mkdir(LOCAL_VHD_DIR)
         for vhd in VHDS:
-            shutil.copyfile(os.path.join(REMOTE_VHD_DIR, vhd.vhd_filename),
-                            os.path.join(LOCAL_VHD_DIR, vhd.vhd_filename))
+            shutil.copyfile(os.path.join(REMOTE_VHD_DIR, vhd.filename),
+                            os.path.join(LOCAL_VHD_DIR, vhd.filename))
             
     @task("Mount VHDs")
     def mount_vhds(self):
@@ -1408,7 +1418,7 @@ class UpgradeTasks(object):
             admin_commands.add_command(
                 "powershell",
                 r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'
-                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.vhd_filename), name=vhd.name, driveletter_file=driveletter_file))
+                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.filename), name=vhd.name, driveletter_file=driveletter_file))
 
             # Append :\\ to drive letter, e.g. E -> E:\\ (this is necessary so that directory junctions work correctly)
             admin_commands.add_command(
@@ -1423,4 +1433,4 @@ class UpgradeTasks(object):
                 r'-command "&cmd /c mklink /J /D {mount_point} @(cat {driveletter_file})"'
                     .format(mount_point=vhd.mount_point, name=vhd.name, driveletter_file=driveletter_file))
 
-        admin_commands.run_all() \
+        admin_commands.run_all()
