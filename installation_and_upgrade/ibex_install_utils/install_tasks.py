@@ -27,6 +27,12 @@ from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.motor_params import get_params_and_save_to_file
 from ibex_install_utils.kafka_utils import add_required_topics
 
+try:
+    from subprocess import DETACHED_PROCESS
+except ImportError:
+    # Hack for Py2 compatibility, can be removed once we are on Py3.
+    DETACHED_PROCESS = 0x00000008
+
 BACKUP_DATA_DIR = os.path.join("C:\\", "data")
 BACKUP_DIR = os.path.join(BACKUP_DATA_DIR, "old")
 
@@ -993,13 +999,32 @@ class UpgradeTasks(object):
 
     def _setup_database_users_and_tables(self, manual=False):
         mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
+        mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
-                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"))
+                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"),
+                                          show_automatic_answer=False)
 
-        subprocess.check_call('{} -u root -e "ALTER USER \'root\'@\'localhost\' '
-                              'IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;"'
-                              .format(mysql, sql_password))
+        if not manual:  # Service won't have been started yet
+            # spawn service in background
+            subprocess.Popen(mysqld, creationflags=DETACHED_PROCESS)
+
+            sleep(5)  # Chance for the service to spawn
+
+        RunProcess(
+            executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            executable_file="mysql.exe",
+            prog_args=[
+                '-u',
+                'root',
+                '-e',
+                'ALTER USER \'root\'@\'localhost\' IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;'
+                    .format(sql_password),
+
+            ],
+            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+        ).run()
 
         if manual:
             self.prompt.prompt_and_raise_if_not_yes(
@@ -1007,21 +1032,26 @@ class UpgradeTasks(object):
                 "WARNING: performing this step will wipe all existing historical data. \n"
                 "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
         else:
-            mysql_password_file = os.path.join(tempfile.gettempdir(), "temp_mysql_pass.txt")
+            RunProcess(
+                working_dir=SYSTEM_SETUP_PATH,
+                executable_directory=SYSTEM_SETUP_PATH,
+                executable_file="config_mysql.bat",
+                prog_args=[sql_password],
+                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+            ).run()
 
-            try:
-                with open(mysql_password_file, "w") as f:
-                    f.write(sql_password)
-
-                with open(mysql_password_file) as f:
-                    RunProcess(
-                        working_dir=SYSTEM_SETUP_PATH,
-                        executable_file="config_mysql.bat",
-                        std_in=f,
-                    ).run()
-            finally:
-                if os.path.exists(mysql_password_file):
-                    os.remove(mysql_password_file)
+            RunProcess(
+                executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+                working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+                executable_file="mysqladmin.exe",
+                prog_args=[
+                    "-u",
+                    "root",
+                    "--password={}".format(sql_password),
+                    "shutdown",
+                ],
+                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+            ).run()
 
     def _install_latest_mysql8(self, clean_install):
         """
