@@ -312,15 +312,19 @@ class UpgradeInstrument(object):
         """
         self._upgrade_tasks.copy_vhds_to_local_area()
         self._upgrade_tasks.request_mount_vhds()
-        self._upgrade_tasks.install_ibex_server(True)
-        self._upgrade_tasks.install_genie_python3()
-        self._upgrade_tasks.install_mysql_for_vhd()
-        self._upgrade_tasks.install_e4_ibex_client()
-        self._upgrade_tasks.setup_config_repository()
-        self._upgrade_tasks.upgrade_instrument_configuration()
-        self._upgrade_tasks.setup_calibrations_repository()
-        self._upgrade_tasks.update_calibrations_repository()
-        self._upgrade_tasks.initialize_var_dir()
+        try:
+            self._upgrade_tasks.install_ibex_server(True)
+            self._upgrade_tasks.install_genie_python3()
+            self._upgrade_tasks.install_mysql_for_vhd()
+            self._upgrade_tasks.install_e4_ibex_client()
+            self._upgrade_tasks.setup_config_repository()
+            self._upgrade_tasks.upgrade_instrument_configuration()
+            self._upgrade_tasks.setup_calibrations_repository()
+            self._upgrade_tasks.update_calibrations_repository()
+            self._upgrade_tasks.initialize_var_dir()
+        finally:
+            self._upgrade_tasks.request_dismount_vhds()
+
 
     def mount_vhds(self):
         """
@@ -1530,7 +1534,7 @@ class UpgradeTasks(object):
                 break
             sleep(1)
         else:
-            raise IOError("Unable to mount VHDs, check VHD mounting service is running correctly")
+            raise IOError("Unable to mount VHDs, check VHD mounting scheduled task is running correctly")
 
     @task("Request VHDs to be mounted")
     def request_dismount_vhds(self):
@@ -1543,7 +1547,7 @@ class UpgradeTasks(object):
                 break
             sleep(1)
         else:
-            raise IOError("Unable to dismount VHDs, check VHD dismounting service is running correctly")
+            raise IOError("Unable to dismount VHDs, check VHD dismounting scheduled task is running correctly")
             
     @task("Mount VHDs")
     def mount_vhds(self):
@@ -1592,5 +1596,24 @@ class UpgradeTasks(object):
 
         if not os.path.exists(FILE_TO_REQUEST_VHD_DISMOUNTING):
             return
+
+        admin_commands = AdminCommandBuilder()
+
+        for vhd in VHDS:
+            # Dismount the VHD
+            admin_commands.add_command(
+                "powershell",
+                r'-command "Hyper-V\Dismount-VHD {vhd_file}"'.format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.filename)),
+                expected_return_val=None,
+            )
+
+            # Remove directory junction
+            admin_commands.add_command(
+                "cmd",
+                r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
+                expected_return_val=None,
+            )
+
+        admin_commands.run_all()
 
         os.remove(FILE_TO_REQUEST_VHD_DISMOUNTING)
