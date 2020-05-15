@@ -1636,9 +1636,8 @@ class UpgradeTasks(object):
         os.makedirs(build_folder)
 
         for vhd in VHDS:
-            shutil.copyfile(
-                os.path.join(LOCAL_VHD_DIR, vhd.filename),
-                os.path.join(build_folder, vhd.filename)
-            )
+            print("Deploying {} to '{}'".format(vhd.filename, build_folder))
+            shutil.copyfile(os.path.join(LOCAL_VHD_DIR, vhd.filename), os.path.join(build_folder, vhd.filename))
 
+        print("Cleaning up local artefacts...")
         shutil.rmtree(LOCAL_VHD_DIR)
