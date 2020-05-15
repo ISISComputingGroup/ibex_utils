@@ -322,13 +322,13 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.initialize_var_dir()
 
-    def mount_vhd(self):
+    def mount_vhds(self):
         """
         Task which actually mounts the VHDs (will be run as admin)
         """
         self._upgrade_tasks.mount_vhds()
 
-    def dismount_vhd(self):
+    def dismount_vhds(self):
         """
         Task which actually dismounts the VHDs (will be run as admin)
         """
@@ -373,6 +373,12 @@ UPGRADE_TYPES = {
     'create_vhds': (
         UpgradeInstrument.run_vhd_creation,
         "create a set of VHDS containing the latest IBEX release"),
+    'mount_vhds': (
+        UpgradeInstrument.mount_vhds,
+        "task to mount VHDs if needed"),
+    'dismount_vhds': (
+        UpgradeInstrument.dismount_vhds,
+        "task to dismount VHDs if needed"),
 }
 
 
