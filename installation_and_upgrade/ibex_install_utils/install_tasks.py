@@ -75,6 +75,9 @@ VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "IC
 REMOTE_VHD_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "chris")
 LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
 
+FILE_TO_REQUEST_VHD_MOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_mount_vhds.txt")
+FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_mount_vhds.txt")
+
 
 class Vhd(object):
     def __init__(self, name, filename, mount_point):
@@ -307,10 +310,10 @@ class UpgradeInstrument(object):
 
         Note: this will run under jenkins, don't add interactive tasks to this list.
         """
-        # self._upgrade_tasks.copy_vhds_to_local_area()
-        # self._upgrade_tasks.mount_vhds()
-        # self._upgrade_tasks.install_ibex_server(True)
-        # self._upgrade_tasks.install_genie_python3()
+        self._upgrade_tasks.copy_vhds_to_local_area()
+        self._upgrade_tasks.request_mount_vhds()
+        self._upgrade_tasks.install_ibex_server(True)
+        self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_mysql_for_vhd()
         self._upgrade_tasks.install_ibex_client()
         self._upgrade_tasks.setup_config_repository()
@@ -318,6 +321,18 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.setup_calibrations_repository()
         self._upgrade_tasks.update_calibrations_repository()
         self._upgrade_tasks.initialize_var_dir()
+
+    def mount_vhd(self):
+        """
+        Task which actually mounts the VHDs (will be run as admin)
+        """
+        self._upgrade_tasks.mount_vhds()
+
+    def dismount_vhd(self):
+        """
+        Task which actually dismounts the VHDs (will be run as admin)
+        """
+        self._upgrade_tasks.dismount_vhds()
 
 
 # All possible upgrade tasks
@@ -1497,9 +1512,38 @@ class UpgradeTasks(object):
         for vhd in VHDS:
             shutil.copyfile(os.path.join(REMOTE_VHD_DIR, vhd.filename),
                             os.path.join(LOCAL_VHD_DIR, vhd.filename))
+
+    @task("Request VHDs to be mounted")
+    def request_mount_vhds(self):
+        with open(FILE_TO_REQUEST_VHD_MOUNTING, "w") as f:
+            f.write("")
+
+        print("Waiting for VHDs to be mounted...")
+        for _ in range(300):
+            if all(os.path.exists(vhd.mount_point) for vhd in VHDS):
+                break
+            sleep(1)
+        else:
+            raise IOError("Unable to mount VHDs, check VHD mounting service is running correctly")
+
+    @task("Request VHDs to be mounted")
+    def request_dismount_vhds(self):
+        with open(FILE_TO_REQUEST_VHD_DISMOUNTING, "w") as f:
+            f.write("")
+
+        print("Waiting for VHDs to be dismounted...")
+        for _ in range(300):
+            if not any(os.path.exists(vhd.mount_point) for vhd in VHDS):
+                break
+            sleep(1)
+        else:
+            raise IOError("Unable to dismount VHDs, check VHD dismounting service is running correctly")
             
     @task("Mount VHDs")
-    def mount_vhd_service(self):
+    def mount_vhds(self):
+
+        if not os.path.exists(FILE_TO_REQUEST_VHD_MOUNTING):
+            return
 
         for vhd in VHDS:
             if os.path.exists(vhd.mount_point):
@@ -1534,3 +1578,13 @@ class UpgradeTasks(object):
                     .format(mount_point=vhd.mount_point, name=vhd.name, driveletter_file=driveletter_file))
 
         admin_commands.run_all()
+
+        os.remove(FILE_TO_REQUEST_VHD_MOUNTING)
+
+    @task("Dismount VHDs")
+    def dismount_vhds(self):
+
+        if not os.path.exists(FILE_TO_REQUEST_VHD_DISMOUNTING):
+            return
+
+        os.remove(FILE_TO_REQUEST_VHD_DISMOUNTING)
