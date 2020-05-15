@@ -1555,18 +1555,19 @@ class UpgradeTasks(object):
         if not os.path.exists(FILE_TO_REQUEST_VHD_MOUNTING):
             return
 
-        for vhd in VHDS:
-            if os.path.exists(vhd.mount_point):
-                self.prompt.prompt_and_raise_if_not_yes(
-                    "{} mount point at {} exists, check and delete or move as appropriate. Press yes when complete."
-                        .format(vhd.name, vhd.mount_point))
-
         admin_commands = AdminCommandBuilder()
+
+        admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
 
         for vhd in VHDS:
             driveletter_file = os.path.join(tempfile.gettempdir(), "{}_driveletter.txt".format(vhd.name))
             if os.path.exists(driveletter_file):
                 os.remove(driveletter_file)
+
+            if os.path.exists(vhd.mount_point):
+                admin_commands.add_command("move",
+                                           '"{mount_point}" "{mount_point}_backup"'.format(mount_point=vhd.mount_point),
+                                           expected_return_val=None)
 
             # Mount the VHD and write it's assigned drive letter to a file.
             admin_commands.add_command(
@@ -1613,6 +1614,12 @@ class UpgradeTasks(object):
                 r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
                 expected_return_val=None,
             )
+
+            # Restore previous directories to where they were before mounting VHDS
+            if os.path.exists("{}_backup".format(vhd.mount_point)):
+                admin_commands.add_command("move",
+                                           '"{mount_point}_backup" "{mount_point}"'.format(mount_point=vhd.mount_point),
+                                           expected_return_val=None)
 
         admin_commands.run_all()
 
