@@ -1,4 +1,5 @@
-set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
+REM fake a release directory as admin can't access network shares. It's not actually needed but the script falls over without it.
+set "SOURCE=C:\Users\Administrator\Documents\fake_release_dir"
 
 REM Use a locally installed python in C:\users\<username>\Documents\Python as we don't want to execute code directly from
 REM a network share as the admin user.
