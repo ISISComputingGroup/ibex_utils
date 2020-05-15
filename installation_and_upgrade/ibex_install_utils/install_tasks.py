@@ -1534,7 +1534,7 @@ class UpgradeTasks(object):
 
         print("Waiting for VHDs to be mounted...")
         for _ in range(300):
-            if all(os.path.exists(vhd.mount_point) for vhd in VHDS):
+            if not os.path.exists(FILE_TO_REQUEST_VHD_MOUNTING):
                 break
             sleep(1)
         else:
@@ -1547,7 +1547,7 @@ class UpgradeTasks(object):
 
         print("Waiting for VHDs to be dismounted...")
         for _ in range(300):
-            if not any(os.path.exists(vhd.mount_point) for vhd in VHDS):
+            if not os.path.exists(FILE_TO_REQUEST_VHD_DISMOUNTING):
                 break
             sleep(1)
         else:
