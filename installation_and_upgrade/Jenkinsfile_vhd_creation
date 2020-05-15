@@ -25,6 +25,7 @@ pipeline {
     stage("Build") {
       steps {
         bat """
+            set BUILD_NUMBER=${env.BUILD_NUMBER}
             installation_and_upgrade/vhd_build.bat
             """
       }

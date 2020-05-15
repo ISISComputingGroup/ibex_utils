@@ -72,8 +72,10 @@ VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140_1.dll")
 VCRUNTIME140_INSTALLER = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer",
                                       "vc_redist.x64.exe")
 
-REMOTE_VHD_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "chris")
+REMOTE_VHD_SRC_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "chris")
+REMOTE_VHD_DEST_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "ICP", "VHDS")
 LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
+
 
 FILE_TO_REQUEST_VHD_MOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_mount_vhds.txt")
 FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_dismount_vhds.txt")
@@ -324,6 +326,8 @@ class UpgradeInstrument(object):
             self._upgrade_tasks.initialize_var_dir()
         finally:
             self._upgrade_tasks.request_dismount_vhds()
+
+        self._upgrade_tasks.deploy_vhds()
 
 
     def mount_vhds(self):
@@ -1520,7 +1524,7 @@ class UpgradeTasks(object):
             shutil.rmtree(LOCAL_VHD_DIR)
         os.mkdir(LOCAL_VHD_DIR)
         for vhd in VHDS:
-            shutil.copyfile(os.path.join(REMOTE_VHD_DIR, vhd.filename),
+            shutil.copyfile(os.path.join(REMOTE_VHD_SRC_DIR, vhd.filename),
                             os.path.join(LOCAL_VHD_DIR, vhd.filename))
 
     @task("Request VHDs to be mounted")
@@ -1624,3 +1628,17 @@ class UpgradeTasks(object):
         admin_commands.run_all()
 
         os.remove(FILE_TO_REQUEST_VHD_DISMOUNTING)
+
+    @task("Deploy VHDS")
+    def deploy_vhds(self):
+
+        build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Build{}".format(os.environ["BUILD_NUMBER"]))
+        os.makedirs(build_folder)
+
+        for vhd in VHDS:
+            shutil.copyfile(
+                os.path.join(LOCAL_VHD_DIR, vhd.filename),
+                os.path.join(build_folder, vhd.filename)
+            )
+
+        shutil.rmtree(LOCAL_VHD_DIR)
