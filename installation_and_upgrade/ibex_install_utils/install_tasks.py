@@ -315,7 +315,7 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.install_ibex_server(True)
         self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_mysql_for_vhd()
-        self._upgrade_tasks.install_ibex_client()
+        self._upgrade_tasks.install_e4_ibex_client()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.setup_calibrations_repository()
