@@ -76,7 +76,7 @@ REMOTE_VHD_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "chris")
 LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
 
 FILE_TO_REQUEST_VHD_MOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_mount_vhds.txt")
-FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_mount_vhds.txt")
+FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_dismount_vhds.txt")
 
 
 class Vhd(object):
@@ -1536,7 +1536,7 @@ class UpgradeTasks(object):
         else:
             raise IOError("Unable to mount VHDs, check VHD mounting scheduled task is running correctly")
 
-    @task("Request VHDs to be mounted")
+    @task("Request VHDs to be dismounted")
     def request_dismount_vhds(self):
         with open(FILE_TO_REQUEST_VHD_DISMOUNTING, "w") as f:
             f.write("")
