@@ -30,7 +30,7 @@ from ibex_install_utils.kafka_utils import add_required_topics
 try:
     from subprocess import DETACHED_PROCESS
 except ImportError:
-    # Hack for Py2 compatibility, can be removed once we are on Py3.
+    # For Py2 compatibility, can be removed once we are on Py3.
     DETACHED_PROCESS = 0x00000008
 
 BACKUP_DATA_DIR = os.path.join("C:\\", "data")
@@ -313,11 +313,11 @@ class UpgradeInstrument(object):
         # self._upgrade_tasks.install_genie_python3()
         self._upgrade_tasks.install_mysql_for_vhd()
         self._upgrade_tasks.install_ibex_client()
-        self._upgrade_tasks.initialize_var_dir()
         self._upgrade_tasks.setup_config_repository()
         self._upgrade_tasks.upgrade_instrument_configuration()
         self._upgrade_tasks.setup_calibrations_repository()
         self._upgrade_tasks.update_calibrations_repository()
+        self._upgrade_tasks.initialize_var_dir()
 
 
 # All possible upgrade tasks
@@ -997,15 +997,14 @@ class UpgradeTasks(object):
             ]
         ).run()
 
-    def _setup_database_users_and_tables(self, manual=False):
-        mysql = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
+    def _setup_database_users_and_tables(self, vhd_install=True):
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
                                           os.getenv("MYSQL_PASSWORD", "environment variable not set"),
                                           show_automatic_answer=False)
 
-        if not manual:  # Service won't have been started yet
+        if vhd_install:  # Service won't have been started yet
             # spawn service in background
             subprocess.Popen(mysqld, creationflags=DETACHED_PROCESS)
 
@@ -1026,12 +1025,7 @@ class UpgradeTasks(object):
             log_command_args=False,  # To make sure password doesn't appear in jenkins log.
         ).run()
 
-        if manual:
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Run config_mysql.bat in {} now. \n"
-                "WARNING: performing this step will wipe all existing historical data. \n"
-                "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
-        else:
+        if vhd_install:
             RunProcess(
                 working_dir=SYSTEM_SETUP_PATH,
                 executable_directory=SYSTEM_SETUP_PATH,
@@ -1052,6 +1046,11 @@ class UpgradeTasks(object):
                 ],
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
+        else:
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Run config_mysql.bat in {} now. \n"
+                "WARNING: performing this step will wipe all existing historical data. \n"
+                "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
 
     def _install_latest_mysql8(self, clean_install):
         """
@@ -1090,7 +1089,7 @@ class UpgradeTasks(object):
         sleep(5)  # Time for service to start
 
         if clean_install:
-            self._setup_database_users_and_tables(manual=True)
+            self._setup_database_users_and_tables(vhd_install=False)
 
     @task("Install latest MySQL for VHD deployment")
     def install_mysql_for_vhd(self):
@@ -1112,7 +1111,7 @@ class UpgradeTasks(object):
                                                     "Please do this manually confirm when complete."
                                                     .format(my_ini_file, MYSQL8_INSTALL_DIR, e))
 
-        self._setup_database_users_and_tables(manual=False)
+        self._setup_database_users_and_tables(vhd_install=True)
 
     def _install_vcruntime140(self):
         if not os.path.exists(VCRUNTIME140):
@@ -1500,11 +1499,7 @@ class UpgradeTasks(object):
                             os.path.join(LOCAL_VHD_DIR, vhd.filename))
             
     @task("Mount VHDs")
-    def mount_vhds(self):
-
-        # TODO sort this out this is a horrible hack. Mount var elsewhere?
-        if os.path.exists(VAR_DIR):
-            shutil.rmtree(VAR_DIR)
+    def mount_vhd_service(self):
 
         for vhd in VHDS:
             if os.path.exists(vhd.mount_point):
