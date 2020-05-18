@@ -318,10 +318,10 @@ class UpgradeInstrument(object):
         self._upgrade_tasks.copy_vhds_to_local_area()
         self._upgrade_tasks.request_mount_vhds()
         try:
-            # self._upgrade_tasks.install_ibex_server(True)
-            # self._upgrade_tasks.install_genie_python3()
-            # self._upgrade_tasks.install_mysql_for_vhd()
-            # self._upgrade_tasks.install_e4_ibex_client()
+            self._upgrade_tasks.install_ibex_server(True)
+            self._upgrade_tasks.install_genie_python3()
+            self._upgrade_tasks.install_mysql_for_vhd()
+            self._upgrade_tasks.install_e4_ibex_client()
             self._upgrade_tasks.setup_config_repository()
             self._upgrade_tasks.upgrade_instrument_configuration()
             self._upgrade_tasks.setup_calibrations_repository()
@@ -330,7 +330,7 @@ class UpgradeInstrument(object):
         finally:
             self._upgrade_tasks.request_dismount_vhds()
 
-        # self._upgrade_tasks.deploy_vhds()
+        self._upgrade_tasks.deploy_vhds()
 
     def mount_vhds(self):
         """
