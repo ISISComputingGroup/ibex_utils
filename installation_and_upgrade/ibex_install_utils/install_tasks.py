@@ -312,6 +312,9 @@ class UpgradeInstrument(object):
 
         Note: this will run under jenkins, don't add interactive tasks to this list.
         """
+        # To try to start from a clean state if we already have partially mounted VHDs
+        self._upgrade_tasks.request_dismount_vhds()
+
         self._upgrade_tasks.copy_vhds_to_local_area()
         self._upgrade_tasks.request_mount_vhds()
         try:
