@@ -630,10 +630,11 @@ class UpgradeTasks(object):
             os.makedirs(SETTINGS_CONFIG_PATH)
 
         subprocess.call(
-            "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
+            "git clone --depth 1 http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
                 inst_name), cwd=SETTINGS_CONFIG_PATH)
 
         inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
+        subprocess.call("git fetch --unshallow", cwd=inst_config_path)
         subprocess.call("git pull", cwd=inst_config_path)
 
         branch_exists = subprocess.call("git checkout {}".format(inst_name), cwd=inst_config_path) == 0
