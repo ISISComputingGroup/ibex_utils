@@ -1520,7 +1520,12 @@ class UpgradeTasks(object):
     @task("Copy VHDs to local area")
     def copy_vhds_to_local_area(self):
         if os.path.exists(LOCAL_VHD_DIR):
-            shutil.rmtree(LOCAL_VHD_DIR)
+            try:
+                shutil.rmtree(LOCAL_VHD_DIR)
+            except IOError:
+                self.request_dismount_vhds()
+                shutil.rmtree(LOCAL_VHD_DIR)
+
         os.mkdir(LOCAL_VHD_DIR)
         for vhd in VHDS:
             shutil.copyfile(os.path.join(REMOTE_VHD_SRC_DIR, vhd.filename),
