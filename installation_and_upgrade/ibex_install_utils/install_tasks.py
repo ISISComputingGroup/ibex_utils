@@ -63,6 +63,8 @@ MYSQL_LATEST_VERSION = "8.0.19"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          "mysql-{}-winx64.zip".format(MYSQL_LATEST_VERSION))
 
+GIT_CMD_DIR = os.path.join("C:\\", "Program Files", "Git", "cmd")
+
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
 MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
 PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
@@ -620,21 +622,56 @@ class UpgradeTasks(object):
         """
         inst_name = self._machine_name
 
-        subprocess.call("git config --global core.autocrlf true")
-        subprocess.call("git config --global credential.helper wincred")
-        subprocess.call("git config --global user.name spudulike")
-        set_user_email = "git config --global user.email spudulike@{}.isis.cclrc.ac.uk"
-        subprocess.call(set_user_email.format(inst_name.lower()))
+        RunProcess(
+            working_dir=APPS_BASE_DIR,
+            executable_file="cmd.exe",
+            executable_directory=os.path.join("C:\\", "Windows", "System32"),
+            prog_args=["/c", "git config --global core.autocrlf true"],
+        ).run()
+
+        RunProcess(
+            working_dir=APPS_BASE_DIR,
+            executable_file="cmd.exe",
+            executable_directory=os.path.join("C:\\", "Windows", "System32"),
+            prog_args=["/c", "git config --global credential.helper wincred"],
+        ).run()
+
+        RunProcess(
+            working_dir=APPS_BASE_DIR,
+            executable_file="cmd.exe",
+            executable_directory=os.path.join("C:\\", "Windows", "System32"),
+            prog_args=["/c", "git config --global user.name spudulike"],
+        ).run()
+
+        RunProcess(
+            working_dir=APPS_BASE_DIR,
+            executable_file="cmd.exe",
+            executable_directory=os.path.join("C:\\", "Windows", "System32"),
+            prog_args=["/c", "git config --global user.email spudulike@{}.isis.cclrc.ac.uk".format(inst_name.lower())],
+        ).run()
 
         if not os.path.exists(SETTINGS_CONFIG_PATH):
             os.makedirs(SETTINGS_CONFIG_PATH)
 
-        subprocess.call(
-            "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
-                inst_name), cwd=SETTINGS_CONFIG_PATH)
+        RunProcess(
+            working_dir=SETTINGS_CONFIG_PATH,
+            executable_file="cmd.exe",
+            executable_directory=os.path.join("C:\\", "Windows", "System32"),
+            prog_args=[
+                "/c",
+                "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(inst_name)
+            ],
+        ).run()
 
         inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
         subprocess.call("git pull", cwd=inst_config_path)
+
+        RunProcess(
+            working_dir=inst_config_path,
+            executable_file="cmd.exe",
+            executable_directory=os.path.join("C:\\", "Windows", "System32"),
+            prog_args=["/c", "git pull"],
+        ).run()
 
         branch_exists = subprocess.call("git checkout {}".format(inst_name), cwd=inst_config_path) == 0
         if not branch_exists:
