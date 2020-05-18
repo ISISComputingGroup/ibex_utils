@@ -1522,7 +1522,7 @@ class UpgradeTasks(object):
         if os.path.exists(LOCAL_VHD_DIR):
             try:
                 shutil.rmtree(LOCAL_VHD_DIR)
-            except IOError:
+            except (IOError, OSError):
                 self.request_dismount_vhds()
                 shutil.rmtree(LOCAL_VHD_DIR)
 
