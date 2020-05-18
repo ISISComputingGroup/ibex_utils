@@ -329,7 +329,6 @@ class UpgradeInstrument(object):
 
         self._upgrade_tasks.deploy_vhds()
 
-
     def mount_vhds(self):
         """
         Task which actually mounts the VHDs (will be run as admin)
@@ -1538,6 +1537,7 @@ class UpgradeTasks(object):
                 break
             sleep(1)
         else:
+            os.remove(FILE_TO_REQUEST_VHD_MOUNTING)
             raise IOError("Unable to mount VHDs, check VHD mounting scheduled task is running correctly")
 
     @task("Request VHDs to be dismounted")
@@ -1551,6 +1551,7 @@ class UpgradeTasks(object):
                 break
             sleep(1)
         else:
+            os.remove(FILE_TO_REQUEST_VHD_DISMOUNTING)
             raise IOError("Unable to dismount VHDs, check VHD dismounting scheduled task is running correctly")
             
     @task("Mount VHDs")
