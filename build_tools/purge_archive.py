@@ -42,7 +42,7 @@ def old_enough_to_delete(f):
 
 
 def is_build_dir(d):
-    return os.path.isdir(d) and "BUILD" in os.path.split(d)[-1]
+    return os.path.isdir(d) and "BUILD" in os.path.split(d)[-1].upper()
 
 
 def deletion_directories(project_areas):
