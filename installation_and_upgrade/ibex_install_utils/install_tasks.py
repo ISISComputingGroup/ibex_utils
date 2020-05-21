@@ -1634,6 +1634,7 @@ class UpgradeTasks(object):
                                            '"{mount_point}_backup" "{mount_point}"'.format(mount_point=vhd.mount_point),
                                            expected_return_val=None)
 
+        admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
         admin_commands.run_all()
 
         os.remove(FILE_TO_REQUEST_VHD_DISMOUNTING)
