@@ -59,7 +59,7 @@ def deletion_directories(project_areas):
 
 def purge(dry_run=False):
     print("Beginning archive purge...")
-    project_areas = [os.path.join(build_area, proj) for proj in ("Client", "genie_python", "VHDS")] + \
+    project_areas = [os.path.join(build_area, proj) for proj in ("Client_E4", "genie_python", "genie_python_3", "VHDS")] + \
         [os.path.join(build_area, "EPICS", proj) for proj in os.listdir(os.path.join(build_area, "EPICS"))
          if proj.startswith("EPICS")]
 
