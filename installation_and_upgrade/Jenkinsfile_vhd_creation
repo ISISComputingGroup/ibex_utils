@@ -11,7 +11,7 @@ pipeline {
   
   triggers {
     pollSCM('H/2 * * * *')
-    upstream(upstreamProjects: 'ibex_gui_pipeline,genie_python_pipeline,EPICS_IOC_Windows7_x64,EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
+    upstream(upstreamProjects: 'ibex_gui_pipeline,genie_python_pipeline,EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
   }
   
   stages {  
