@@ -91,7 +91,7 @@ class UpgradeInstrument(object):
     Class to upgrade the instrument installation to the given version of IBEX.
     """
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
-                 file_utils=FileUtils()):
+                 ibex_version, file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -100,10 +100,12 @@ class UpgradeInstrument(object):
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie_python 3 from
+            ibex_version: version number of ibex that we are upgrading to
             file_utils : collection of file utilities
         """
         self._upgrade_tasks = UpgradeTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
+            ibex_version, file_utils)
 
     @staticmethod
     def _should_install_utils():
@@ -323,7 +325,7 @@ class UpgradeTasks(object):
     """
 
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
-                 file_utils=FileUtils()):
+                 ibex_version, file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -332,6 +334,7 @@ class UpgradeTasks(object):
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie python from
+            ibex_version: version number of ibex that we are upgrading to
             file_utils : collection of file utilities
         """
         self.prompt = user_prompt  # This is needed to allow @tasks to work
@@ -340,7 +343,7 @@ class UpgradeTasks(object):
         self._client_e4_source_dir = client_e4_source_dir
         self._genie_python_3_source_dir = genie_python3_dir
         self._file_utils = file_utils
-
+        self._ibex_version = ibex_version
         self._machine_name = self._get_machine_name()
 
         self._ca = CaWrapper()
@@ -1164,7 +1167,12 @@ class UpgradeTasks(object):
         """
         # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes(
-            "Inform the instrument scientists that the upgrade has been completed")
+            "Please send the following email to your instrument scientists:\n"+\
+            "Hello,\n\nWe have finished the upgrade of {} to IBEX {}.".format(self._machine_name, self._ibex_version)+\
+            "The release notes for this are at the following link: "
+            "https://github.com/ISISComputingGroup/IBEX/wiki/Release-Notes-v{}\n\n".format(self._ibex_version)+\
+            "Please let us know if you have any queries or find any problems with the upgrade.\n\n"+\
+            "Thank you,\n\n<your name>")
 
     @task("Apply changes in release notes")
     def apply_changes_noted_in_release_notes(self):
@@ -1174,7 +1182,6 @@ class UpgradeTasks(object):
         # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes(
             "Look in the IBEX wiki at the release notes for the version you are deploying. Apply needed fixes.")
-
     @contextmanager
     def timestamped_pv_backups_file(self, name, directory, extension="txt"):
         """
