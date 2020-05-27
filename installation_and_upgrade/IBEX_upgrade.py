@@ -66,6 +66,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     client_e4_dir = args.client_e4_dir
+    current_client_version = None
     if args.release_dir is not None:
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
         current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
@@ -103,7 +104,8 @@ if __name__ == "__main__":
 
     try:
         prompt = UserPrompt(args.quiet, args.confirm_step)
-        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir, genie_python3_dir, current_client_version)
+        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir, genie_python3_dir,
+                                               current_client_version)
         upgrade_function = UPGRADE_TYPES[args.deployment_type][0]
         upgrade_function(upgrade_instrument)
 
