@@ -1166,13 +1166,17 @@ class UpgradeTasks(object):
         Inform instrument scientists that the machine has been upgraded.
         """
         # For future reference, genie_python can send emails!
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Please send the following email to your instrument scientists:\n"+\
-            "Hello,\n\nWe have finished the upgrade of {} to IBEX {}.".format(self._machine_name, self._ibex_version)+\
-            "The release notes for this are at the following link: "
-            "https://github.com/ISISComputingGroup/IBEX/wiki/Release-Notes-v{}\n\n".format(self._ibex_version)+\
-            "Please let us know if you have any queries or find any problems with the upgrade.\n\n"+\
-            "Thank you,\n\n<your name>")
+        ibex_version = self._ibex_version if self._ibex_version is not None else "<Insert version number here>"
+        email_template = """Please send the following email to your instrument scientists:
+            Hello,
+            We have finished the upgrade of {machine_name} to IBEX {ibex_version}.
+            The release notes for this are at the following link: https://github.com/ISISComputingGroup/IBEX/wiki/Release-Notes-v{ibex_version}
+            
+            Please let us know if you have any queries or find any problems with the upgrade.
+            Thank you,
+            <your name>""".format(machine_name=self._machine_name, ibex_version=ibex_version)
+
+        self.prompt.prompt_and_raise_if_not_yes(email_template)
 
     @task("Apply changes in release notes")
     def apply_changes_noted_in_release_notes(self):
