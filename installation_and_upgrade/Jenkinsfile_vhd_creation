@@ -10,10 +10,10 @@ pipeline {
   }
   
   triggers {
-    #pollSCM('H/2 * * * *')
-    #cron('H H(4-7) * * *')
-    ## only trigger on clean EPICS builds, which should be roughly once a day
-    #upstream(upstreamProjects: 'ibex_gui_pipeline,genie_python_pipeline,EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
+    //pollSCM('H/2 * * * *')
+    //cron('H H(4-7) * * *')
+    //upstream(upstreamProjects: 'ibex_gui_pipeline,genie_python_pipeline,EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
+    //// only trigger on clean EPICS builds, which should be roughly once a day
     upstream(upstreamProjects: 'EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
   }
   
@@ -40,7 +40,7 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr:'5', daysToKeepStr: '7'))
     timeout(time: 90, unit: 'MINUTES')
     disableConcurrentBuilds()
-	timestamps()
+    timestamps()
     office365ConnectorWebhooks([[
                     name: "Office 365",
                     notifyBackToNormal: true,
