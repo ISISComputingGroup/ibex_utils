@@ -10,8 +10,11 @@ pipeline {
   }
   
   triggers {
-    pollSCM('H/2 * * * *')
-    upstream(upstreamProjects: 'ibex_gui_pipeline,genie_python_pipeline,EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
+    #pollSCM('H/2 * * * *')
+    #cron('H H(4-7) * * *')
+    ## only trigger on clean EPICS builds, which should be roughly once a day
+    #upstream(upstreamProjects: 'ibex_gui_pipeline,genie_python_pipeline,EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
+    upstream(upstreamProjects: 'EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
   }
   
   stages {  
