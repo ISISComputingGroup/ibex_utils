@@ -23,7 +23,7 @@ class UserPrompt(object):
         self._automatic = automatic
         self._confirm_steps = confirm_steps
 
-    def prompt(self, prompt_text, possibles, default, case_sensitive=False):
+    def prompt(self, prompt_text, possibles, default, case_sensitive=False, show_automatic_answer=True):
         """
         Prompt the user for an answer and check that answer. If in auto mode just answer the default
         Args:
@@ -31,12 +31,13 @@ class UserPrompt(object):
             possibles: allowed answers
             default: default answer if in automatic mode, if None still ask the user even in automatic mode
             case_sensitive: is the answer case sensitive
+            show_automatic_answer: whether the default answer should be printed in automatic mode
 
         Returns: answer from possibles
 
         """
         if self._automatic and default is not None:
-            print("{prompt} : {default}".format(prompt=prompt_text, default=default))
+            print("{} : {}".format(prompt_text, default if show_automatic_answer else "(hidden)"))
             return default
         elif possibles is UserPrompt.ANY:
             return six.moves.input(prompt_text).strip()

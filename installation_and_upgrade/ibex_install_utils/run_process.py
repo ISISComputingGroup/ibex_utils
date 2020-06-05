@@ -4,7 +4,6 @@ Running processes infrastructure.
 
 import os
 import subprocess
-import traceback
 
 from ibex_install_utils.exceptions import ErrorInRun
 
@@ -14,7 +13,7 @@ class RunProcess(object):
     Create a process runner to run a process.
     """
     def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None,
-                 capture_pipes=True, std_in=None):
+                 capture_pipes=True, std_in=None, log_command_args=True):
         """
         Create a process that needs running
 
@@ -26,6 +25,7 @@ class RunProcess(object):
             prog_args(list[string]): arguments to pass to the program
             capture_pipes: whether to capture pipes and manage in python or let the process access the console
             std_in: std_in sets the stdin pipe to be this
+            log_command_args (bool): Whether to show the full command line that is being executed.
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
@@ -33,6 +33,7 @@ class RunProcess(object):
         self._prog_args = prog_args
         self._capture_pipes = capture_pipes
         self._stdin = std_in
+        self.log_command_args = log_command_args
         if std_in is not None and self._capture_pipes:
             raise NotImplementedError("Capturing pipes and set standard in is not implemented.")
         if executable_directory is None:
@@ -47,12 +48,16 @@ class RunProcess(object):
         Returns:
         Raises ErrorInRun: if there is a known problem with the run
         """
+        output_lines = ""
         try:
-            print("    Running {0} ...".format(self._bat_file))
-
             command_line = [self._full_path_to_process_file]
             if self._prog_args is not None:
                 command_line.extend(self._prog_args)
+
+            if self.log_command_args:
+                print("    Running {} ...".format(" ".join(command_line)))
+            else:
+                print("    Running {} ... (command arguments hidden)".format(self._bat_file))
 
             if not self._capture_pipes:
                 if self._stdin:
@@ -78,8 +83,15 @@ class RunProcess(object):
                 print("    > {line}".format(line=line))
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
-            traceback.print_exc()
-            raise ErrorInRun("Command failed with error: {0}".format(ex))
+            if ex.output:
+                print("Process failed with return code {}. Output was: ".format(ex.returncode))
+                for line in ex.output.splitlines():
+                    print("    > {line}".format(line=line))
+                print(" --- ")
+            else:
+                print("Process failed with return code {} and no output.".format(ex.returncode))
+
+            raise ErrorInRun("Command failed with return code {}".format(ex.returncode))
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
