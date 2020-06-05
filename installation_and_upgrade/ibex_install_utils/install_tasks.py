@@ -83,17 +83,18 @@ VHD_MOUNT_DISMOUNT_TIMEOUT = 300
 
 
 class Vhd(object):
-    def __init__(self, name, filename, mount_point):
+    def __init__(self, name, source_filename, dest_filename, mount_point):
         self.name = name
-        self.filename = filename
+        self.source_filename = source_filename
+        self.dest_filename = dest_filename
         self.mount_point = mount_point
 
 
 VHDS = [
     # Key = VHD location, Value = Mount point
-    Vhd(name="Apps", filename="empty_apps.vhdx", mount_point=APPS_BASE_DIR),
-    Vhd(name="Settings", filename="empty_settings.vhdx", mount_point=SETTINGS_CONFIG_PATH),
-    Vhd(name="Var", filename="empty_var.vhdx", mount_point=VAR_DIR),
+    Vhd(name="Apps", source_filename="empty_apps.vhdx", dest_filename="apps.vhdx", mount_point=APPS_BASE_DIR),
+    Vhd(name="Settings", source_filename="empty_settings.vhdx", dest_filename="settings.vhdx", mount_point=SETTINGS_CONFIG_PATH),
+    Vhd(name="Var", source_filename="empty_var.vhdx", dest_filename="var.vhdx", mount_point=VAR_DIR),
 ]
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
@@ -1532,8 +1533,8 @@ class UpgradeTasks(object):
 
         os.mkdir(LOCAL_VHD_DIR)
         for vhd in VHDS:
-            shutil.copyfile(os.path.join(REMOTE_VHD_SRC_DIR, vhd.filename),
-                            os.path.join(LOCAL_VHD_DIR, vhd.filename))
+            shutil.copyfile(os.path.join(REMOTE_VHD_SRC_DIR, vhd.source_filename),
+                            os.path.join(LOCAL_VHD_DIR, vhd.source_filename))
 
     def _create_file_and_wait_for_it_to_be_deleted(self, filename, timeout):
         with open(filename, "w") as f:
@@ -1580,7 +1581,7 @@ class UpgradeTasks(object):
             admin_commands.add_command(
                 "powershell",
                 r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'
-                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.filename), name=vhd.name, driveletter_file=driveletter_file))
+                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename), name=vhd.name, driveletter_file=driveletter_file))
 
             # Append :\\ to drive letter, e.g. E -> E:\\ (this is necessary so that directory junctions work correctly)
             admin_commands.add_command(
@@ -1611,7 +1612,7 @@ class UpgradeTasks(object):
             # Dismount the VHD
             admin_commands.add_command(
                 "powershell",
-                r'-command "Hyper-V\Dismount-VHD {vhd_file}"'.format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.filename)),
+                r'-command "Hyper-V\Dismount-VHD {vhd_file}"'.format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename)),
                 expected_return_val=None,
             )
 
@@ -1640,8 +1641,8 @@ class UpgradeTasks(object):
         os.makedirs(build_folder)
 
         for vhd in VHDS:
-            print("Deploying {} to '{}'".format(vhd.filename, build_folder))
-            shutil.copyfile(os.path.join(LOCAL_VHD_DIR, vhd.filename), os.path.join(build_folder, vhd.filename))
+            print("Deploying {} to '{}'".format(vhd.source_filename, build_folder))
+            shutil.copyfile(os.path.join(LOCAL_VHD_DIR, vhd.source_filename), os.path.join(build_folder, vhd.dest_filename))
 
         print("Cleaning up local artefacts...")
         shutil.rmtree(LOCAL_VHD_DIR)
