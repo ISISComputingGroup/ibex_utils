@@ -77,8 +77,9 @@ REMOTE_VHD_DEST_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "ICP",
 LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
 
 
-FILE_TO_REQUEST_VHD_MOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_mount_vhds.txt")
-FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join("C:\\", "instrument", "ibex_vhd_deployment_dismount_vhds.txt")
+FILE_TO_REQUEST_VHD_MOUNTING = os.path.join(INSTRUMENT_BASE_DIR, "ibex_vhd_deployment_mount_vhds.txt")
+FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join(INSTRUMENT_BASE_DIR, "ibex_vhd_deployment_dismount_vhds.txt")
+VHD_MOUNT_DISMOUNT_TIMEOUT = 300
 
 
 class Vhd(object):
@@ -1056,15 +1057,16 @@ class UpgradeTasks(object):
             log_command_args=False,  # To make sure password doesn't appear in jenkins log.
         ).run()
 
-        if vhd_install:
-            RunProcess(
-                working_dir=SYSTEM_SETUP_PATH,
-                executable_directory=SYSTEM_SETUP_PATH,
-                executable_file="config_mysql.bat",
-                prog_args=[sql_password],
-                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
-            ).run()
+        RunProcess(
+            working_dir=SYSTEM_SETUP_PATH,
+            executable_directory=SYSTEM_SETUP_PATH,
+            executable_file="config_mysql.bat",
+            prog_args=[sql_password],
+            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+        ).run()
 
+        if vhd_install:
+            # For VHD install only, stop mysql when done
             RunProcess(
                 executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
                 working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
@@ -1077,11 +1079,6 @@ class UpgradeTasks(object):
                 ],
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
-        else:
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Run config_mysql.bat in {} now. \n"
-                "WARNING: performing this step will wipe all existing historical data. \n"
-                "Confirm you have done this. ".format(SYSTEM_SETUP_PATH))
 
     def _install_latest_mysql8(self, clean_install):
         """
@@ -1124,9 +1121,13 @@ class UpgradeTasks(object):
 
     @task("Install latest MySQL for VHD deployment")
     def install_mysql_for_vhd(self):
-        # Ensure we start from a clean slate. We are creating VHDs so we can assume that these files shouldn't exist
-        # and can be safely removed if so. This facilitates developer testing/resuming the script if it failed halfway
-        # through
+        """
+        Installs MySQL for the VHD creation build.
+
+        Ensure we start from a clean slate. We are creating VHDs so we can assume that no files should exist in
+        C:\instrument\apps\mysql or c:\instrument\var\mysql and delete them if they do exist. This facilitates
+        developer testing/resuming the script if it failed halfway through
+        """
         for path in [MYSQL_FILES_DIR, MYSQL8_INSTALL_DIR]:
             if os.path.exists(path):
                 shutil.rmtree(path)
@@ -1534,37 +1535,30 @@ class UpgradeTasks(object):
             shutil.copyfile(os.path.join(REMOTE_VHD_SRC_DIR, vhd.filename),
                             os.path.join(LOCAL_VHD_DIR, vhd.filename))
 
-    @task("Request VHDs to be mounted")
-    def request_mount_vhds(self):
-        with open(FILE_TO_REQUEST_VHD_MOUNTING, "w") as f:
+    def _create_file_and_wait_for_it_to_be_deleted(self, filename, timeout):
+        with open(filename, "w") as f:
             f.write("")
 
-        print("Waiting for VHDs to be mounted...")
-        for _ in range(300):
-            if not os.path.exists(FILE_TO_REQUEST_VHD_MOUNTING):
+        print("Waiting for file at {} to be deleted...".format(filename))
+        for _ in range(timeout):
+            if not os.path.exists(filename):
                 break
             sleep(1)
         else:
-            os.remove(FILE_TO_REQUEST_VHD_MOUNTING)
-            raise IOError("Unable to mount VHDs, check VHD mounting scheduled task is running correctly")
+            os.remove(filename)
+            raise IOError("File at {} still existed after {}s, check VHD scheduled task is running correctly"
+                          .format(filename, timeout))
+
+    @task("Request VHDs to be mounted")
+    def request_mount_vhds(self):
+        self._create_file_and_wait_for_it_to_be_deleted(FILE_TO_REQUEST_VHD_MOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT)
 
     @task("Request VHDs to be dismounted")
     def request_dismount_vhds(self):
-        with open(FILE_TO_REQUEST_VHD_DISMOUNTING, "w") as f:
-            f.write("")
-
-        print("Waiting for VHDs to be dismounted...")
-        for _ in range(300):
-            if not os.path.exists(FILE_TO_REQUEST_VHD_DISMOUNTING):
-                break
-            sleep(1)
-        else:
-            os.remove(FILE_TO_REQUEST_VHD_DISMOUNTING)
-            raise IOError("Unable to dismount VHDs, check VHD dismounting scheduled task is running correctly")
+        self._create_file_and_wait_for_it_to_be_deleted(FILE_TO_REQUEST_VHD_DISMOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT)
             
     @task("Mount VHDs")
     def mount_vhds(self):
-
         if not os.path.exists(FILE_TO_REQUEST_VHD_MOUNTING):
             return
 
