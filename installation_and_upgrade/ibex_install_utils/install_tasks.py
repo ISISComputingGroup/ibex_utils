@@ -22,7 +22,7 @@ class UpgradeInstrument(object):
     Class to upgrade the instrument installation to the given version of IBEX.
     """
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
-                 file_utils=FileUtils()):
+                 ibex_version, file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -31,22 +31,29 @@ class UpgradeInstrument(object):
             client_source_dir: directory to install ibex client from
             client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie_python 3 from
+            ibex_version: version number of ibex that we are upgrading to
             file_utils : collection of file utilities
         """
         self._client_tasks = ClientTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+
         self._mysql_tasks = MysqlTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+
         self._python_tasks = PythonTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+
         self._server_tasks = ServerTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+
         self._system_tasks = SystemTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+
         self._vhd_tasks = VHDTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+
         self._backup_tasks = BackupTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, file_utils)
+            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
 
     @staticmethod
     def _should_install_utils():

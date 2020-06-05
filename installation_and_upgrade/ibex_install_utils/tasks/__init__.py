@@ -9,7 +9,7 @@ from ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
 
 class BaseTasks(object):
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
-                 file_utils=FileUtils()):
+                 ibex_version, file_utils=FileUtils()):
         """
         Initializer.
         Args:
@@ -19,6 +19,7 @@ class BaseTasks(object):
             client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie python from
             file_utils : collection of file utilities
+            ibex_version : the version of ibex being installed
         """
         self.prompt = user_prompt  # This is needed to allow @tasks to work
         self._server_source_dir = server_source_dir
@@ -26,6 +27,7 @@ class BaseTasks(object):
         self._client_e4_source_dir = client_e4_source_dir
         self._genie_python_3_source_dir = genie_python3_dir
         self._file_utils = file_utils
+        self._ibex_version = ibex_version
 
         self._ca = CaWrapper()
 
