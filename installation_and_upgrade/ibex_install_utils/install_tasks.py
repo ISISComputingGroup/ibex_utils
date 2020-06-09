@@ -331,7 +331,7 @@ UPGRADE_TYPES = {
         UpgradeInstrument.run_instrument_deploy_pre_stop_7_0_0,
         "instrument_deploy part before the stop of instrument"),
     'instrument_deploy_main_7_0_0': (
-        UpgradeInstrument.run_instrument_deploy_mai_7_0_0n,
+        UpgradeInstrument.run_instrument_deploy_main_7_0_0,
         "instrument_deploy after stop but before starting it,"),
     'instrument_deploy_post_start_7_0_0': (
         UpgradeInstrument.run_instrument_deploy_post_start_7_0_0,
