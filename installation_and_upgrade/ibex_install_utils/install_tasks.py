@@ -202,6 +202,51 @@ class UpgradeInstrument(object):
         self._server_tasks.save_blocks_to_file()
         self._server_tasks.save_blockserver_pv_to_file()
 
+    def run_instrument_deploy_post_start_7_0_0(self):
+        """
+            Upgrade an instrument. Steps to do after ibex has been started.
+
+            Current the server can not be started in this python script.
+        """
+        self._client_tasks.start_ibex_gui()
+        self._client_tasks.perform_client_tests()
+        self._server_tasks.perform_server_tests()
+        self._server_tasks.save_motor_parameters_to_file()
+        self._server_tasks.save_blocks_to_file()
+        self._server_tasks.save_blockserver_pv_to_file()
+        self._system_tasks.put_autostart_script_in_startup_area()
+        self._python_tasks.change_shortcuts_to_python_3()
+        self._system_tasks.inform_instrument_scientists()
+
+    def run_instrument_deploy_main_7_0_0(self):
+        """
+            Upgrade an instrument. Steps to do after ibex has been stopped but before it is restarted.
+
+            Current the server can not be started or stopped in this python script.
+        """
+        self._backup_tasks.backup_old_directories()
+        self._server_tasks.install_ibex_server(self._should_install_utils())
+        self._python_tasks.install_genie_python3()
+        self._client_tasks.install_ibex_client()
+
+        self._server_tasks.upgrade_instrument_configuration()
+        self._server_tasks.merge_changes_from_ticket_5262()
+        self._server_tasks.update_calibrations_repository()
+        self._system_tasks.apply_changes_noted_in_release_notes()
+        self._system_tasks.update_release_notes()
+        self._system_tasks.reapply_hotfixes()
+        self._python_tasks.update_script_definitions()
+
+    def run_instrument_deploy_pre_stop_7_0_0(self):
+        """
+            Upgrade an instrument. Steps to do before ibex is stopped.
+
+            Current the server can not be started or stopped in this python script.
+        """
+        self._server_tasks.save_motor_parameters_to_file()
+        self._server_tasks.save_blocks_to_file()
+        self._server_tasks.save_blockserver_pv_to_file()
+
     def run_truncate_database(self):
         """
         Backup and truncate databases only
@@ -281,6 +326,15 @@ UPGRADE_TYPES = {
         "instrument_deploy after stop but before starting it,"),
     'instrument_deploy_post_start': (
         UpgradeInstrument.run_instrument_deploy_post_start,
+        "instrument_deploy part after the start of instrument"),
+    'instrument_deploy_pre_stop_7_0_0': (
+        UpgradeInstrument.run_instrument_deploy_pre_stop_7_0_0,
+        "instrument_deploy part before the stop of instrument"),
+    'instrument_deploy_main_7_0_0': (
+        UpgradeInstrument.run_instrument_deploy_mai_7_0_0n,
+        "instrument_deploy after stop but before starting it,"),
+    'instrument_deploy_post_start_7_0_0': (
+        UpgradeInstrument.run_instrument_deploy_post_start_7_0_0,
         "instrument_deploy part after the start of instrument"),
     'install_latest_incr': (
         UpgradeInstrument.remove_all_and_install_client_and_server,

@@ -172,6 +172,29 @@ class ServerTasks(BaseTasks):
 
         RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
 
+    @task("Upgrading instrument configuration")
+    def merge_changes_from_ticket_5262(self):
+        """
+        Merge the changes from ticket 5262 into the configs repository
+        """
+        try:
+            repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name()))
+            if repo.active_branch.name != BaseTasks._get_machine_name():
+                print("Git branch, '{}', is not the same as machine name ,'{}' ".format(
+                    repo.active_branch, BaseTasks._get_machine_name()))
+                print("Error doing ticket 5262 merge, please perform the merge manually".format(e))
+                self.prompt.prompt_and_raise_if_not_yes("Confirm when complete [y/n]")
+            else:
+                print(" fetch: {}".format(repo.git.fetch()))
+                print(" merge: {}".format(repo.git.merge("origin/{}_Ticket5262".format(BaseTasks._get_machine_name()))))
+
+                if BaseTasks._get_machine_name() in ["NDXLARMOR", "NDXMERLIN"]:
+                    print(" merge 2: {}".format(
+                        repo.git.merge("origin/{}_update_genie".format(BaseTasks._get_machine_name()))))
+        except git.GitCommandError as e:
+            print("Error doing ticket 5262 merge, please perform the merge manually".format(e))
+            self.prompt.prompt_and_raise_if_not_yes("Confirm when complete [y/n]")
+
     @task("Set up calibrations repository")
     def setup_calibrations_repository(self):
         """
