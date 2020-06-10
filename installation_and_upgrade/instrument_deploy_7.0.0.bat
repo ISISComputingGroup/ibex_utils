@@ -40,6 +40,3 @@ REM python should be installed correctly at this point, so use local python
 call "C:\Instrument\Apps\Python\python.exe" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" instrument_deploy_post_start_7_0_0
 :ERROR
 EXIT /b %errorlevel%
-
-REM we want most machines back off again after we install IBEX for testing. Otherwise they will fill up log files etc
-start /wait cmd /c "%STOP_IBEX%"

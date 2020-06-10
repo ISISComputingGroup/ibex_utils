@@ -225,8 +225,11 @@ class UpgradeInstrument(object):
             Current the server can not be started or stopped in this python script.
         """
         self._backup_tasks.backup_old_directories()
+        self._mysql_tasks.backup_database()
+        self._mysql_tasks.truncate_database()
         self._server_tasks.install_ibex_server(self._should_install_utils())
         self._python_tasks.install_genie_python3()
+        self._mysql_tasks.install_mysql()
         self._client_tasks.install_ibex_client()
 
         self._server_tasks.upgrade_instrument_configuration()
