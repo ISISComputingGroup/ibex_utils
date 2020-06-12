@@ -4,7 +4,7 @@ load the script into a genie_python console and run as a standard user script.
 """
 
 import csv
-from genie_python import genie as g
+import os
 
 VELOCITY_UNITS = "EGU per sec"
 
@@ -95,6 +95,7 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
         file_reference (BinaryIO): The csv file to save the data to.
         num_of_controllers (int, optional): The number of motor controllers on the instrument (default is 8)
     """
+    g.set_instrument(os.getenv("MYPVPREFIX"), import_instrument_init=False)
     data = []
     for motor in range(1, num_of_controllers+1):
         for axis in range(1, 9):
