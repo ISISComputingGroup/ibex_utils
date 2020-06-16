@@ -329,7 +329,7 @@ class ServerTasks(BaseTasks):
 
     @task("Patch ISISDAE for ticket 5164")
     def patch_isisdae(self):
-        if BaseTasks._get_machine_name() == "NDEMUONFE" or True:
+        if BaseTasks._get_machine_name() == "NDEMUONFE":
             for filename in os.listdir(RELEASE_5_5_0_ISISDAE_DIR):
                 if filename.lower() == "isisdae-ioc-01.exe":
                     continue
