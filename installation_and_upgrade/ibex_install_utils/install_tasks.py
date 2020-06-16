@@ -75,6 +75,7 @@ class UpgradeInstrument(object):
         self._server_tasks.remove_settings()
         self._server_tasks.install_settings()
         self._server_tasks.install_ibex_server(self._should_install_utils())
+        self._server_tasks.patch_isisdae()
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_ibex_client()
         self._system_tasks.upgrade_notepad_pp()
@@ -91,6 +92,7 @@ class UpgradeInstrument(object):
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._backup_tasks.remove_old_ibex()
         self._server_tasks.install_ibex_server(self._should_install_utils())
+        self._server_tasks.patch_isisdae()
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_e4_ibex_client()
         self._server_tasks.upgrade_instrument_configuration()
@@ -120,6 +122,7 @@ class UpgradeInstrument(object):
         self._system_tasks.restrict_ie()
 
         self._server_tasks.install_ibex_server(self._should_install_utils())
+        self._server_tasks.patch_isisdae()
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
         self._client_tasks.install_ibex_client()
@@ -179,6 +182,7 @@ class UpgradeInstrument(object):
         self._mysql_tasks.backup_database()
         self._mysql_tasks.truncate_database()
         self._server_tasks.install_ibex_server(self._should_install_utils())
+        self._server_tasks.patch_isisdae()
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
 
@@ -236,6 +240,7 @@ class UpgradeInstrument(object):
         self._vhd_tasks.request_mount_vhds()
         try:
             self._server_tasks.install_ibex_server(True)
+            self._server_tasks.patch_isisdae()
             self._python_tasks.install_genie_python3()
             self._mysql_tasks.install_mysql_for_vhd()
             self._client_tasks.install_e4_ibex_client()
