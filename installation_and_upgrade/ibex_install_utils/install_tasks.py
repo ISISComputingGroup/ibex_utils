@@ -138,7 +138,6 @@ class UpgradeInstrument(object):
         self._system_tasks.update_web_dashboard()
         self._system_tasks.update_kafka_topics()
         self._system_tasks.put_autostart_script_in_startup_area()
-        self._python_tasks.update_script_definitions()
 
     def run_instrument_deploy(self):
         """
@@ -188,7 +187,6 @@ class UpgradeInstrument(object):
         self._system_tasks.apply_changes_noted_in_release_notes()
         self._system_tasks.update_release_notes()
         self._system_tasks.reapply_hotfixes()
-        self._python_tasks.update_script_definitions()
 
     def run_instrument_deploy_pre_stop(self):
         """
