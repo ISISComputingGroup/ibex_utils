@@ -27,12 +27,3 @@ class PythonTasks(BaseTasks):
             self.prompt.prompt("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
                 "Check with the scientists that it is ok to do this." + \
                 "You can do it by git pull, you may need to merge changes made on the instrument.")
-
-    @task("Change genie_python shortcuts to python 3")
-    def change_shortcuts_to_python_3(self):
-        """
-        Prompt user to find shortcuts to genie_python and replace them with Python 3 shortcuts
-        """
-
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Relace any shortcuts to genie_python with those to python 3 in C:\\Instrument\\Apps\\Python3")

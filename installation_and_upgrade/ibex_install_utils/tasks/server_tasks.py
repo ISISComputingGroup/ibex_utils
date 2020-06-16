@@ -18,7 +18,7 @@ from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
-    SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER
+    SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -29,6 +29,10 @@ SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFI
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
 PV_BACKUPS_DIR = os.path.join(VAR_DIR, "deployment_pv_backups")
+
+# This is needed for the DAE patch detailed in https://github.com/ISISComputingGroup/IBEX/issues/5164
+RELEASE_5_5_0_ISISDAE_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "ICP", "Releases", "5.5.0", "EPICS",
+                                         "ioc", "master", "ISISDAE", "bin", "windows-x64")
 
 
 class ServerTasks(BaseTasks):
@@ -322,3 +326,21 @@ class ServerTasks(BaseTasks):
                 except Exception as e:
                     print("Couldn't get data from {} because: {}".format(pv, e.message))
                     f.write(e.message)
+
+    @task("Patch ISISDAE for ticket 5164")
+    def patch_isisdae(self):
+        if BaseTasks._get_machine_name() == "NDEMUONFE":
+            for filename in os.listdir(RELEASE_5_5_0_ISISDAE_DIR):
+                if filename.lower() == "isisdae-ioc-01.exe":
+                    continue
+
+                source_path = os.path.join(RELEASE_5_5_0_ISISDAE_DIR, filename)
+                dest_path = os.path.join(EPICS_PATH, "ioc", "master", "ISISDAE", "bin", "windows-x64", filename)
+
+                print("Patching {}".format(filename))
+                if os.path.exists(dest_path):
+                    os.remove(dest_path)
+                shutil.copy2(source_path, dest_path)
+            print("ISISDAE successfully patched")
+        else:
+            print("ISISDAE patch not required on this machine - skipping")

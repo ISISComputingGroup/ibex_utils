@@ -75,6 +75,7 @@ if __name__ == "__main__":
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
+
     elif args.kits_icp_dir is not None:
         if args.deployment_type == 'install_latest_incr':
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
