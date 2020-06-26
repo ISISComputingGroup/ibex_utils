@@ -19,7 +19,7 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
-from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
+from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR, get_latest_directory_path
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -337,14 +337,21 @@ class ServerTasks(BaseTasks):
                 print("Failed to find DAE_type ({}), not installing ICP".format(e.message))
                 return
             # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2, if it's talking to a DAE3 it will be 3 or 4
-            if DAE_type == 1 or DAE_type == 2:
+            if DAE_type in [1, 2]:
                 DAE_type = 2
-            elif DAE_type == 3 or DAE_type == 4:
+            elif DAE_type in [3, 4]:
                 DAE_type = 3
             else:
                 print("DAE type {} not recognised, not installing ICP".format(DAE_type))
                 return
-            self.prompt.confirm_step("upgrade DAE{} type ICP found in labview modules?".format(DAE_type))
+            self.prompt.confirm_step("Upgrade DAE{} type ICP found in Labview Modules".format(DAE_type))
+            ICP_path = get_latest_directory_path(os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "ISISICP",
+                                                              "DAE{}".format(DAE_type)), "")
+
+            RunProcess(os.getcwd(), "update_inst.cmd", executable_directory=ICP_path).run()
+
+            print("ICP updated successfully, registering ICP")
         else:
-            self.prompt.confirm_step("install into EPICS/ICP_Binaries?")
+            self.prompt.confirm_step("Install into EPICS/ICP_Binaries")
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
+

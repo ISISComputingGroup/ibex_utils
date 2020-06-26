@@ -5,10 +5,21 @@ Filesystem utility classes
 import os
 import shutil
 import time
-
 from ibex_install_utils.exceptions import UserStop
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
+
+
+def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
+    latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
+    build_num = None
+    for line in open(latest_build_path):
+        build_num = line.strip()
+    if build_num is None or build_num == "":
+        raise IOError("Latest build num unknown. Cannot read it from '{0}'".format(latest_build_path))
+    if directory_above_build_num is None:
+        return os.path.join(build_dir, "{}{}".format(build_prefix, build_num))
+    return os.path.join(build_dir, "{}{}".format(build_prefix, build_num), directory_above_build_num)
 
 
 class FileUtils(object):
