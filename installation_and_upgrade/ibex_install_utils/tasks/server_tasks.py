@@ -1,7 +1,7 @@
 import datetime
 import pprint
 import shutil
-
+import lxml.etree
 import os
 import subprocess
 
@@ -19,6 +19,7 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
+from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -86,7 +87,7 @@ class ServerTasks(BaseTasks):
         shutil.copytree(SOURCE_MACHINE_SETTINGS_COMMON_PATH, os.path.join(SETTINGS_CONFIG_PATH, "common"))
 
     @task("Installing IBEX Server")
-    def install_ibex_server(self, with_utils):
+    def install_ibex_server(self):
         """
         Install ibex server.
         Args:
@@ -95,8 +96,6 @@ class ServerTasks(BaseTasks):
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
         RunProcess(self._server_source_dir, "install_to_inst.bat", prog_args=["NOLOG"]).run()
-        if with_utils and self.prompt.confirm_step("install icp binaries"):
-            RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
     @task("Set up configuration repository")
     def setup_config_repository(self):
@@ -327,20 +326,25 @@ class ServerTasks(BaseTasks):
                     print("Couldn't get data from {} because: {}".format(pv, e.message))
                     f.write(e.message)
 
-    @task("Patch ISISDAE for ticket 5164")
-    def patch_isisdae(self):
-        if BaseTasks._get_machine_name() == "NDEMUONFE":
-            for filename in os.listdir(RELEASE_5_5_0_ISISDAE_DIR):
-                if filename.lower() == "isisdae-ioc-01.exe":
-                    continue
-
-                source_path = os.path.join(RELEASE_5_5_0_ISISDAE_DIR, filename)
-                dest_path = os.path.join(EPICS_PATH, "ioc", "master", "ISISDAE", "bin", "windows-x64", filename)
-
-                print("Patching {}".format(filename))
-                if os.path.exists(dest_path):
-                    os.remove(dest_path)
-                shutil.copy2(source_path, dest_path)
-            print("ISISDAE successfully patched")
+    @task("Update the ICP")
+    def update_icp(self, icp_in_labview_modules):
+        if icp_in_labview_modules:
+            config_filepath = os.path.join(LABVIEW_DAE_DIR, "icp_config.xml")
+            root = lxml.etree.parse(config_filepath)
+            try:
+                DAE_type = int(root.xpath("./I32/Name[text() = 'DAEType']/../Val/text()")[0])
+            except Exception as e:
+                print("Failed to find DAE_type ({}), not installing ICP".format(e.message))
+                return
+            # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2, if it's talking to a DAE3 it will be 3 or 4
+            if DAE_type == 1 or DAE_type == 2:
+                DAE_type = 2
+            elif DAE_type == 3 or DAE_type == 4:
+                DAE_type = 3
+            else:
+                print("DAE type {} not recognised, not installing ICP".format(DAE_type))
+                return
+            self.prompt.confirm_step("upgrade DAE{} type ICP found in labview modules?".format(DAE_type))
         else:
-            print("ISISDAE patch not required on this machine - skipping")
+            self.prompt.confirm_step("install into EPICS/ICP_Binaries?")
+            RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()

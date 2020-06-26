@@ -3,11 +3,12 @@ Filesystem utility classes
 """
 
 import os
-import time
 import shutil
 import time
 
 from ibex_install_utils.exceptions import UserStop
+
+LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
 
 class FileUtils(object):
