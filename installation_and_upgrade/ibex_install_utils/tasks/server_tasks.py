@@ -359,9 +359,9 @@ class ServerTasks(BaseTasks):
             self.prompt.confirm_step("Install into EPICS/ICP_Binaries")
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
-            icp_exe_path = EPICS_PATH, "ICP_Binaries", "isisdae", "x64", "Release"
-            register_icp_commands.add(os.path.join(icp_exe_path, "isisicp.exe"), r"/RegServer")
-            register_icp_commands.add(os.path.join(icp_exe_path, "isisdatasvr.exe"), r"/RegServer")
+            icp_exe_path = os.path.join(EPICS_PATH, "ICP_Binaries", "isisdae", "x64", "Release")
+            register_icp_commands.add_command(os.path.join(icp_exe_path, "isisicp.exe"), r"/RegServer")
+            register_icp_commands.add_command(os.path.join(icp_exe_path, "isisdatasvr.exe"), r"/RegServer")
 
         print("ICP updated successfully, registering ICP")
         register_icp_commands.run_all()
