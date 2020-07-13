@@ -20,6 +20,7 @@ from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
 from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR, get_latest_directory_path
+from ibex_install_utils.admin_runner import AdminCommandBuilder
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -328,6 +329,8 @@ class ServerTasks(BaseTasks):
 
     @task("Update the ICP")
     def update_icp(self, icp_in_labview_modules):
+        register_icp_commands = AdminCommandBuilder()
+
         if icp_in_labview_modules:
             config_filepath = os.path.join(LABVIEW_DAE_DIR, "icp_config.xml")
             root = lxml.etree.parse(config_filepath)
@@ -350,8 +353,17 @@ class ServerTasks(BaseTasks):
 
             RunProcess(os.getcwd(), "update_inst.cmd", executable_directory=ICP_path).run()
 
-            print("ICP updated successfully, registering ICP")
+            register_icp_commands.add_command(os.path.join(LABVIEW_DAE_DIR, "register_programs.cmd"), "",
+                                              expected_return_val=None)
         else:
             self.prompt.confirm_step("Install into EPICS/ICP_Binaries")
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
+
+            icp_exe_path = EPICS_PATH, "ICP_Binaries", "isisdae", "x64", "Release"
+            register_icp_commands.add(os.path.join(icp_exe_path, "isisicp.exe"), r"/RegServer")
+            register_icp_commands.add(os.path.join(icp_exe_path, "isisdatasvr.exe"), r"/RegServer")
+
+        print("ICP updated successfully, registering ICP")
+        register_icp_commands.run_all()
+        print("ICP registered")
 
