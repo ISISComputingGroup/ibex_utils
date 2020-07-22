@@ -3,6 +3,7 @@ import os
 
 import zlib
 
+from genie_python.utilities import dehex_and_decompress
 
 class CaWrapper(object):
     """
@@ -53,7 +54,7 @@ class CaWrapper(object):
         if data is None:
             return None
         else:
-            return json.loads(zlib.decompress(data.decode('hex')))
+            return dehex_and_decompress(data)
 
     def get_blocks(self):
         """

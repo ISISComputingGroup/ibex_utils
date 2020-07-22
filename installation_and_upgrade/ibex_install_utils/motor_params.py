@@ -6,6 +6,8 @@ load the script into a genie_python console and run as a standard user script.
 import csv
 from genie_python import genie as g
 
+g.set_instrument(None)
+
 VELOCITY_UNITS = "EGU per sec"
 
 PV, AXIS_NAME = "PV", "Axis Name"
