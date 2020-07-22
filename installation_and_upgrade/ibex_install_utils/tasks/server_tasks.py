@@ -284,9 +284,7 @@ class ServerTasks(BaseTasks):
         """
         Saves block parameters in a file.
         """
-
         blocks = self._ca.get_blocks()
-
         if blocks is None:
             print("Blockserver unavailable - not archiving.")
         else:
