@@ -5,6 +5,8 @@ import shutil
 import os
 import subprocess
 
+from ibex_install_utils.user_prompt import UserPrompt
+
 try:
     from contextlib import contextmanager
 except ImportError:
@@ -325,7 +327,7 @@ class ServerTasks(BaseTasks):
                     print("Couldn't get data from {} because: {}".format(pv, e.message))
                     f.write(e.message)
 
-    @task("Patch ISISDAE for ticket 5164")
+    @task("Patch ISISDAE for ticket 5164 (only required on NDEMUONFE)")
     def patch_isisdae(self):
         if BaseTasks._get_machine_name() == "NDEMUONFE":
             for filename in os.listdir(RELEASE_5_5_0_ISISDAE_DIR):
@@ -342,3 +344,15 @@ class ServerTasks(BaseTasks):
             print("ISISDAE successfully patched")
         else:
             print("ISISDAE patch not required on this machine - skipping")
+
+    @task("Set username and password for alerts (only required if this is a SECI to IBEX migration)")
+    def set_alert_url_and_password(self):
+        print("The URL and password for alerts are at http://www.facilities.rl.ac.uk/isis/computing/instruments/Lists/Access/AllItems.aspx")
+        url = self.prompt.prompt("Input URL for alerts: ", possibles=UserPrompt.ANY, default=None)
+        password = self.prompt.prompt("Input password for alerts: ", possibles=UserPrompt.ANY, default=None)
+
+        if url is not None and password is not None:
+            self._ca.set_pv("CS:AC:ALERTS:URL:SP", url, is_local=True)
+            self._ca.set_pv("CS:AC:ALERTS:PW:SP", password, is_local=True)
+        else:
+            print("No username/password provided - skipping step")
