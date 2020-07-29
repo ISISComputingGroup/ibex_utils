@@ -91,9 +91,6 @@ class ServerTasks(BaseTasks):
     def install_ibex_server(self):
         """
         Install ibex server.
-        Args:
-            with_utils: True also install epics utils using icp binaries; False don't
-
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
         RunProcess(self._server_source_dir, "install_to_inst.bat", prog_args=["NOLOG"]).run()
@@ -329,6 +326,11 @@ class ServerTasks(BaseTasks):
 
     @task("Update the ICP")
     def update_icp(self, icp_in_labview_modules):
+        """
+        Updates the IPC to the latest version.
+        Args:
+            icp_in_labview_modules (bool): true if the ICP is in labview modules
+        """
         register_icp_commands = AdminCommandBuilder()
 
         if BaseTasks._get_machine_name() == "NDEMUONFE":
@@ -345,28 +347,29 @@ class ServerTasks(BaseTasks):
                     os.remove(dest_path)
                 shutil.copy2(source_path, dest_path)
             print("ISISDAE successfully patched")
+            return
 
         if icp_in_labview_modules:
             config_filepath = os.path.join(LABVIEW_DAE_DIR, "icp_config.xml")
             root = lxml.etree.parse(config_filepath)
             try:
-                DAE_type = int(root.xpath("./I32/Name[text() = 'DAEType']/../Val/text()")[0])
+                dae_type = int(root.xpath("./I32/Name[text() = 'DAEType']/../Val/text()")[0])
             except Exception as e:
-                print("Failed to find DAE_type ({}), not installing ICP".format(e.message))
+                print("Failed to find dae_type ({}), not installing ICP".format(e))
                 return
             # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2, if it's talking to a DAE3 it will be 3 or 4
-            if DAE_type in [1, 2]:
-                DAE_type = 2
-            elif DAE_type in [3, 4]:
-                DAE_type = 3
+            if dae_type in [1, 2]:
+                dae_type = 2
+            elif dae_type in [3, 4]:
+                dae_type = 3
             else:
-                print("DAE type {} not recognised, not installing ICP".format(DAE_type))
+                print("DAE type {} not recognised, not installing ICP".format(dae_type))
                 return
-            self.prompt.confirm_step("Upgrade DAE{} type ICP found in Labview Modules".format(DAE_type))
-            ICP_path = get_latest_directory_path(os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "ISISICP",
-                                                              "DAE{}".format(DAE_type)), "")
+            self.prompt.confirm_step("Upgrade DAE{} type ICP found in Labview Modules".format(dae_type))
+            icp_path = get_latest_directory_path(os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "ISISICP",
+                                                              "DAE{}".format(dae_type)), "")
 
-            RunProcess(os.getcwd(), "update_inst.cmd", executable_directory=ICP_path).run()
+            RunProcess(os.getcwd(), "update_inst.cmd", executable_directory=icp_path).run()
 
             register_icp_commands.add_command(os.path.join(LABVIEW_DAE_DIR, "register_programs.cmd"), "",
                                               expected_return_val=None)

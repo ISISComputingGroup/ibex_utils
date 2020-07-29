@@ -235,7 +235,7 @@ class UpgradeInstrument(object):
         self._vhd_tasks.copy_vhds_to_local_area()
         self._vhd_tasks.request_mount_vhds()
         try:
-            self._server_tasks.install_ibex_server(True)
+            self._server_tasks.install_ibex_server()
             self._python_tasks.install_genie_python3()
             self._mysql_tasks.install_mysql_for_vhd()
             self._client_tasks.install_e4_ibex_client()
