@@ -1,8 +1,6 @@
-import json
 import os
 
-import zlib
-
+import six
 from genie_python.utilities import dehex_and_decompress
 
 class CaWrapper(object):
@@ -69,3 +67,9 @@ class CaWrapper(object):
             A collection of blocks, or None if the PV was not connected.
         """
         return self._get_genie().cget(block)
+
+    def set_pv(self, *args, **kwargs):
+        """
+        Sets the value of a PV.
+        """
+        return self._get_genie().set_pv(*args, **kwargs)
