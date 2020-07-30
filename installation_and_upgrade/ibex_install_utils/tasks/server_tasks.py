@@ -369,10 +369,10 @@ class ServerTasks(BaseTasks):
             icp_path = get_latest_directory_path(os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "ISISICP",
                                                               "DAE{}".format(dae_type)), "")
 
-            RunProcess(os.getcwd(), "update_inst.cmd", executable_directory=icp_path).run()
+            RunProcess(os.getcwd(), "update_inst.cmd", prog_args=["NOINT"], executable_directory=icp_path).run()
 
-            register_icp_commands.add_command(os.path.join(LABVIEW_DAE_DIR, "register_programs.cmd"), "",
-                                              expected_return_val=None)
+            register_icp_commands.add_command('cd "{}" && register_programs.cmd'.format(LABVIEW_DAE_DIR),
+                                              "Release NOINT", expected_return_val=None)
         else:
             self.prompt.confirm_step("Install into EPICS/ICP_Binaries")
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
