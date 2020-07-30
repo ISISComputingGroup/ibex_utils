@@ -1,8 +1,10 @@
+import filecmp
 import os
 import shutil
 
 import psutil
 
+from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import UserStop
 from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
@@ -129,10 +131,6 @@ class SystemTasks(BaseTasks):
         self.prompt.prompt_and_raise_if_not_yes(
             "Have you applied any hotfixes listed that are not fixed by the release, as on the instrument "
             "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?")
-        if BaseTasks._get_machine_name() == "NDEMUONFE":
-            self.prompt.prompt_and_raise_if_not_yes(
-                "MUONFE requires the fix specified in https://github.com/ISISComputingGroup/IBEX/issues/5164, "
-                "which should be specified in the hotfixes, did you apply this?")
 
     @task("Restart VIs")
     def restart_vis(self):
@@ -275,18 +273,15 @@ class SystemTasks(BaseTasks):
         from_path = os.path.join(EPICS_PATH, autostart_script_name)
         to_path = os.path.join(PC_START_MENU, "Programs", "Startup", autostart_script_name)
 
-        # Remove old version if exists
-        if os.path.exists(to_path):
-            try:
-                os.remove(to_path)
-            except (OSError, IOError):
-                self.prompt.prompt_and_raise_if_not_yes("Please manually remove file at '{}'".format(to_path))
+        if os.path.exists(to_path) and filecmp.cmp(from_path, to_path):
+            print("Autostart script already installed correctly - nothing to do")
+            return
 
-        try:
-            shutil.copyfile(from_path, to_path)
-        except (OSError, IOError):
-            self.prompt.prompt_and_raise_if_not_yes("Please manually copy file from '{}' to '{}'"
-                                                    .format(from_path, to_path))
+        # We need to run these as admin as the destination dir is not writable by standard users.
+        admin_commands = AdminCommandBuilder()
+        admin_commands.add_command("del", '"{}"'.format(to_path))
+        admin_commands.add_command("copy", '"{}" "{}"'.format(from_path, to_path))
+        admin_commands.run_all()
 
     @task("Restrict Internet Explorer")
     def restrict_ie(self):

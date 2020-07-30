@@ -29,7 +29,7 @@ def _get_latest_release_path(release_dir):
     regex = re.compile(r'^\d\.\d\.\d$')
 
     releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
-    releases = filter(regex.match, releases)
+    releases = list(filter(regex.match, releases))
 
     if len(releases) == 0:
         print("Error: No releases found in '{0}'".format(release_dir))
@@ -70,11 +70,12 @@ if __name__ == "__main__":
     if args.release_dir is not None:
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
         current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
-        if args.release_suffix is not "":
+        if args.release_suffix != "":
             current_release_dir += "-{}".format(args.release_suffix)
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
+
     elif args.kits_icp_dir is not None:
         if args.deployment_type == 'install_latest_incr':
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
