@@ -24,6 +24,6 @@ class PythonTasks(BaseTasks):
         Update (or at least ask the user to update) the script definitions used by the script generator.
         """
         if os.path.exists("C:\\ScriptGeneratorConfigs") or os.path.exists("C:\\ScriptDefinitions"):
-            self.prompt.prompt("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
-                "Check with the scientists that it is ok to do this." + \
-                "You can do it by git pull, you may need to merge changes made on the instrument.")
+            print("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
+                  "Check with the scientists that it is ok to do this." + \
+                  "You can do it by git pull, you may need to merge changes made on the instrument.")
