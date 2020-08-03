@@ -5,7 +5,7 @@ from __future__ import division, unicode_literals, print_function
 
 import os
 
-from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
 from ibex_install_utils.tasks.client_tasks import ClientTasks
 from ibex_install_utils.tasks.mysql_tasks import MysqlTasks
@@ -13,8 +13,6 @@ from ibex_install_utils.tasks.python_tasks import PythonTasks
 from ibex_install_utils.tasks.server_tasks import ServerTasks
 from ibex_install_utils.tasks.system_tasks import SystemTasks
 from ibex_install_utils.tasks.vhd_tasks import VHDTasks
-
-LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
 
 class UpgradeInstrument(object):
@@ -56,13 +54,13 @@ class UpgradeInstrument(object):
             user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
 
     @staticmethod
-    def _should_install_utils():
+    def icp_in_labview_modules():
         """
-        Condition on which to install ibex utils (ICP_Binaries)
+        Condition on which to install ICP_Binaries or
 
-        :return: True if utils should be installed, False otherwise
+        :return: True if the ICP is installed in labview modules, False otherwise
         """
-        return not os.path.exists(LABVIEW_DAE_DIR)
+        return os.path.exists(LABVIEW_DAE_DIR)
 
     def run_test_update(self):
         """
@@ -74,8 +72,8 @@ class UpgradeInstrument(object):
         self._system_tasks.clean_up_desktop_ibex_training_folder()
         self._server_tasks.remove_settings()
         self._server_tasks.install_settings()
-        self._server_tasks.install_ibex_server(self._should_install_utils())
-        self._server_tasks.patch_isisdae()
+        self._server_tasks.install_ibex_server()
+        self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_ibex_client()
         self._system_tasks.upgrade_notepad_pp()
@@ -90,8 +88,8 @@ class UpgradeInstrument(object):
 
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._backup_tasks.remove_old_ibex()
-        self._server_tasks.install_ibex_server(self._should_install_utils())
-        self._server_tasks.patch_isisdae()
+        self._server_tasks.install_ibex_server()
+        self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_e4_ibex_client()
         self._server_tasks.upgrade_instrument_configuration()
@@ -120,8 +118,8 @@ class UpgradeInstrument(object):
         self._system_tasks.remove_treesize_shortcuts()
         self._system_tasks.restrict_ie()
 
-        self._server_tasks.install_ibex_server(self._should_install_utils())
-        self._server_tasks.patch_isisdae()
+        self._server_tasks.install_ibex_server()
+        self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
         self._client_tasks.install_ibex_client()
@@ -180,8 +178,8 @@ class UpgradeInstrument(object):
         self._backup_tasks.backup_old_directories()
         self._mysql_tasks.backup_database()
         self._mysql_tasks.truncate_database()
-        self._server_tasks.install_ibex_server(self._should_install_utils())
-        self._server_tasks.patch_isisdae()
+        self._server_tasks.install_ibex_server()
+        self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
 
@@ -238,8 +236,7 @@ class UpgradeInstrument(object):
         self._vhd_tasks.copy_vhds_to_local_area()
         self._vhd_tasks.request_mount_vhds()
         try:
-            self._server_tasks.install_ibex_server(True)
-            self._server_tasks.patch_isisdae()
+            self._server_tasks.install_ibex_server()
             self._python_tasks.install_genie_python3()
             self._mysql_tasks.install_mysql_for_vhd()
             self._client_tasks.install_e4_ibex_client()

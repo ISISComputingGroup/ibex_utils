@@ -48,7 +48,6 @@ class RunProcess(object):
         Returns:
         Raises ErrorInRun: if there is a known problem with the run
         """
-        output_lines = ""
         try:
             command_line = [self._full_path_to_process_file]
             if self._prog_args is not None:
@@ -66,21 +65,25 @@ class RunProcess(object):
                     error_code = subprocess.call(command_line, cwd=self._working_dir)
                 if error_code != 0:
                     raise ErrorInRun("Command failed with error code: {0}".format(error_code))
-                output_lines = ""
             elif self._press_any_key:
                 output = subprocess.Popen(command_line, cwd=self._working_dir,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 output_lines, err = output.communicate(" ")
-            else:
-                output_lines = subprocess.check_output(
-                    command_line,
-                    cwd=self._working_dir,
-                    stderr=subprocess.STDOUT,
-                    stdin=subprocess.PIPE)
 
-            for line in output_lines.splitlines():
-                print("    > {line}".format(line=line))
+                for line in output_lines.splitlines():
+                    print("    > {line}".format(line=line))
+            else:
+                process = subprocess.Popen(command_line, cwd=self._working_dir,
+                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                           universal_newlines=True)
+                for stdout_line in iter(process.stdout.readline, ""):
+                    print("    > {}".format(stdout_line))
+                process.stdout.close()
+                return_code = process.wait()
+                if return_code:
+                    raise subprocess.CalledProcessError(return_code, command_line)
+
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
             if ex.output:

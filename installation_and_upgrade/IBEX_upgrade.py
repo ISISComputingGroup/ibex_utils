@@ -10,19 +10,7 @@ import sys
 from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
 from ibex_install_utils.exceptions import UserStop, ErrorInTask
 from ibex_install_utils.user_prompt import UserPrompt
-
-
-def _get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
-    latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
-    build_num = None
-    for line in open(latest_build_path):
-        build_num = line.strip()
-    if build_num is None or build_num == "":
-        print("Latest build num unknown. Cannot read it from '{0}'".format(latest_build_path))
-        sys.exit(3)
-    if directory_above_build_num is None:
-        return os.path.join(build_dir, "{}{}".format(build_prefix, build_num))
-    return os.path.join(build_dir, "{}{}".format(build_prefix, build_num), directory_above_build_num)
+from ibex_install_utils.file_utils import get_latest_directory_path
 
 
 def _get_latest_release_path(release_dir):
@@ -81,16 +69,21 @@ if __name__ == "__main__":
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
         else:
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")
-        server_dir = _get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
 
-        client_build_dir = os.path.join(args.kits_icp_dir, "Client")
-        client_dir = _get_latest_directory_path(client_build_dir, "BUILD")
+        try:
+            server_dir = get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
 
-        client_e4_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
-        client_e4_dir = _get_latest_directory_path(client_e4_build_dir, "BUILD")
+            client_build_dir = os.path.join(args.kits_icp_dir, "Client")
+            client_dir = get_latest_directory_path(client_build_dir, "BUILD")
 
-        genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
-        genie_python3_dir = _get_latest_directory_path(genie_python3_build_dir, "BUILD-")
+            client_e4_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
+            client_e4_dir = get_latest_directory_path(client_e4_build_dir, "BUILD")
+
+            genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
+            genie_python3_dir = get_latest_directory_path(genie_python3_build_dir, "BUILD-")
+        except IOError as e:
+            print(e.message)
+            sys.exit(3)
 
     elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
             args.client_e4_dir is not None:

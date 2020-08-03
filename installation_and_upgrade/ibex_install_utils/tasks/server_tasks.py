@@ -1,7 +1,7 @@
 import datetime
 import pprint
 import shutil
-
+import lxml.etree
 import os
 import subprocess
 
@@ -21,6 +21,8 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
+from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR, get_latest_directory_path
+from ibex_install_utils.admin_runner import AdminCommandBuilder
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -88,17 +90,12 @@ class ServerTasks(BaseTasks):
         shutil.copytree(SOURCE_MACHINE_SETTINGS_COMMON_PATH, os.path.join(SETTINGS_CONFIG_PATH, "common"))
 
     @task("Installing IBEX Server")
-    def install_ibex_server(self, with_utils):
+    def install_ibex_server(self):
         """
         Install ibex server.
-        Args:
-            with_utils: True also install epics utils using icp binaries; False don't
-
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
         RunProcess(self._server_source_dir, "install_to_inst.bat", prog_args=["NOLOG"]).run()
-        if with_utils and self.prompt.confirm_step("install icp binaries"):
-            RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
     @task("Set up configuration repository")
     def setup_config_repository(self):
@@ -327,9 +324,17 @@ class ServerTasks(BaseTasks):
                     print("Couldn't get data from {} because: {}".format(pv, e.message))
                     f.write(e.message)
 
-    @task("Patch ISISDAE for ticket 5164 (only required on NDEMUONFE)")
-    def patch_isisdae(self):
+    @task("Update the ICP")
+    def update_icp(self, icp_in_labview_modules):
+        """
+        Updates the IPC to the latest version.
+        Args:
+            icp_in_labview_modules (bool): true if the ICP is in labview modules
+        """
+        register_icp_commands = AdminCommandBuilder()
+
         if BaseTasks._get_machine_name() == "NDEMUONFE":
+            print("NDEMUONFE requires an old IOC")
             for filename in os.listdir(RELEASE_5_5_0_ISISDAE_DIR):
                 if filename.lower() == "isisdae-ioc-01.exe":
                     continue
@@ -342,8 +347,43 @@ class ServerTasks(BaseTasks):
                     os.remove(dest_path)
                 shutil.copy2(source_path, dest_path)
             print("ISISDAE successfully patched")
+            return
+
+        if icp_in_labview_modules:
+            config_filepath = os.path.join(LABVIEW_DAE_DIR, "icp_config.xml")
+            root = lxml.etree.parse(config_filepath)
+            try:
+                dae_type = int(root.xpath("./I32/Name[text() = 'DAEType']/../Val/text()")[0])
+            except Exception as e:
+                print("Failed to find dae_type ({}), not installing ICP".format(e))
+                return
+            # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2, if it's talking to a DAE3 it will be 3 or 4
+            if dae_type in [1, 2]:
+                dae_type = 2
+            elif dae_type in [3, 4]:
+                dae_type = 3
+            else:
+                print("DAE type {} not recognised, not installing ICP".format(dae_type))
+                return
+            self.prompt.confirm_step("Upgrade DAE{} type ICP found in Labview Modules".format(dae_type))
+            icp_path = get_latest_directory_path(os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "ISISICP",
+                                                              "DAE{}".format(dae_type)), "")
+
+            RunProcess(os.getcwd(), "update_inst.cmd", prog_args=["NOINT"], executable_directory=icp_path).run()
+
+            register_icp_commands.add_command('cd "{}" && register_programs.cmd'.format(LABVIEW_DAE_DIR),
+                                              "Release NOINT", expected_return_val=None)
         else:
-            print("ISISDAE patch not required on this machine - skipping")
+            self.prompt.confirm_step("Install into EPICS/ICP_Binaries")
+            RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
+
+            icp_exe_path = os.path.join(EPICS_PATH, "ICP_Binaries", "isisdae", "x64", "Release")
+            register_icp_commands.add_command(os.path.join(icp_exe_path, "isisicp.exe"), r"/RegServer")
+            register_icp_commands.add_command(os.path.join(icp_exe_path, "isisdatasvr.exe"), r"/RegServer")
+
+        print("ICP updated successfully, registering ICP")
+        register_icp_commands.run_all()
+        print("ICP registered")
 
     @task("Set username and password for alerts (only required if this is a SECI to IBEX migration)")
     def set_alert_url_and_password(self):
@@ -356,3 +396,4 @@ class ServerTasks(BaseTasks):
             self._ca.set_pv("CS:AC:ALERTS:PW:SP", password, is_local=True)
         else:
             print("No username/password provided - skipping step")
+
