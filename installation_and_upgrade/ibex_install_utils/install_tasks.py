@@ -89,7 +89,7 @@ class UpgradeInstrument(object):
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._backup_tasks.remove_old_ibex()
         self._server_tasks.install_ibex_server()
-        self._server_tasks.update_icp(self.icp_in_labview_modules())
+        self._server_tasks.update_icp(self.icp_in_labview_modules(), register_icp=False)
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_e4_ibex_client()
         self._server_tasks.upgrade_instrument_configuration()

@@ -325,11 +325,12 @@ class ServerTasks(BaseTasks):
                     f.write(e.message)
 
     @task("Update the ICP")
-    def update_icp(self, icp_in_labview_modules):
+    def update_icp(self, icp_in_labview_modules, register_icp=True):
         """
         Updates the IPC to the latest version.
         Args:
             icp_in_labview_modules (bool): true if the ICP is in labview modules
+            register_icp (bool): whether to re-register the ISISICP program (requires admin rights; interactive only)
         """
         register_icp_commands = AdminCommandBuilder()
 
@@ -381,9 +382,12 @@ class ServerTasks(BaseTasks):
             register_icp_commands.add_command(os.path.join(icp_exe_path, "isisicp.exe"), r"/RegServer")
             register_icp_commands.add_command(os.path.join(icp_exe_path, "isisdatasvr.exe"), r"/RegServer")
 
-        print("ICP updated successfully, registering ICP")
-        register_icp_commands.run_all()
-        print("ICP registered")
+        if register_icp:
+            print("ICP updated successfully, registering ICP")
+            register_icp_commands.run_all()
+            print("ICP registered")
+        else:
+            print("Not registering ICP as running a non-interactive deploy")
 
     @task("Set username and password for alerts (only required if this is a SECI to IBEX migration)")
     def set_alert_url_and_password(self):
