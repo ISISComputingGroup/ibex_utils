@@ -135,7 +135,6 @@ class UpgradeInstrument(object):
         self._server_tasks.configure_motion()
         self._system_tasks.add_nagios_checks()
         self._system_tasks.update_instlist()
-        self._system_tasks.update_web_dashboard()
         self._system_tasks.update_kafka_topics()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._python_tasks.update_script_definitions()
