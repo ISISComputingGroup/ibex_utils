@@ -156,22 +156,6 @@ class SystemTasks(BaseTasks):
         self.prompt.prompt_and_raise_if_not_yes(
             "Add the host name of the instrument to the list saved in the CS:INSTLIST PV")
 
-    @task("Update web dashboard")
-    def update_web_dashboard(self):
-        """
-        Prompt user to add the instrument to the web dashboard
-        """
-        redirect_page = os.path.join("C:", "inetpub", "wwwroot", "DataWeb", "Dashboards", "redirect.html")
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Add the host name of the instrument to NDX_INSTS or ALL_INSTS in webserver.py in the JSON_bourne "
-            "repository.")
-        self.prompt.prompt_and_raise_if_not_yes(
-            "On NDAEXTWEB1, pull the updated code and add a link to the instrument dashboard on the main "
-            "dataweb page under {}".format(redirect_page))
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Restart JSON_bourne on NDAEXTWEB1 when appropriate. "
-            "(WARNING: This will kill all existing sessions!)")
-
     @task("Update kafka topics")
     def update_kafka_topics(self):
         """
