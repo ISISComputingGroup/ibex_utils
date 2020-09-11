@@ -50,7 +50,7 @@ class UserPrompt(object):
             for possible in possibles:
                 if answer == possible or (not case_sensitive and possible.lower() == answer.lower()):
                     return possible
-            print("Answer is not allowed can be one of ({0})".format(possibles))
+            print(f"Answer is not allowed can be one of ({possibles})")
 
     def confirm_step(self, step_text):
         """
@@ -63,7 +63,7 @@ class UserPrompt(object):
         """
         if not self._confirm_steps or self._automatic:
             return True
-        return self._get_user_answer("Do step '{0}'? : ".format(step_text), ("Y", "N")) == "Y"
+        return self._get_user_answer(f"Do step '{step_text}'? : ", ("Y", "N")) == "Y"
 
     def prompt_and_raise_if_not_yes(self, message, default="N"):
         """

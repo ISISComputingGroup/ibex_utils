@@ -38,7 +38,7 @@ def check(machine, cycle, outf):
     :return: nothing
     """
     last_data_file = None
-    header = "--- FILES {} {} ---\n".format(machine, cycle)
+    header = f"--- FILES {machine} {cycle} ---\n"
     print(header)
     outf.write(header)
 
@@ -71,17 +71,12 @@ def check(machine, cycle, outf):
                     start_of_current = datetime.strptime(data_file["start_time"], "%Y-%m-%dT%H:%M:%S")
                     gap = start_of_current - end_of_last
                     if not same and gap < timedelta(seconds=100):
-                        outf.write("{run_number}, {time_diff}, {start_time}: added {blocks} removed {removals}\n".format(
-                            run_number=data_file["run_number"],
-                            time_diff=gap.total_seconds(),
-                            start_time=start_of_current,
-                            blocks=additions,
-                            removals=removals
-                        ))
+                        run_number = data_file["run_number"]
+                        outf.write(f"{run_number}, {gap.total_seconds()}, {start_of_current}: added {additions} removed {removals}\n")
 
                 last_data_file = data_file
             except IOError:
-                print("Problem opening/reading {}".format(file_name))
+                print(f"Problem opening/reading {file_name}")
 
 
 with open(r"C:\temp\problems.txt", mode="w") as outf:

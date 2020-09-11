@@ -3,7 +3,7 @@ import unittest
 from datetime import datetime
 from hamcrest import *
 from github3 import GitHubError
-from repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
+from repo_tool.repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
 from mock import Mock
 
 

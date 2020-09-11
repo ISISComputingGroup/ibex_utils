@@ -4,9 +4,9 @@ Script to install IBEX to various machines
 import sys
 import traceback
 
-from ibex_install_utils.install_tasks import UpgradeInstrument
-from ibex_install_utils.exceptions import UserStop, ErrorInTask
-from ibex_install_utils.user_prompt import UserPrompt
+from installation_and_upgrade.ibex_install_utils.install_tasks import UpgradeInstrument
+from installation_and_upgrade.ibex_install_utils.exceptions import UserStop, ErrorInTask
+from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
 
 
 if __name__ == "__main__":

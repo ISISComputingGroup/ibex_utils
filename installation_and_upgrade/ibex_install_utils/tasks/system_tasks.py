@@ -69,7 +69,7 @@ class SystemTasks(BaseTasks):
         for path in AUTOSTART_LOCATIONS:
             if os.path.exists(path):
                 self.prompt.prompt_and_raise_if_not_yes(
-                    "SECI autostart found in {}, delete this.".format(path))
+                    f"SECI autostart found in {path}, delete this.")
 
         self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
         self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
@@ -95,9 +95,9 @@ class SystemTasks(BaseTasks):
             try:
                 self._file_utils.remove_tree(SECI_ONE_PATH, self.prompt, use_robocopy=False)
             except (IOError, WindowsError) as e:
-                self.prompt.prompt_and_raise_if_not_yes("Failed to remove SECI 1 (located in '{}') because "
-                                                        "'{}'. Please remove it manually and type 'Y' to "
-                                                        "confirm".format(SECI_ONE_PATH, e.message))
+                self.prompt.prompt_and_raise_if_not_yes(f"Failed to remove SECI 1 (located in '{SECI_ONE_PATH}') "
+                                                        f"because '{e}'. Please remove it manually and type 'Y'"
+                                                        f" to confirm")
 
     @task("Install java")
     def check_java_installation(self):
@@ -179,14 +179,14 @@ class SystemTasks(BaseTasks):
         """
         # For future reference, genie_python can send emails!
         ibex_version = self._ibex_version if self._ibex_version is not None else "<Insert version number here>"
-        email_template = """Please send the following email to your instrument scientists:
+        email_template = f"""Please send the following email to your instrument scientists:
                     Hello,
-                    We have finished the upgrade of {machine_name} to IBEX {ibex_version}.
+                    We have finished the upgrade of {BaseTasks._get_machine_name()} to IBEX {ibex_version}.
                     The release notes for this are at the following link: https://github.com/ISISComputingGroup/IBEX/wiki/Release-Notes-v{ibex_version}
 
                     Please let us know if you have any queries or find any problems with the upgrade.
                     Thank you,
-                    <your name>""".format(machine_name=BaseTasks._get_machine_name(), ibex_version=ibex_version)
+                    <your name>"""
 
         self.prompt.prompt_and_raise_if_not_yes(email_template)
 

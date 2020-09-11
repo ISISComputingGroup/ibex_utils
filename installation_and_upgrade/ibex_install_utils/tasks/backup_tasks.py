@@ -2,9 +2,9 @@ import os
 import shutil
 
 
-from ibex_install_utils.task import task
-from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
+from installation_and_upgrade.ibex_install_utils.task import task
+from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
+from installation_and_upgrade.ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
     PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH, GUI_PATH_E4
 
 ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH)
@@ -23,10 +23,10 @@ class BackupTasks(BaseTasks):
                 f"Backup dir {backup_dir} already exists. Please backup this app manually")
         elif os.path.exists(src):
             if copy:
-                print("Copying {} to {}".format(src, backup_dir))
+                print(f"Copying {src} to {backup_dir}")
                 shutil.copytree(src, backup_dir)
             else:
-                print("Moving {} to {}".format(src, backup_dir))
+                print(f"Moving {src} to {backup_dir}")
                 self._file_utils.move_dir(src, backup_dir, self.prompt)
 
     @task("Backup old directories")
@@ -48,7 +48,7 @@ class BackupTasks(BaseTasks):
                 backups_to_delete = []
 
             for d in backups_to_delete:
-                print("Removing backup {}".format(d))
+                print(f"Removing backup {d}")
                 self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d), self.prompt)
 
             # Move the folders
@@ -60,8 +60,8 @@ class BackupTasks(BaseTasks):
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "var", "Autosave"))
         else:
             self.prompt.prompt_and_raise_if_not_yes(
-                "Unable to find data directory '{}'. Please backup the current installation of IBEX "
-                "manually".format(BACKUP_DATA_DIR))
+                f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
+                f"manually")
 
     @task("Removing old version of IBEX")
     def remove_old_ibex(self):

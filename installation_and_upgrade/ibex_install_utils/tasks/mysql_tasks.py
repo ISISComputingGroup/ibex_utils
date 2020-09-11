@@ -77,7 +77,7 @@ class MysqlTasks(BaseTasks):
         except ErrorInRun as ex:
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Unable to run mysql command, please truncate the database manually. "
-                f"Error is {ex.message}")
+                f"Error is {ex}")
 
     def _configure_mysql(self):
         """
@@ -129,7 +129,7 @@ class MysqlTasks(BaseTasks):
         with closing(zipfile.ZipFile(MYSQL_ZIP)) as f:
             f.extractall(mysql_unzip_temp)
 
-        mysql_unzip_temp_release = os.path.join(mysql_unzip_temp, "mysql-{}-winx64".format(MYSQL_LATEST_VERSION))
+        mysql_unzip_temp_release = os.path.join(mysql_unzip_temp, f"mysql-{MYSQL_LATEST_VERSION}-winx64")
         for item in os.listdir(mysql_unzip_temp_release):
             shutil.move(os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR)
 
@@ -143,7 +143,7 @@ class MysqlTasks(BaseTasks):
             executable_file="mysqld.exe",
             executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
             prog_args=[
-                '--datadir={}'.format(os.path.join(MYSQL_FILES_DIR, "data")),
+                f'--datadir={os.path.join(MYSQL_FILES_DIR, "data")}',
                 '--initialize-insecure',
                 '--console',
                 '--log-error-verbosity=3'
@@ -295,10 +295,11 @@ class MysqlTasks(BaseTasks):
         mysql_8_exe = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
 
         if os.path.exists(mysql_8_exe):
-            version = subprocess.check_output("{} --version".format(mysql_8_exe))
+            version = subprocess.check_output(f"{mysql_8_exe} --version")
             if MYSQL_LATEST_VERSION in version and not force:
-                answer = self.prompt.prompt("MySQL already appears to be on the latest version ({}) - would you like to"
-                                            " force a reinstall anyway? [Y/N]".format(MYSQL_LATEST_VERSION),
+                answer = self.prompt.prompt(f"MySQL already appears to be on the latest version ({MYSQL_LATEST_VERSION}) "
+                                            f"- would you like to "
+                                            f" force a reinstall anyway? [Y/N]",
                                             possibles=["Y", "N"], default="N")
                 if answer == "Y":
                     force = True

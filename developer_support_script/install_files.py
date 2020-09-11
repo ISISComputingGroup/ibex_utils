@@ -124,9 +124,8 @@ if __name__ == "__main__":
     all_sizes = {}
     inst_names = []
 
-    for index, inst in enumerate \
-                (["NDXSANDALS", "NDXVESUVIO", "NDXZOOM", "NDXALF", "NDXEMMA-A", "NDXENGINX", "NDXGEM", "NDXHRPD",
-                  "NDXIMAT", "NDXIRIS", "NDXLARMOR", "NDEMUONFE", "NDXMERLIN", "NDXPOLARIS"]):
+    for index, inst in enumerate(["NDXSANDALS", "NDXVESUVIO", "NDXZOOM", "NDXALF", "NDXEMMA-A", "NDXENGINX", "NDXGEM",
+                                  "NDXHRPD", "NDXIMAT", "NDXIRIS", "NDXLARMOR", "NDEMUONFE", "NDXMERLIN", "NDXPOLARIS"]):
         print(f"-- {inst} --")
         sizes = get_for_instrument(inst, username, password)
         print(sizes)

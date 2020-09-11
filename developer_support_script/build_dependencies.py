@@ -363,7 +363,7 @@ def build_dependencies(ioc_dir):
     file_list = find(r"(build.mak)|(Makefile)", ioc_dir)
 
     if len(file_list) < 1:
-        exit("ERROR: Too few makefiles. Found {}".format(file_list))
+        exit(f"ERROR: Too few makefiles. Found {file_list}")
 
     all_dependencies = set()
     for file_to_parse in file_list:
@@ -380,7 +380,7 @@ def build_dependencies(ioc_dir):
             if match is not None:
                 print(f"STRANGE: Strange line fix manually {line}")
 
-        print("    - Dependencies {}".format(dependencies))
+        print(f"    - Dependencies {dependencies}")
         all_dependencies = all_dependencies.union(dependencies)
 
     return all_dependencies
@@ -421,10 +421,10 @@ def write_extra_lines(outfile, lines):
         outfile: file to out to
         lines: lines to add
     """
-    outfile.write("{}\n".format(FIRST_NEW_LINE))
+    outfile.write(f"{FIRST_NEW_LINE}\n")
     outfile.write("\n".join(lines))
     outfile.write("\n")
-    outfile.write("{}\n".format(LAST_NEW_LINE))
+    outfile.write(f"{LAST_NEW_LINE}\n")
 
 
 def replace_config_lines(lines, ioc_dir):
@@ -435,7 +435,7 @@ def replace_config_lines(lines, ioc_dir):
         ioc_dir: ioc directory
     """
     release_filename = os.path.join(ioc_dir, "configure", "RELEASE")
-    print("    - Replace lines in {}".format(release_filename))
+    print(f"    - Replace lines in {release_filename}")
     with open(release_filename) as infile:
         release_file_contents = infile.readlines()
 
@@ -464,7 +464,7 @@ def replace_dependencies_in_release_file(base_dir):
         base_dir: the base directory which contains the release file
     """
     abs_base_dir = os.path.abspath(base_dir)
-    print("Working in '{0}'".format(abs_base_dir))
+    print(f"Working in '{abs_base_dir}'")
 
     macros = macro_dependencies(abs_base_dir)
     if "ioc" in abs_base_dir:

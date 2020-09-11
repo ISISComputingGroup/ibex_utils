@@ -21,7 +21,7 @@ from installation_and_upgrade.ibex_install_utils.task import task
 from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
 from installation_and_upgrade.ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
-from installation_and_upgrade.ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR, get_latest_directory_path
+from installation_and_upgrade.ibex_install_utils.file_utils import LABVIEW_DAE_DIR, get_latest_directory_path
 from installation_and_upgrade.ibex_install_utils.admin_runner import AdminCommandBuilder
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
@@ -84,7 +84,7 @@ class ServerTasks(BaseTasks):
         inst_name = inst_name.replace("-", "_")
         self._file_utils.move_file(
             os.path.join(settings_path, "Python", "init_inst_name.py"),
-            os.path.join(settings_path, "Python", "init_{inst_name}.py".format(inst_name=inst_name)),
+            os.path.join(settings_path, "Python", f"init_{inst_name}.py"),
             self.prompt)
 
         shutil.copytree(SOURCE_MACHINE_SETTINGS_COMMON_PATH, os.path.join(SETTINGS_CONFIG_PATH, "common"))
@@ -108,38 +108,36 @@ class ServerTasks(BaseTasks):
         subprocess.call("git config --global core.autocrlf true")
         subprocess.call("git config --global credential.helper wincred")
         subprocess.call("git config --global user.name spudulike")
-        set_user_email = "git config --global user.email spudulike@{}.isis.cclrc.ac.uk"
-        subprocess.call(set_user_email.format(inst_name.lower()))
+        set_user_email = f"git config --global user.email spudulike@{inst_name.lower()}.isis.cclrc.ac.uk"
+        subprocess.call(set_user_email)
 
         if not os.path.exists(SETTINGS_CONFIG_PATH):
             os.makedirs(SETTINGS_CONFIG_PATH)
 
         subprocess.call(
-            "git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {}".format(
-                inst_name), cwd=SETTINGS_CONFIG_PATH)
+            f"git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {inst_name}", cwd=SETTINGS_CONFIG_PATH)
 
         inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
         subprocess.call("git pull", cwd=inst_config_path)
 
-        branch_exists = subprocess.call("git checkout {}".format(inst_name), cwd=inst_config_path) == 0
+        branch_exists = subprocess.call(f"git checkout {inst_name}", cwd=inst_config_path) == 0
         if not branch_exists:
-            subprocess.call("git checkout -b {}".format(inst_name), cwd=inst_config_path)
+            subprocess.call(f"git checkout -b {inst_name}", cwd=inst_config_path)
 
         inst_scripts_path = os.path.join(inst_config_path, "Python")
-        if not os.path.exists(os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower()))):
+        if not os.path.exists(os.path.join(inst_scripts_path, f"init_{inst_name.lower()}.py")):
             try:
                 os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
-                          os.path.join(inst_scripts_path, "init_{}.py".format(inst_name.lower())))
-                subprocess.call("git add init_{}.py".format(inst_name.lower()), cwd=inst_scripts_path)
+                          os.path.join(inst_scripts_path, f"init_{inst_name.lower()}.py"))
+                subprocess.call(f"git add init_{inst_name.lower()}.py", cwd=inst_scripts_path)
                 subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
-                subprocess.call('git commit -m"create initial python"'.format(inst_name), cwd=inst_config_path)
-                subprocess.call("git push --set-upstream origin {}".format(inst_name), cwd=inst_config_path)
+                subprocess.call('git commit -m"create initial python"', cwd=inst_config_path)
+                subprocess.call(f"git push --set-upstream origin {inst_name}", cwd=inst_config_path)
             except Exception as e:
                 self.prompt.prompt_and_raise_if_not_yes(
-                    "Something went wrong setting up the configurations repository. Please resolve manually, "
-                    "instructions are in the developers manual under "
-                    "First-time-installing-and-building-(Windows): \n {}".format(e.message))
-
+                    f"Something went wrong setting up the configurations repository. Please resolve manually, "
+                    f"instructions are in the developers manual under "
+                    f"First-time-installing-and-building-(Windows): \n {e}")
 
     @task("Upgrading instrument configuration")
     def upgrade_instrument_configuration(self):
@@ -160,11 +158,10 @@ class ServerTasks(BaseTasks):
             try:
                 repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name()))
                 if repo.active_branch.name != BaseTasks._get_machine_name():
-                    print("Git branch, '{}', is not the same as machine name ,'{}' ".format(
-                        repo.active_branch, BaseTasks._get_machine_name()))
+                    print(f"Git branch, '{repo.active_branch}', is not the same as machine name ,'{BaseTasks._get_machine_name()}' ")
                     raise ErrorInTask("Git branch is not the same as machine name")
                 else:
-                    print("     fetch: {}".format(repo.git.fetch()))
+                    print(f"     fetch: {repo.git.fetch()}")
                     print("     merge: {}".format(repo.git.merge("origin/master")))
                     # no longer push let the instrument do that on start up if needed
             except git.GitCommandError as e:
@@ -321,8 +318,8 @@ class ServerTasks(BaseTasks):
                 try:
                     f.write("{}\r\n".format(_pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))))
                 except Exception as e:
-                    print("Couldn't get data from {} because: {}".format(pv, e.message))
-                    f.write(e.message)
+                    print(f"Couldn't get data from {pv} because: {e}")
+                    f.write(e)
 
     @task("Update the ICP")
     def update_icp(self, icp_in_labview_modules, register_icp=True):

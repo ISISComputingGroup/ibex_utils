@@ -56,7 +56,7 @@ class RunProcess(object):
             if self.log_command_args:
                 print("    Running {} ...".format(" ".join(command_line)))
             else:
-                print("    Running {} ... (command arguments hidden)".format(self._bat_file))
+                print(f"    Running {self._bat_file} ... (command arguments hidden)")
 
             if not self._capture_pipes:
                 if self._stdin:
@@ -64,7 +64,7 @@ class RunProcess(object):
                 else:
                     error_code = subprocess.call(command_line, cwd=self._working_dir)
                 if error_code != 0:
-                    raise ErrorInRun("Command failed with error code: {0}".format(error_code))
+                    raise ErrorInRun(f"Command failed with error code: {error_code}")
             elif self._press_any_key:
                 output = subprocess.Popen(command_line, cwd=self._working_dir,
                                           stdout=subprocess.PIPE,
@@ -72,13 +72,13 @@ class RunProcess(object):
                 output_lines, err = output.communicate(" ")
 
                 for line in output_lines.splitlines():
-                    print("    > {line}".format(line=line))
+                    print(f"    > {line}")
             else:
                 process = subprocess.Popen(command_line, cwd=self._working_dir,
                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                            universal_newlines=True)
                 for stdout_line in iter(process.stdout.readline, ""):
-                    print("    > {}".format(stdout_line))
+                    print(f"    > {stdout_line}")
                 process.stdout.close()
                 return_code = process.wait()
                 if return_code:
@@ -87,19 +87,17 @@ class RunProcess(object):
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
             if ex.output:
-                print("Process failed with return code {}. Output was: ".format(ex.returncode))
+                print(f"Process failed with return code {ex.returncode}. Output was: ")
                 for line in ex.output.splitlines():
-                    print("    > {line}".format(line=line))
+                    print(f"    > {line}")
                 print(" --- ")
             else:
-                print("Process failed with return code {} and no output.".format(ex.returncode))
+                print(f"Process failed with return code {ex.returncode} and no output.")
 
-            raise ErrorInRun("Command failed with return code {}".format(ex.returncode))
+            raise ErrorInRun(f"Command failed with return code {ex.returncode}")
         except WindowsError as ex:
             if ex.errno == 2:
-                raise ErrorInRun("Command '{cmd}' not found in '{cwd}'".format(
-                    cmd=self._bat_file, cwd=self._working_dir))
+                raise ErrorInRun(f"Command '{self._bat_file}' not found in '{self._working_dir}'")
             elif ex.errno == 22:
-                raise ErrorInRun("Directory not found to run command '{cmd}', command is in :  '{cwd}'".format(
-                    cmd=self._bat_file, cwd=self._working_dir))
+                raise ErrorInRun(f"Directory not found to run command '{self._bat_file}', command is in :  '{self._working_dir}'")
             raise ex

@@ -46,9 +46,9 @@ class AdminCommandBuilder(object):
     def run_all(self):
         bat_file = ""
         for cmd, parameters, expected_return_val in self._commands:
-            bat_file += "{} {}\r\n".format(cmd, parameters)
+            bat_file += f"{cmd} {parameters}\r\n"
             if expected_return_val is not None:
-                bat_file += "if %errorlevel% neq {} exit /B 1\r\n".format(expected_return_val)
+                bat_file += f"if %errorlevel% neq {expected_return_val} exit /B 1\r\n"
 
         bat_file += "exit /B 0\r\n"
 
@@ -56,10 +56,9 @@ class AdminCommandBuilder(object):
         with open(filename, "w") as f:
             f.write(bat_file)
 
-        print("Executing bat script as admin. Saved as {filename}. Check for an admin prompt. Contents:\r\n{content}"
-              .format(filename=filename, content=bat_file))
+        print(f"Executing bat script as admin. Saved as {filename}. Check for an admin prompt. Contents:\r\n{bat_file}")
 
         sleep(1)  # Wait for file handle to be closed etc
-        AdminRunner.run_command("cmd", "/c {}".format(filename))
+        AdminRunner.run_command("cmd", f"/c {filename}")
         sleep(1)  # Wait for commands to fully die etc
         os.remove(filename)

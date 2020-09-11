@@ -7,7 +7,7 @@ TICKET = "Ticket2162:"
 
 # Severe log line
 SEVERE = "SEVERE:"
-SEVERE_LINE_START = "{0} {1}".format(SEVERE, TICKET)
+SEVERE_LINE_START = f"{SEVERE} {TICKET}"
 
 
 class LogLine:
@@ -45,7 +45,7 @@ def parse_normal_line(line):
     pattern = r"\*(.*) \[.*" + TICKET + r"(.*) - (.*)"
     match = re.match(pattern, line)
     if match is None:
-        print("Can not understand {0}".format(line))
+        print(f"Can not understand {line}")
         return None
 
     time_string, pv, message = match.groups()
@@ -67,7 +67,7 @@ def check_time(time, start_time_hour, start_time_mins, start_time_secs):
 
 def print_and_log(log_file, message):
     print(message)
-    log_file.write("\n{0}".format(message))
+    log_file.write(f"\n{message}")
 
 
 def read_log_files(log_file, day, month):
@@ -78,19 +78,18 @@ def read_log_files(log_file, day, month):
     pvChanges = []
     previous_line = ""
     for filepath in filepaths:
-        print_and_log(log_file, "Reading: {0}".format(filepath))
+        print_and_log(log_file, f"Reading: {filepath}")
+        with open(filepath) as file:
+            for line in file:
+                if TICKET in line:
+                    if line.startswith(SEVERE):
+                        pvChange = parse_severe_line(previous_line, line)
+                    else:
+                        pvChange = parse_normal_line(line)
 
-        for line in file(filepath):
-
-            if TICKET in line:
-                if line.startswith(SEVERE):
-                    pvChange = parse_severe_line(previous_line, line)
-                else:
-                    pvChange = parse_normal_line(line)
-
-                if pvChange is not None:
-                    pvChanges.append(pvChange)
-            previous_line = line
+                    if pvChange is not None:
+                        pvChanges.append(pvChange)
+                previous_line = line
 
     return sorted(pvChanges, key=lambda student: student.time)
 
@@ -141,6 +140,6 @@ if __name__ == "__main__":
         log_pv_timeline(log_file, pvChanges, ["TE:NDW1407:CS:SB:TEMP1", "all"])
         # log_pv_timeline(log_file, pvChanges, ["TE:NDW1407:SIMPLE:NUMBERED1", "unknown", "buffer"])
 
-        #log_events_after_time(log_file, pvChanges, start_time_hour, start_time_mins, start_time_secs)
+        # log_events_after_time(log_file, pvChanges, start_time_hour, start_time_mins, start_time_secs)
 
-        #log_flow_control(log_file, pvChanges)
+        # log_flow_control(log_file, pvChanges)

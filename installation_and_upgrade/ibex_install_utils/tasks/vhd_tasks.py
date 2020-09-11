@@ -60,15 +60,15 @@ class VHDTasks(BaseTasks):
         with open(filename, "w") as f:
             f.write("")
 
-        print("Waiting for file at {} to be deleted...".format(filename))
+        print(f"Waiting for file at {filename} to be deleted...")
         for _ in range(timeout):
             if not os.path.exists(filename):
                 break
             sleep(1)
         else:
             os.remove(filename)
-            raise IOError("File at {} still existed after {}s, check VHD scheduled task is running correctly"
-                          .format(filename, timeout))
+            raise IOError(f"File at {filename} still existed after {timeout}s, check VHD scheduled task is running "
+                          f"correctly ")
 
     @task("Request VHDs to be mounted")
     def request_mount_vhds(self):

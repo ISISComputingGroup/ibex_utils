@@ -5,7 +5,7 @@ Filesystem utility classes
 import os
 import shutil
 import time
-from ibex_install_utils.exceptions import UserStop
+from installation_and_upgrade.ibex_install_utils.exceptions import UserStop
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -16,10 +16,10 @@ def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num
     for line in open(latest_build_path):
         build_num = line.strip()
     if build_num is None or build_num == "":
-        raise IOError("Latest build num unknown. Cannot read it from '{0}'".format(latest_build_path))
+        raise IOError(f"Latest build num unknown. Cannot read it from '{latest_build_path}'")
     if directory_above_build_num is None:
-        return os.path.join(build_dir, "{}{}".format(build_prefix, build_num))
-    return os.path.join(build_dir, "{}{}".format(build_prefix, build_num), directory_above_build_num)
+        return os.path.join(build_dir, f"{build_prefix}{build_num}")
+    return os.path.join(build_dir, f"{build_prefix}{build_num}", directory_above_build_num)
 
 
 class FileUtils(object):
@@ -45,8 +45,8 @@ class FileUtils(object):
                         os.rmdir(empty_dir) # in case left over from previous aborted run
                     os.mkdir(empty_dir)
                     if not os.path.exists(empty_dir):
-                        prompt.prompt_and_raise_if_not_yes('Error creating empty dir for robocopy "{}". '
-                                                           'Please do this manually'.format(empty_dir))
+                        prompt.prompt_and_raise_if_not_yes(f'Error creating empty dir for robocopy "{empty_dir}". '
+                                                           f'Please do this manually')
                     if os.path.isdir(path):
                         os.system(f"robocopy \"{empty_dir}\" \"{path}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 "
                                   f"/LOG:NUL")
