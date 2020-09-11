@@ -4,13 +4,13 @@ import subprocess
 import zipfile
 from time import sleep
 
-from ibex_install_utils.admin_runner import AdminCommandBuilder
-from ibex_install_utils.exceptions import ErrorInRun
-from ibex_install_utils.run_process import RunProcess
-from ibex_install_utils.task import task
-from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
-from ibex_install_utils.user_prompt import UserPrompt
+from installation_and_upgrade.ibex_install_utils.admin_runner import AdminCommandBuilder
+from installation_and_upgrade.ibex_install_utils.exceptions import ErrorInRun
+from installation_and_upgrade.ibex_install_utils.run_process import RunProcess
+from installation_and_upgrade.ibex_install_utils.task import task
+from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
+from installation_and_upgrade.ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
+from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
 
 try:
     from subprocess import DETACHED_PROCESS
@@ -28,7 +28,7 @@ MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
 MYSQL_LATEST_VERSION = "8.0.19"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
-                         "mysql-{}-winx64.zip".format(MYSQL_LATEST_VERSION))
+                         f"mysql-{MYSQL_LATEST_VERSION}-winx64.zip")
 
 MYSQL_FILES_DIR = os.path.join(VAR_DIR, "mysql")
 
@@ -76,8 +76,8 @@ class MysqlTasks(BaseTasks):
 
         except ErrorInRun as ex:
             self.prompt.prompt_and_raise_if_not_yes(
-                "Unable to run mysql command, please truncate the database manually. "
-                "Error is {}".format(ex.message))
+                f"Unable to run mysql command, please truncate the database manually. "
+                f"Error is {ex.message}")
 
     def _configure_mysql(self):
         """
@@ -87,9 +87,9 @@ class MysqlTasks(BaseTasks):
         try:
             shutil.copy(my_ini_file, MYSQL8_INSTALL_DIR)
         except (OSError, IOError) as e:
-            self.prompt.prompt_and_raise_if_not_yes("Couldn't copy my.ini from {} to {} because {}. "
-                                                    "Please do this manually confirm when complete."
-                                                    .format(my_ini_file, MYSQL8_INSTALL_DIR, e))
+            self.prompt.prompt_and_raise_if_not_yes(f"Couldn't copy my.ini from {my_ini_file} to {MYSQL8_INSTALL_DIR}"
+                                                    f" because {e}. Please do this manually confirm when complete."
+                                                    )
 
         # Restart to pick up new my.ini
         admin_commands = AdminCommandBuilder()
@@ -171,8 +171,9 @@ class MysqlTasks(BaseTasks):
                 '-u',
                 'root',
                 '-e',
-                'ALTER USER \'root\'@\'localhost\' IDENTIFIED WITH mysql_native_password BY \'{}\';FLUSH privileges;'
-                    .format(sql_password),
+                f'ALTER USER \'root\'@\'localhost\' IDENTIFIED WITH mysql_native_password BY \'{sql_password}\';FLUSH '
+                f'privileges; '
+                    ,
 
             ],
             log_command_args=False,  # To make sure password doesn't appear in jenkins log.

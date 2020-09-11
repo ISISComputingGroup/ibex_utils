@@ -323,5 +323,5 @@ if __name__ == "__main__":
     elif label[0] == "i":
         label = '"in+progress"'
 
-    print label
+    print(label)
     get_tickets_generate_doc(auth_pair, from_file, label)

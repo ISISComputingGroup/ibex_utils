@@ -9,24 +9,25 @@ TICKET = "Ticket2162:"
 SEVERE = "SEVERE:"
 SEVERE_LINE_START = "{0} {1}".format(SEVERE, TICKET)
 
-class LogLine():
+
+class LogLine:
     def __init__(self, time, pv, message):
         self.time = time
         self.message = message.strip()
         self.pv = pv.strip()
+
     def __repr__(self):
-        dateTimeString = datetime.strftime(self.time, "%H:%M:%S.%f")
-        return "{time}: {message}".format(time=dateTimeString, message=self.message)
+        date_time_string = datetime.strftime(self.time, "%H:%M:%S.%f")
+        return f"{date_time_string}: {self.message}"
 
 
 def parse_severe_line(previous_line, line):
 
-
     # Mar 22, 2017 12:04:24 PM org.epics.pvmanager.SourceDesiredRateDecoupler sendDesiredRateEvent
     pattern = r"(.* (?:AM|PM)).*"
     match = re.match(pattern, previous_line)
-    dateString, = match.groups()
-    dateTime = datetime.strptime(dateString, '%b %d, %Y %I:%M:%S %p')
+    date_string, = match.groups()
+    date_time = datetime.strptime(date_string, '%b %d, %Y %I:%M:%S %p')
     # SEVERE: Ticket2162: TE:NDW1407:CS:IOC:INSTETC_01:DEVIOS:TOD - PVDirector event connected true
 
     match = re.match(SEVERE_LINE_START + "(.*) - (.*)", line)
@@ -35,7 +36,7 @@ def parse_severe_line(previous_line, line):
 
     pv, message = match.groups()
 
-    return LogLine(dateTime, pv, message)
+    return LogLine(date_time, pv, message)
 
 
 def parse_normal_line(line):
@@ -44,7 +45,7 @@ def parse_normal_line(line):
     pattern = r"\*(.*) \[.*" + TICKET + r"(.*) - (.*)"
     match = re.match(pattern, line)
     if match is None:
-        print "Can not understand {0}".format(line)
+        print("Can not understand {0}".format(line))
         return None
 
     time_string, pv, message = match.groups()
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     start_time_mins = 24
     start_time_secs = 00
 
-    with file(r"c:\tmp\ibexLog{0}-{1}.txt".format(month, day), mode="w") as log_file:
+    with open(r"c:\tmp\ibexLog{0}-{1}.txt".format(month, day), mode="w") as log_file:
         pvChanges = read_log_files(log_file, day, month)
 
         log_changed_pvs(log_file, pvChanges)

@@ -3,8 +3,8 @@ Task infrastructure.
 """
 import traceback
 
-from ibex_install_utils.exceptions import UserStop, ErrorInTask
-from ibex_install_utils.user_prompt import UserPrompt
+from installation_and_upgrade.ibex_install_utils.exceptions import UserStop, ErrorInTask
+from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
 
 
 def _run_task_to_completion(task_name, prompt, self_decorated_method, func, args, kwargs):
@@ -15,7 +15,7 @@ def _run_task_to_completion(task_name, prompt, self_decorated_method, func, args
     except UserStop as ex:
         raise ex
     except Exception:
-        print("Error in task '{}'".format(task_name))
+        print(f"Error in task '{task_name}'")
         traceback.print_exc()
 
         answer = prompt.prompt(
@@ -42,7 +42,7 @@ def task(task_name, attribute_name="prompt"):
         def _wrapper(self_of_decorated_method, *args, **kwargs):
             prompt = getattr(self_of_decorated_method, attribute_name)
             if prompt.confirm_step(task_name):
-                print("{} ...".format(task_name))
+                print(f"{task_name} ...")
                 while True:
                     if _run_task_to_completion(task_name, prompt, self_of_decorated_method, func, args, kwargs):
                         break

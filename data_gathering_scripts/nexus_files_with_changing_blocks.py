@@ -84,7 +84,7 @@ def check(machine, cycle, outf):
                 print("Problem opening/reading {}".format(file_name))
 
 
-with file(r"C:\temp\problems.txt", mode="w") as outf:
+with open(r"C:\temp\problems.txt", mode="w") as outf:
     for machine in machines:
         for cycle in CYCLES:
             check(machine, cycle, outf)

@@ -27,19 +27,19 @@ class CalibrationsFolder(object):
         """
         Returns: True if disconnect is successful, else False.
         """
-        return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), '/del', '/y'],
+        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', '/del', '/y'],
                                stdout=FNULL, stderr=FNULL) == 0
 
     def connect_to_drive(self):
         """
         Returns: True if the connection is successful, else False
         """
-        return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), self.network_location,
-                                '/user:{}'.format(self.username_with_domain), self.password],
+        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', self.network_location,
+                                f'/user:{self.username_with_domain}', self.password],
                                stdout=FNULL, stderr=FNULL) == 0
 
     def __init__(self, instrument_host, username, password):
-        self.username_with_domain = "{}\\{}".format(instrument_host, username)
+        self.username_with_domain = f"{instrument_host}\\{username}"
         self.network_location = r'\\{}\c$\Instrument\Settings\config\common'.format(instrument_host)
         self.password = password
 

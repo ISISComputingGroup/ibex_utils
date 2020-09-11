@@ -59,10 +59,10 @@ class BaseTasks(object):
         Returns: The backup dir, will create it if needed (both old and dir).
         Raises: IOError if the base dir doesn't exist
         """
-        new_backup_dir = os.path.join(BACKUP_DIR, "ibex_backup_{}".format(BaseTasks._today_date_for_filenames()))
+        new_backup_dir = os.path.join(BACKUP_DIR, f"ibex_backup_{BaseTasks._today_date_for_filenames()}")
 
         if not os.path.exists(BACKUP_DATA_DIR):
-            raise IOError("Base directory does not exist {} should be a provided linked dir".format(BACKUP_DATA_DIR))
+            raise IOError(f"Base directory does not exist {BACKUP_DATA_DIR} should be a provided linked dir")
         if not os.path.exists(BACKUP_DIR):
             os.mkdir(BACKUP_DIR)
         if not os.path.exists(new_backup_dir):

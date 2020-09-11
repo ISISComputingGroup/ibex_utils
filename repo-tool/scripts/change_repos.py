@@ -167,22 +167,22 @@ def _parse_command_line():
 
     if settings.date_from is not None or settings.date_to is not None:
         if settings.date_from is None or settings.date_to is None:
-            print "Error from and to date for milestone must be set if one is"
+            print("Error from and to date for milestone must be set if one is")
             exit(-1)
         try:
             RepositoryManipulator.get_checked_date(settings.date_from)
         except UserError as ex:
-            print "Error in from date: {0}".format(ex)
+            print("Error in from date: {0}".format(ex))
             exit(-1)
         try:
             RepositoryManipulator.get_checked_date(settings.date_to)
         except UserError as ex:
-            print "Error in to date: {0}".format(ex)
+            print("Error in to date: {0}".format(ex))
             exit(-1)
 
     if settings.ensure_label is not None or settings.ensure_label_colour is not None:
         if settings.ensure_label is None or settings.ensure_label_colour is None:
-            print "Error label name and colour must both be set if one is"
+            print("Error label name and colour must both be set if one is")
             exit(-1)
 
     return settings
@@ -197,15 +197,15 @@ def _get_user_token():
     while token == "":
         token = getpass('GitHub token for user (blank for help): ')
         if token == "":
-            print "To get a personal token from git hub"
-            print "  1. Log into git hub"
-            print "  2. Open Your Setting (from icon top right)"
-            print "  3. Click Personal access tokens"
-            print "  4. Generate new token"
-            print "  5. Add token description"
-            print "  6. Select repo (Full control of private repositories)"
-            print "  7. Generate token"
-            print "  8. Copy the token an store it somewhere safe"
+            print("To get a personal token from git hub")
+            print("  1. Log into git hub")
+            print("  2. Open Your Setting (from icon top right)")
+            print("  3. Click Personal access tokens")
+            print("  4. Generate new token")
+            print("  5. Add token description")
+            print("  6. Select repo (Full control of private repositories)")
+            print("  7. Generate token")
+            print("  8. Copy the token an store it somewhere safe")
     return token
 
 

@@ -102,10 +102,10 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
         for axis in range(1, 9):
             axis_pv = g.prefix_pv_name("MOT:MTR{:02d}{:02d}".format(motor, axis))
             if pv_exists(axis_pv):
-                print("Gathering data for {}".format(axis_pv))
+                print(f"Gathering data for {axis_pv}")
                 data.append(get_params_for_one_axis(axis_pv))
 
-    print("Saving to {}".format(file_reference.name))
+    print(f"Saving to {file_reference.name}")
 
     writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction='ignore')
     writer.writeheader()

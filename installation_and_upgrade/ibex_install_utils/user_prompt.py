@@ -74,5 +74,5 @@ class UserPrompt(object):
             default: default answer if in automatic mode
         Raises UserStop: if the user does not answer Y
         """
-        if self.prompt("{}\nType Y when done.".format(message), possibles=["Y", "N"], default=default) != "Y":
+        if self.prompt(f"{message}\nType Y when done.", possibles=["Y", "N"], default=default) != "Y":
             raise UserStop

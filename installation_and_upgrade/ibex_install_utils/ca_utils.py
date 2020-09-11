@@ -1,7 +1,7 @@
 import os
 
-import six
 from genie_python.utilities import dehex_and_decompress
+
 
 class CaWrapper(object):
     """

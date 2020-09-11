@@ -5,7 +5,7 @@ import lxml.etree
 import os
 import subprocess
 
-from ibex_install_utils.user_prompt import UserPrompt
+from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
 
 try:
     from contextlib import contextmanager
@@ -14,15 +14,15 @@ except ImportError:
 
 import git
 
-from ibex_install_utils.exceptions import ErrorInTask, ErrorInRun
-from ibex_install_utils.motor_params import get_params_and_save_to_file
-from ibex_install_utils.run_process import RunProcess
-from ibex_install_utils.task import task
-from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
+from installation_and_upgrade.ibex_install_utils.exceptions import ErrorInTask, ErrorInRun
+from installation_and_upgrade.ibex_install_utils.motor_params import get_params_and_save_to_file
+from installation_and_upgrade.ibex_install_utils.run_process import RunProcess
+from installation_and_upgrade.ibex_install_utils.task import task
+from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
+from installation_and_upgrade.ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
-from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR, get_latest_directory_path
-from ibex_install_utils.admin_runner import AdminCommandBuilder
+from installation_and_upgrade.ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR, get_latest_directory_path
+from installation_and_upgrade.ibex_install_utils.admin_runner import AdminCommandBuilder
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 

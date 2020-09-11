@@ -16,11 +16,11 @@ class BackupTasks(BaseTasks):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
         if src in os.getcwd():
             self.prompt.prompt_and_raise_if_not_yes(
-                "You appear to be trying to delete the folder, {}, containing the current working directory {}. "
-                "Please do this manually to be on the safe side".format(src, os.getcwd()))
+                f"You appear to be trying to delete the folder, {src}, containing the current working directory {os.getcwd()}. "
+                f"Please do this manually to be on the safe side")
         elif os.path.exists(backup_dir):
             self.prompt.prompt_and_raise_if_not_yes(
-                "Backup dir {} already exist. Please backup this app manually".format(backup_dir))
+                f"Backup dir {backup_dir} already exists. Please backup this app manually")
         elif os.path.exists(src):
             if copy:
                 print("Copying {} to {}".format(src, backup_dir))

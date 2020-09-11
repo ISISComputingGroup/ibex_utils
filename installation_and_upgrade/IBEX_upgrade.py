@@ -20,10 +20,10 @@ def _get_latest_release_path(release_dir):
     releases = list(filter(regex.match, releases))
 
     if len(releases) == 0:
-        print("Error: No releases found in '{0}'".format(release_dir))
+        print(f"Error: No releases found in '{release_dir}'")
         sys.exit(3)
     current_release = max(releases)
-    return os.path.join(release_dir, "{}".format(current_release))
+    return os.path.join(release_dir, f"{current_release}")
 
 
 if __name__ == "__main__":
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
         current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
         if args.release_suffix != "":
-            current_release_dir += "-{}".format(args.release_suffix)
+            current_release_dir += f"-{args.release_suffix}"
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         print("User stopped upgrade")
         sys.exit(2)
     except ErrorInTask as error_in_run_ex:
-        print("Error in upgrade: {0}".format(error_in_run_ex.message))
+        print(f"Error in upgrade: {error_in_run_ex.message}")
         sys.exit(1)
 
     print("Finished upgrade")

@@ -1234,6 +1234,6 @@ for number in range(1, NUMBER_OF_PVS + 1):
     widget_y = initialy + 20 * number
     widgets += WIDGET.format(Y=widget_y, NUMBER=number)
 
-with file(r"C:\Instrument\Dev\ibex_gui\base\uk.ac.stfc.isis.ibex.opis\resources\OpenPVs.opi", mode="w") as f:
+with open(r"C:\Instrument\Dev\ibex_gui\base\uk.ac.stfc.isis.ibex.opis\resources\OpenPVs.opi", mode="w") as f:
     f.write(OPI.format(WIDGET=widgets))
 

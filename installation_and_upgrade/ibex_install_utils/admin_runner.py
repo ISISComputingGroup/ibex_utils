@@ -15,7 +15,7 @@ class AdminRunner(object):
         except ImportError:
             raise OSError("Can only elevate privileges on windows")
 
-        print("Running command: '{} {}' as administrator".format(command, parameters))
+        print(f"Running command: '{command} {parameters}' as administrator")
 
         process_info = ShellExecuteEx(
             nShow=win32con.SW_HIDE,
@@ -30,7 +30,7 @@ class AdminRunner(object):
         win32api.CloseHandle(process_info['hProcess'])
 
         if ret != expected_return_val:
-            raise IOError("Process returned {} (expected {})".format(ret, expected_return_val))
+            raise IOError(f"Process returned {ret} (expected {expected_return_val})")
 
 
 class AdminCommandBuilder(object):

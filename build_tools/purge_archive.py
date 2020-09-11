@@ -65,7 +65,7 @@ def purge(dry_run=False):
 
     for d in deletion_directories(project_areas):
         if dry_run:
-            print("{}".format(d))
+            print(f"{d}")
         else:
             delete_dir(d)
     print("Archive purge complete.")

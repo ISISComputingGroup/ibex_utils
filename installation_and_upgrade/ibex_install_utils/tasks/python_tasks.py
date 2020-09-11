@@ -1,9 +1,9 @@
 import os
 
-from ibex_install_utils.run_process import RunProcess
-from ibex_install_utils.task import task
-from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR
+from installation_and_upgrade.ibex_install_utils.run_process import RunProcess
+from installation_and_upgrade.ibex_install_utils.task import task
+from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
+from installation_and_upgrade.ibex_install_utils.tasks.common_paths import APPS_BASE_DIR
 
 
 class PythonTasks(BaseTasks):

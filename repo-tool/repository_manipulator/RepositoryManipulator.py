@@ -164,7 +164,7 @@ class RepositoryManipulator(object):
         for repo in self._repo_list:
             print("{name}:".format(name=repo.name))
             if not repo.has_issues:
-                print "    no issues milestone not updates"
+                print("    no issues milestone not updates")
             else:
                 self._update_milestones_on_rep(due_on, new_milestone_title, repo, close_old_milestones)
 
@@ -237,7 +237,7 @@ class RepositoryManipulator(object):
         for repo in self._repo_list:
             print("{name}:".format(name=repo.name))
             if not repo.has_issues:
-                print "    no issues labels not updates"
+                print("    no issues labels not updates")
             else:
                 self._update_labels_on_rep(ensure_labels, repo)
 

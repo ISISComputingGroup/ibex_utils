@@ -7,7 +7,6 @@ import argparse
 import os
 import re
 
-
 # lines which indicate what should be replaced in the release file
 FIRST_OLD_RELEASE_LINE = "include $(TOP)/../../../configure/MASTER_RELEASE"
 RELEASE_LINES_TO_IGNORE = [
@@ -332,7 +331,7 @@ def macro_dependencies(ioc_dir):
     all_dependencies = set()
     for file_to_parse in file_list:
         dependencies = set()
-        print("    - Parsing {}".format(file_to_parse))
+        print(f"    - Parsing {file_to_parse}")
 
         for line in open(file_to_parse):
             try:
@@ -348,7 +347,7 @@ def macro_dependencies(ioc_dir):
                     if split.strip().startswith(macro):
                         dependencies.add(dependency)
 
-        print("    - Dependencies {}".format(dependencies))
+        print(f"    - Dependencies {dependencies}")
         all_dependencies = all_dependencies.union(dependencies)
 
     return all_dependencies
@@ -369,7 +368,7 @@ def build_dependencies(ioc_dir):
     all_dependencies = set()
     for file_to_parse in file_list:
         dependencies = set()
-        print("    - Parsing {}".format(file_to_parse))
+        print(f"    - Parsing {file_to_parse}")
 
         for line in open(file_to_parse):
             match = re.match(r".*(?:_DBD|_LIBS) \+= (.*)", line)
@@ -379,7 +378,7 @@ def build_dependencies(ioc_dir):
 
             match = re.match(r".*(?:_DBD_|_LIBS_).* \+= (.*)", line)
             if match is not None:
-                print("STRANGE: Strange line fix manually {}".format(line))
+                print(f"STRANGE: Strange line fix manually {line}")
 
         print("    - Dependencies {}".format(dependencies))
         all_dependencies = all_dependencies.union(dependencies)
@@ -407,7 +406,7 @@ def get_entries(dependencies, macros):
     if len(missing) != 0:
         print("\nERROR: There are unknown dependencies:\n    {}".format("    \n".join(sorted(missing))))
         print("\n(Fix this by adding the dependency to the KNOWN_DEPENDENCIES dictionary in this script. ")
-        print("A list of possible dependencies can be found in EPICS\configure\MASTER_RELEASE)")
+        print("A list of possible dependencies can be found in EPICS\\configure\\MASTER_RELEASE)")
         exit(1)
     sorted_lines = sorted([line for line in lines if line is not ""])
     to_print = "\n".join(sorted_lines)
