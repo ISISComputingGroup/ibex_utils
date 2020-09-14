@@ -263,8 +263,8 @@ class SystemTasks(BaseTasks):
 
         # We need to run these as admin as the destination dir is not writable by standard users.
         admin_commands = AdminCommandBuilder()
-        admin_commands.add_command("del", '"{}"'.format(to_path))
-        admin_commands.add_command("copy", '"{}" "{}"'.format(from_path, to_path))
+        admin_commands.add_command("del", f'"{to_path}"')
+        admin_commands.add_command("copy", f'"{from_path}" "{to_path}"')
         admin_commands.run_all()
 
     @task("Restrict Internet Explorer")
@@ -304,10 +304,10 @@ class SystemTasks(BaseTasks):
         Raises UserStop: when the user doesn't want to continue
 
         """
-        print("Upgrade {0} as a {1}".format(BaseTasks._get_machine_name(), machine_type))
-        print("    Server source: {0}".format(self._server_source_dir))
-        print("    Client source: {0}".format(self._client_source_dir))
-        print("    Python 3 source: {0}".format(self._genie_python_3_source_dir))
+        print(f"Upgrade {BaseTasks._get_machine_name()} as a {machine_type}")
+        print(f"    Server source: {self._server_source_dir}")
+        print(f"    Client source: {self._client_source_dir}")
+        print(f"    Python 3 source: {self._genie_python_3_source_dir}")
         answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()

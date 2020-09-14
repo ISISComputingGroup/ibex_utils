@@ -52,7 +52,7 @@ class CalibrationsFolder(object):
         Returns: True if the connection is successful, else False
         """
         print("connecting")
-        net_use_cmd_line = ['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), self.network_location,
+        net_use_cmd_line = ['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', self.network_location,
                             f'/user:{self.username_with_domain}', self.password]
         return subprocess.call(net_use_cmd_line,
                                stdout=FNULL, stderr=FNULL) == 0

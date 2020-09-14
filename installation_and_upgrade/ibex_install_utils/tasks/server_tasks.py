@@ -165,7 +165,7 @@ class ServerTasks(BaseTasks):
                     print("     merge: {}".format(repo.git.merge("origin/master")))
                     # no longer push let the instrument do that on start up if needed
             except git.GitCommandError as e:
-                print("Error doing automatic merge, please perform the merge manually: {}".format(e))
+                print(f"Error doing automatic merge, please perform the merge manually: {e}")
                 self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
@@ -207,15 +207,15 @@ class ServerTasks(BaseTasks):
         server_release_tests_url = "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/" \
                                    "Server-Release-Tests"
 
-        print("For further details, see {}".format(server_release_tests_url))
+        print(f"For further details, see {server_release_tests_url}")
         self.prompt.prompt_and_raise_if_not_yes("Check that blocks are logging as expected")
 
         print("Checking that configurations are being pushed to the appropriate repository")
         repo = git.Repo(self._get_config_path())
         repo.git.fetch()
         status = repo.git.status()
-        print("Current repository status is: {}".format(status))
-        if "up-to-date with 'origin/{}".format(self._get_machine_name()) in status:
+        print(f"Current repository status is: {status}")
+        if f"up-to-date with 'origin/{self._get_machine_name()}" in status:
             print("Configurations updating correctly")
         else:
             self.prompt.prompt_and_raise_if_not_yes(
@@ -223,9 +223,8 @@ class ServerTasks(BaseTasks):
                 "remote repository")
 
         self.prompt.prompt_and_raise_if_not_yes(
-            "Check that the web dashboard for this instrument is updating "
-            "correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={}".format(
-                self._get_instrument_name()))
+            f"Check that the web dashboard for this instrument is updating "
+            f"correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={self._get_instrument_name()}")
 
     @task("Install wiring tables")
     def install_wiring_tables(self):
@@ -233,7 +232,7 @@ class ServerTasks(BaseTasks):
         Prompt user to install wiring tables in the appropriate folder.
         """
         tables_dir = os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name(), "configurations", "tables")
-        self.prompt.prompt_and_raise_if_not_yes("Install the wiring tables in {}.".format(tables_dir))
+        self.prompt.prompt_and_raise_if_not_yes(f"Install the wiring tables in {tables_dir}.")
 
     @task("Configure motion setpoints")
     def configure_motion(self):
@@ -245,7 +244,7 @@ class ServerTasks(BaseTasks):
         if self.prompt.prompt("Please configure the motion set points for this instrument. Instructions can be"
                               " found on the developer wiki. Open instructions in browser now?",
                               ["Y", "N"], "N") == "Y":
-            subprocess.call("explorer {}".format(url))
+            subprocess.call(f"explorer {url}")
         self.prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
 
     @contextmanager
@@ -287,7 +286,7 @@ class ServerTasks(BaseTasks):
             if blocks:
                 for block in blocks:
                     with self.timestamped_pv_backups_file(name=block, directory="blocks") as f:
-                        f.write("{}\r\n".format(self._ca.cget(block)))
+                        f.write(f"{self._ca.cget(block)}\r\n")
             else:
                 print("Blockserver available but no blocks found - not archiving anything")
 
@@ -316,7 +315,7 @@ class ServerTasks(BaseTasks):
         for name, pv in pvs_to_save:
             with self.timestamped_pv_backups_file(directory="inst_servers", name=name) as f:
                 try:
-                    f.write("{}\r\n".format(_pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))))
+                    f.write(f"{_pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))}\r\n")
                 except Exception as e:
                     print(f"Couldn't get data from {pv} because: {e}")
                     f.write(e)
@@ -340,7 +339,7 @@ class ServerTasks(BaseTasks):
                 source_path = os.path.join(RELEASE_5_5_0_ISISDAE_DIR, filename)
                 dest_path = os.path.join(EPICS_PATH, "ioc", "master", "ISISDAE", "bin", "windows-x64", filename)
 
-                print("Patching {}".format(filename))
+                print(f"Patching {filename}")
                 if os.path.exists(dest_path):
                     os.remove(dest_path)
                 shutil.copy2(source_path, dest_path)
@@ -353,7 +352,7 @@ class ServerTasks(BaseTasks):
             try:
                 dae_type = int(root.xpath("./I32/Name[text() = 'DAEType']/../Val/text()")[0])
             except Exception as e:
-                print("Failed to find dae_type ({}), not installing ICP".format(e))
+                print(f"Failed to find dae_type ({e}), not installing ICP")
                 return
             # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2, if it's talking to a DAE3 it will be 3 or 4
             if dae_type in [1, 2]:
@@ -361,15 +360,15 @@ class ServerTasks(BaseTasks):
             elif dae_type in [3, 4]:
                 dae_type = 3
             else:
-                print("DAE type {} not recognised, not installing ICP".format(dae_type))
+                print(f"DAE type {dae_type} not recognised, not installing ICP")
                 return
-            self.prompt.confirm_step("Upgrade DAE{} type ICP found in Labview Modules".format(dae_type))
+            self.prompt.confirm_step(f"Upgrade DAE{dae_type} type ICP found in Labview Modules")
             icp_path = get_latest_directory_path(os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "ISISICP",
-                                                              "DAE{}".format(dae_type)), "")
+                                                              f"DAE{dae_type}"), "")
 
             RunProcess(os.getcwd(), "update_inst.cmd", prog_args=["NOINT"], executable_directory=icp_path).run()
 
-            register_icp_commands.add_command('cd "{}" && register_programs.cmd'.format(LABVIEW_DAE_DIR),
+            register_icp_commands.add_command(f'cd "{LABVIEW_DAE_DIR}" && register_programs.cmd',
                                               "Release NOINT", expected_return_val=None)
         else:
             self.prompt.confirm_step("Install into EPICS/ICP_Binaries")

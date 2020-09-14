@@ -196,7 +196,7 @@ class MysqlTasks(BaseTasks):
                 prog_args=[
                     "-u",
                     "root",
-                    "--password={}".format(sql_password),
+                    f"--password={sql_password}",
                     "shutdown",
                 ],
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
@@ -264,17 +264,17 @@ class MysqlTasks(BaseTasks):
         try:
             shutil.copy(my_ini_file, MYSQL8_INSTALL_DIR)
         except (OSError, IOError) as e:
-            self.prompt.prompt_and_raise_if_not_yes("Couldn't copy my.ini from {} to {} because {}. "
-                                                    "Please do this manually confirm when complete."
-                                                    .format(my_ini_file, MYSQL8_INSTALL_DIR, e))
+            self.prompt.prompt_and_raise_if_not_yes(f"Couldn't copy my.ini from {my_ini_file} to {MYSQL8_INSTALL_DIR}"
+                                                    f" because {e}. "
+                                                    f"Please do this manually confirm when complete.")
 
         self._setup_database_users_and_tables(vhd_install=True)
 
     def _install_vcruntime140(self):
         if not os.path.exists(VCRUNTIME140):
             self.prompt.prompt_and_raise_if_not_yes(
-                "MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
-                "Install it from {} and confirm when complete".format(VCRUNTIME140_INSTALLER))
+                f"MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
+                f"Install it from {VCRUNTIME140_INSTALLER} and confirm when complete")
 
     @task("Install latest MySQL")
     def install_mysql(self, force=False):
@@ -325,14 +325,14 @@ class MysqlTasks(BaseTasks):
         mysql_bin_dir = self._get_mysql_dir()
 
         dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
-                        "--result-file={}".format(result_file)]
+                        f"--result-file={result_file}"]
         RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
                    prog_args=dump_command,
                    capture_pipes=False).run()
 
         if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
             self.prompt.prompt_and_raise_if_not_yes(
-                "Dump file '{}' seems to be small is it correct? ".format(result_file))
+                f"Dump file '{result_file}' seems to be small is it correct? ")
 
         self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
                                    self.prompt)
@@ -346,7 +346,7 @@ class MysqlTasks(BaseTasks):
 
         mysql_bin_dir = self._get_mysql_dir()
         dump_command = ["-u", "root", "-p", "--single-transaction",
-                        "--result-file={}".format(result_file), "--no-create-db", "--no-create-info", "--skip-triggers",
+                        f"--result-file={result_file}", "--no-create-db", "--no-create-info", "--skip-triggers",
                         "--databases", "alarm", "archive", "exp_data", "iocdb", "journal", "msg_log"]
         RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
                    prog_args=dump_command,
@@ -354,7 +354,7 @@ class MysqlTasks(BaseTasks):
 
         if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
             self.prompt.prompt_and_raise_if_not_yes(
-                "Dump file '{}' seems to be small is it correct? ".format(result_file))
+                f"Dump file '{result_file}' seems to be small is it correct? ")
 
     def _reload_backup_data(self):
         """

@@ -37,7 +37,8 @@ class UserPrompt(object):
 
         """
         if self._automatic and default is not None:
-            print("{} : {}".format(prompt_text, default if show_automatic_answer else "(hidden)"))
+            _answer = default if show_automatic_answer else "(hidden)"
+            print(f"{prompt_text} : {_answer}")
             return default
         elif possibles is UserPrompt.ANY:
             return six.moves.input(prompt_text).strip()

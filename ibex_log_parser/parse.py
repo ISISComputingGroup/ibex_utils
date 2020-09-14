@@ -32,7 +32,7 @@ def parse_severe_line(previous_line, line):
 
     match = re.match(SEVERE_LINE_START + "(.*) - (.*)", line)
     if match is None:
-        exit("ERROR: servere message not match {0}".format(line))
+        exit(f"ERROR: servere message not match {line}")
 
     pv, message = match.groups()
 
@@ -97,19 +97,19 @@ def read_log_files(log_file, day, month):
 def log_changed_pvs(log_file, pvChanges):
     print_and_log(log_file, "PVS:")
     for pv_name in set([x.pv for x in pvChanges]):
-        print_and_log(log_file, "    {0}".format(pv_name))
+        print_and_log(log_file, f"    {pv_name}")
     print_and_log(log_file, "\n\n")
 
 
 def log_pv_timeline(log_file, pvChanges, wanted_pvs):
-    print_and_log(log_file, "Timeline for {0}".format(wanted_pvs))
+    print_and_log(log_file, f"Timeline for {wanted_pvs}")
     for pvChange in pvChanges:
         if pvChange.pv in wanted_pvs:
             print_and_log(log_file, "{0:>20} = {1}".format(pvChange.pv.strip()[-20:], pvChange))
 
 
 def log_events_after_time(log_file, pvChanges, start_time_hour, start_time_mins, start_time_secs):
-    print_and_log(log_file, "Timeline after {0}:{1}:{2}".format(start_time_hour, start_time_mins, start_time_secs))
+    print_and_log(log_file, f"Timeline after {start_time_hour}:{start_time_mins}:{start_time_secs}")
     for pvChange in pvChanges:
         if check_time(pvChange.time, start_time_hour, start_time_mins, start_time_secs):
             print_and_log(log_file, "{0:>20} = {1}".format(pvChange.pv.strip()[-20:], pvChange))
