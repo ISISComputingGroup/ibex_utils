@@ -10,11 +10,11 @@ build_area = r"\\isis\inst$\kits$\CompGroup\ICP"
 
 def winapi_path(dos_path):
     path = os.path.abspath(dos_path)
-    long_path_identifier = u"\\\\?\\"
+    long_path_identifier = "\\\\?\\"
     if path.startswith(long_path_identifier):
         win_path = path
-    elif path.startswith(u"\\\\"):
-        win_path = long_path_identifier + u"UNC\\" + path[2:]
+    elif path.startswith("\\\\"):
+        win_path = long_path_identifier + "UNC\\" + path[2:]
     else:
         win_path = long_path_identifier + path
     return win_path

@@ -20,7 +20,7 @@ machines = ("NDXALF",
             "NDXVESUVIO",
             "NDXZOOM")
 
-IGNORE_LIST = (u"EPICS_PUTLOG", u"ICP_DAE_TD", u"ICP_SYS_TD", u"Status")
+IGNORE_LIST = ("EPICS_PUTLOG", "ICP_DAE_TD", "ICP_SYS_TD", "Status")
 
 # List of cycles
 CYCLES = ("cycle_17_1", "cycle_17_2", "cycle_17_3")
@@ -55,10 +55,10 @@ def check(machine, cycle, outf):
             try:
                 with h5py.File(os.path.join(path, file_name)) as f:
                     data_file = {
-                        "start_time": f[u"raw_data_1"]["start_time"][0],
-                        "end_time": f[u"raw_data_1"]["end_time"][0],
-                        "run_number": f[u"raw_data_1"]["run_number"][0],
-                        "blocks": f[u"raw_data_1"]["selog"].keys()
+                        "start_time": f["raw_data_1"]["start_time"][0],
+                        "end_time": f["raw_data_1"]["end_time"][0],
+                        "run_number": f["raw_data_1"]["run_number"][0],
+                        "blocks": f["raw_data_1"]["selog"].keys()
                     }
 
                 if last_data_file is not None:
