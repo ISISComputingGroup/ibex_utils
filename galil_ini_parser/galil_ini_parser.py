@@ -10,15 +10,27 @@ AXIS_SETTING_REGEX = r"(?<=Axis {axis_letter} ).*"
 class Galil:
     def __init__(self, crate_index: int, crate_ini_text: str):
         self.crate_index = crate_index
-        self.ini_text = crate_ini_text
+        self.ini_text = []#crate_ini_text
         self.settings = OrderedDict()
-        self.axis_letters = self.get_axis_letters()
+        self.axis_letters = None#self.get_axis_letters()
         self.axes = {}
 
-        self.add_settings()
+        #self.add_settings()
 
+        # for axis_label in self.axis_letters:
+        #     self.axes[axis_label] = Axis(self.get_axis_settings(axis_label))
+
+    def parse_ini_lines(self):
+        self.add_settings()
+        self.axis_letters = self.get_axis_letters()
         for axis_label in self.axis_letters:
             self.axes[axis_label] = Axis(self.get_axis_settings(axis_label))
+
+    def add_ini_line(self, line):
+        """
+        Adds a line of the galil ini file to this class
+        """
+        self.ini_text.append(line)
 
     def add_setting(self, ini_line):
         print(line)
@@ -118,25 +130,13 @@ for line in ini_file:
         crate_index = int(line[2])
         galil_crates[crate_index] = Galil(crate_index, crate_settings)
     elif "=" in line:
-        galil_crates[crate_index].add_setting(line)
+        galil_crates[crate_index].add_ini_line(line)
     else:
         # Not a setting or new galil crate, skip this line
         pass
 
-    #     print(line)
-    #     if crate_index is not None:
-    #         print(crate_index)
-    #         galil_crates[crate_index] = Galil(crate_index, crate_settings)
-
-    #     crate_index = int(line[2])
-    #     #print(crate_index)
-
-    #     #crate_index = int(re.search(GALIL_CRATE_NUMBER_REGEX, line).group(0))
-    #     crate_settings = []
-    # else:
-    #     crate_settings.append(line)
-# finally:
-#     galil_crates[crate_index] = Galil(crate_index, crate_settings)
+for galil in galil_crates.values():
+    galil.parse_ini_lines()
 
 # for galil in galil_crates.values():
 #     print("Galil crate {}".format(galil.crate_index))
@@ -146,9 +146,9 @@ for line in ini_file:
 #         print("Axis {} offset {}".format(axis_name, axis.settings["Offset"]))
 # #    for axis in galil.axis_letters:
 
-# for galil in galil_crates.values():
-#     print("[G{}]".format(galil.crate_index))
-#     print(galil.get_save_string())
+for galil in galil_crates.values():
+    print("[G{}]".format(galil.crate_index))
+    print(galil.get_save_string())
 
 for galil in galil_crates.values():
     print("[G{}]".format(galil.crate_index))
