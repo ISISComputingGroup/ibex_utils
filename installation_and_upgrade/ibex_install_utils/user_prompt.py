@@ -5,7 +5,7 @@ from .exceptions import UserStop
 import six.moves
 
 
-class UserPrompt(object):
+class UserPrompt:
     """
     A user prompt object to ask the user questions.
     """

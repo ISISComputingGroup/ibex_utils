@@ -11,7 +11,7 @@ from installation_and_upgrade.ibex_install_utils.tasks.common_paths import INSTR
     SETTINGS_CONFIG_PATH, VAR_DIR
 
 
-class Vhd(object):
+class Vhd:
     def __init__(self, name, source_filename, dest_filename, mount_point):
         self.name = name
         self.source_filename = source_filename

@@ -1,7 +1,6 @@
 """
 Tasks associated with install
 """
-from __future__ import division, unicode_literals, print_function
 
 import os
 
@@ -15,7 +14,7 @@ from installation_and_upgrade.ibex_install_utils.tasks.system_tasks import Syste
 from installation_and_upgrade.ibex_install_utils.tasks.vhd_tasks import VHDTasks
 
 
-class UpgradeInstrument(object):
+class UpgradeInstrument:
     """
     Class to upgrade the instrument installation to the given version of IBEX.
     """

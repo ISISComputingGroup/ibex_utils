@@ -34,7 +34,7 @@ class UserError(Exception):
         return self.detail
 
 
-class RepositoryManipulator(object):
+class RepositoryManipulator:
     """
     GitHub Repository Manipulator class
 

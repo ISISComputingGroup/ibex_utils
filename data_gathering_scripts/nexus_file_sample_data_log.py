@@ -3,7 +3,6 @@
 Uses h5py to extract given log values from an ISIS NeXus file over a given time period. It is assumed
 that the control software has logged when values changed.
 """
-from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 # std imports
 from argparse import ArgumentParser
@@ -12,7 +11,6 @@ from datetime import datetime, timedelta
 import logging
 import os.path as osp
 import sys
-
 # third party imports
 from h5py import (File as HDF5File)
 import numpy as np

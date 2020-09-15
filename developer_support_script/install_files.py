@@ -32,7 +32,7 @@ files_in_dir = {
 FNULL = open(os.devnull, 'w')
 
 
-class CalibrationsFolder(object):
+class CalibrationsFolder:
     """
     Context manager for accessing calibration folders on remote instruments.
     """

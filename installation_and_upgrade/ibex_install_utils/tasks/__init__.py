@@ -7,7 +7,7 @@ from installation_and_upgrade.ibex_install_utils.file_utils import FileUtils
 from installation_and_upgrade.ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
 
 
-class BaseTasks(object):
+class BaseTasks:
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
                  ibex_version, file_utils=FileUtils()):
         """

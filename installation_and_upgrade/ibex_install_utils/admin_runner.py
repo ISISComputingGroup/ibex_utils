@@ -2,7 +2,7 @@ import os
 from time import sleep
 
 
-class AdminRunner(object):
+class AdminRunner:
     @staticmethod
     def run_command(command, parameters, expected_return_val=0):
         try:
@@ -33,7 +33,7 @@ class AdminRunner(object):
             raise IOError(f"Process returned {ret} (expected {expected_return_val})")
 
 
-class AdminCommandBuilder(object):
+class AdminCommandBuilder:
     """
     Builder for running multiple commands sequentially as admin.
     """

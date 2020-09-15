@@ -8,7 +8,7 @@ import subprocess
 from installation_and_upgrade.ibex_install_utils.exceptions import ErrorInRun
 
 
-class RunProcess(object):
+class RunProcess:
     """
     Create a process runner to run a process.
     """

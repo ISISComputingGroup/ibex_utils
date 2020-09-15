@@ -15,7 +15,7 @@ from six.moves import input
 FNULL = open(os.devnull, 'w')
 
 
-class CalibrationsFolder(object):
+class CalibrationsFolder:
     """
     Context manager for accessing calibration folders on remote instruments.
     """

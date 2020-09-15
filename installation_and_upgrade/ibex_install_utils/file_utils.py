@@ -22,7 +22,7 @@ def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num
     return os.path.join(build_dir, f"{build_prefix}{build_num}", directory_above_build_num)
 
 
-class FileUtils(object):
+class FileUtils:
     """
     Various utilities for interacting with the file system
     """

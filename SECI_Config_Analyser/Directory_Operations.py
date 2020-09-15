@@ -8,7 +8,7 @@ from fnmatch import fnmatch
 import xml.etree.ElementTree as ET
 
 
-class ReadConfigFiles(object):
+class ReadConfigFiles:
     """
     Reads SECI configuration files and extracts VI names
     """

@@ -7,7 +7,7 @@ from repo_tool.repository_manipulator.RepositoryManipulator import RepositoryMan
 from mock import Mock
 
 
-class GitHubMock(object):
+class GitHubMock:
     username = None
     token = None
 
