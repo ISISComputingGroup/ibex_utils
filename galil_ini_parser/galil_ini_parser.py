@@ -84,8 +84,8 @@ class Axis:
         split_line = setting.split("=")
         key = split_line[0].strip()
         # This captures settings which contain an equals sign in them
-        value = "=".join(split_line[1:])
-        self.settings[key] = value.strip()
+        value = "=".join(split_line[1:]).strip()
+        self.set_value(key, value, make_new=True)
 
     def get_value(self, setting: str, caster: Any) -> Optional[Any]:
         """
