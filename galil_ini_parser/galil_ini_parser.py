@@ -1,30 +1,16 @@
 import re
 
 from collections import OrderedDict
-from typing import Optional, Any, List
+from typing import Optional, Any
 
-#GALIL_CRATE_NUMBER_REGEX = r"(?<=\[G)\d+(?=\])]"
 AXIS_NUMBER_REGEX = r"(?<=Axis )\S+"
-AXIS_SETTING_REGEX = r"(?<=Axis {axis_letter} ).*"
 
 
 class Galil:
     def __init__(self, crate_index: int):
         self.crate_index = crate_index
-        self.ini_text = []
         self.settings = OrderedDict()
-        self.axis_letters = []
         self.axes = {}
-
-    def parse_ini_lines(self) -> None:
-        """
-        Parses the lines of the ini file referring to this galil crate.
-        Only run when all settings for this crate have been added to its instance
-        """
-        self.add_crate_settings()
-        self.axis_letters = self.get_axis_letters()
-        # for axis_label in self.axis_letters:
-        #     self.axes[axis_label] = Axis(self.get_axis_settings(axis_label))
 
     def add_ini_line(self, line) -> None:
         """
@@ -32,30 +18,16 @@ class Galil:
         """
         axis_index = self.get_axis_letter_from_line(line)
         if axis_index is None:
-        #if not line.startswith("Axis"):
-            # Line has no Axis, so is a setting for the crate
             setting, value = line.split("=")
             self.settings[setting] = value
         elif axis_index in self.axes.keys():
-            self.axes[axis_index].add_setting_from_ini_line(line)
+            axis = self.axes[axis_index]
+            axis.add_setting_from_ini_line(line)
         else:
             new_axis = Axis(axis_index)
             new_axis.add_setting_from_ini_line(line)
-            self.axis_letters.append(axis_index)
 
             self.axes[axis_index] = new_axis
-
-        self.ini_text.append(line)
-
-    def add_crate_settings(self) -> None:
-        """
-        Adds lines which do not refer to a specific axis to the galil crate settings
-        """
-        for line in self.ini_text:
-            if not line.startswith("Axis"):
-                # Line does not begin with Axis, so is a crate setting
-                setting, value = line.split("=")
-                self.settings[setting] = value
 
     def get_axis_letter_from_line(self, ini_line: str) -> str:
         """
@@ -67,35 +39,6 @@ class Galil:
         else:
             return None
 
-    def get_axis_letters(self) -> List[str]:
-        """
-        Returns all the defined axis letters for this galil crate
-
-        Returns:
-            axis_letters: List containing the unique axis letters defined for this crate
-        """
-        axis_letters = []
-        for line in self.ini_text:
-            match = self.get_axis_letter_from_line(line)
-            # match = re.search(AXIS_NUMBER_REGEX, line)
-            if match is not None and match not in axis_letters:
-                axis_letters.append(match)
-        return axis_letters
-
-    def get_axis_settings(self, axis_letter: str) -> str:
-        """
-        Returns the lines which contain settings for a single axis
-
-        Args:
-            axis_letter: The identifying letter of the axis
-        """
-        axis_settings = []
-        for line in self.ini_text:
-            setting = re.search(AXIS_SETTING_REGEX.format(axis_letter=axis_letter), line)
-            if setting is not None:
-                axis_settings.append(setting.group(0))
-        return axis_settings
-
     def get_save_string(self) -> str:
         """
         Returns a string which can be written to file containing the settings for all axes on this crate
@@ -104,7 +47,7 @@ class Galil:
         settings.append("[G{}]".format(self.crate_index))
         for crate_setting, setting_value in self.settings.items():
             settings.append("{setting} = {value}".format(setting=crate_setting, value=setting_value))
-        for axis_letter in self.axis_letters:
+        for axis_letter in self.axes.keys():
             axis = self.axes[axis_letter]
             for setting, value in axis.settings.items():
                 settings.append("Axis {axis_letter} {setting} = {value}".format(axis_letter=axis_letter,
@@ -119,12 +62,25 @@ class Axis:
         self.axis_index = axis_index
         self.axis_line_prefix = "Axis {}".format(axis_index)
 
+    def scrub_axis_prefix(self, ini_line: str) -> str:
+        """
+        Removes the axis identifier from a line in the ini file. Returns a string which defines its setting
+
+        Args:
+            ini_line: Line from the ini file
+
+        Returns:
+            setting: String containing "setting_name = value" pair 
+        """
+        # Scrub the Axis prefix from the line
+        setting = ini_line[len(self.axis_line_prefix):]
+        return setting
+
     def add_setting_from_ini_line(self, ini_line: str):
         """
         Imports a new setting from a line in the galil ini file
         """
-        # Scrub the Axis prefix from the line
-        setting = ini_line[len(self.axis_line_prefix):]
+        setting = self.scrub_axis_prefix(ini_line)
         split_line = setting.split("=")
         key = split_line[0].strip()
         # This captures settings which contain an equals sign in them
