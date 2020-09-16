@@ -110,7 +110,7 @@ class Axis:
             self.settings[key] = value
 
 
-filename = ""
+filename = "file"
 
 
 with open(filename, 'r') as f:
@@ -162,7 +162,7 @@ for galil in galil_crates.values():
 #     print("[G{}]".format(galil.crate_index))
 #     print(galil.get_save_string())
 
-with open("C:\\Users\\plf31717\\Downloads\\sans2d_vis\\Galil2.ini", 'w') as f:
+with open("file", 'w') as f:
     for galil in galil_crates.values():
         f.write("[G{}]\n".format(galil.crate_index))
         f.write(galil.get_save_string())
