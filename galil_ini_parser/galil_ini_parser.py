@@ -19,6 +19,8 @@ class Galil:
         axis_index = self.get_axis_letter_from_line(line)
         if axis_index is None:
             setting, value = line.split("=")
+            setting = setting.strip()
+            value = value.strip()
             self.settings[setting] = value
         elif axis_index in self.axes.keys():
             axis = self.axes[axis_index]
@@ -73,7 +75,7 @@ class Axis:
             setting: String containing "setting_name = value" pair 
         """
         # Scrub the Axis prefix from the line
-        setting = ini_line[len(self.axis_line_prefix):]
+        setting = ini_line[len(self.axis_line_prefix):].strip()
         return setting
 
     def add_setting_from_ini_line(self, ini_line: str):
