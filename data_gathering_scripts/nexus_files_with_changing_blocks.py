@@ -20,7 +20,7 @@ machines = ("NDXALF",
             "NDXVESUVIO",
             "NDXZOOM")
 
-IGNORE_LIST = (u"EPICS_PUTLOG", u"ICP_DAE_TD", u"ICP_SYS_TD", u"Status")
+IGNORE_LIST = ("EPICS_PUTLOG", "ICP_DAE_TD", "ICP_SYS_TD", "Status")
 
 # List of cycles
 CYCLES = ("cycle_17_1", "cycle_17_2", "cycle_17_3")
@@ -38,7 +38,7 @@ def check(machine, cycle, outf):
     :return: nothing
     """
     last_data_file = None
-    header = "--- FILES {} {} ---\n".format(machine, cycle)
+    header = f"--- FILES {machine} {cycle} ---\n"
     print(header)
     outf.write(header)
 
@@ -55,10 +55,10 @@ def check(machine, cycle, outf):
             try:
                 with h5py.File(os.path.join(path, file_name)) as f:
                     data_file = {
-                        "start_time": f[u"raw_data_1"]["start_time"][0],
-                        "end_time": f[u"raw_data_1"]["end_time"][0],
-                        "run_number": f[u"raw_data_1"]["run_number"][0],
-                        "blocks": f[u"raw_data_1"]["selog"].keys()
+                        "start_time": f["raw_data_1"]["start_time"][0],
+                        "end_time": f["raw_data_1"]["end_time"][0],
+                        "run_number": f["raw_data_1"]["run_number"][0],
+                        "blocks": f["raw_data_1"]["selog"].keys()
                     }
 
                 if last_data_file is not None:
@@ -71,20 +71,15 @@ def check(machine, cycle, outf):
                     start_of_current = datetime.strptime(data_file["start_time"], "%Y-%m-%dT%H:%M:%S")
                     gap = start_of_current - end_of_last
                     if not same and gap < timedelta(seconds=100):
-                        outf.write("{run_number}, {time_diff}, {start_time}: added {blocks} removed {removals}\n".format(
-                            run_number=data_file["run_number"],
-                            time_diff=gap.total_seconds(),
-                            start_time=start_of_current,
-                            blocks=additions,
-                            removals=removals
-                        ))
+                        run_number = data_file["run_number"]
+                        outf.write(f"{run_number}, {gap.total_seconds()}, {start_of_current}: added {additions} removed {removals}\n")
 
                 last_data_file = data_file
             except IOError:
-                print("Problem opening/reading {}".format(file_name))
+                print(f"Problem opening/reading {file_name}")
 
 
-with file(r"C:\temp\problems.txt", mode="w") as outf:
+with open(r"C:\temp\problems.txt", mode="w") as outf:
     for machine in machines:
         for cycle in CYCLES:
             check(machine, cycle, outf)

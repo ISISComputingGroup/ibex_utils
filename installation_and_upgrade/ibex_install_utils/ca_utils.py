@@ -1,9 +1,9 @@
 import os
 
-import six
 from genie_python.utilities import dehex_and_decompress
 
-class CaWrapper(object):
+
+class CaWrapper:
     """
     Wrapper around genie python's channel access class providing some useful abstractions.
     """

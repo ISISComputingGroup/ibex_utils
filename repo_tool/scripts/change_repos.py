@@ -18,7 +18,7 @@ from getpass import getpass
 
 import sys
 
-from repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
+from repo_tool.repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
 
 
 def main(settings, token):
@@ -62,7 +62,7 @@ def main(settings, token):
 
         return 0
     except UserError as ex:
-        print("Failed to update repositories: {0}".format(ex))
+        print(f"Failed to update repositories: {ex}")
         return -1
 
 
@@ -74,14 +74,15 @@ def _get_repository_name_from_file(filename):
     """
     try:
         repository_names = set()
-        for line in file(filename):
-            repo_name = line.strip()
-            if repo_name != "" and not repo_name.startswith("#"):
-                repository_names.add(repo_name)
-        if len(repository_names) == 0:
-            raise UserError("File has no entries in")
+        with open(filename) as file:
+            for line in file:
+                repo_name = line.strip()
+                if repo_name != "" and not repo_name.startswith("#"):
+                    repository_names.add(repo_name)
+            if len(repository_names) == 0:
+                raise UserError("File has no entries in")
     except IOError as ex:
-        raise UserError("Can not open repository list file, {0}".format(ex))
+        raise UserError(f"Can not open repository list file, {ex}")
     return repository_names
 
 
@@ -94,22 +95,23 @@ def _get_labels_from(filename):
     try:
         has_comment = False
         labels = []
-        for line in file(filename):
-            label_line = line.strip()
-            is_comment = label_line.startswith("#")
-            has_comment = has_comment or is_comment
-            if label_line != "" and not is_comment:
-                split_line = line.split(",", 1)
-                if len(split_line) != 2:
-                    raise UserError("Label lines must be <colour code>, <label name>. Line: {0}".format(label_line))
-                label_colour = split_line[0].strip()
-                label_name = split_line[1].strip()
-                if label_name == "":
-                    raise UserError("Label name must not be empty. Line: {0}".format(label_line))
-                if label_colour == "":
-                    raise UserError("Label colour must not be empty. Line: {0}".format(label_line))
+        with open(filename) as file:
+            for line in file:
+                label_line = line.strip()
+                is_comment = label_line.startswith("#")
+                has_comment = has_comment or is_comment
+                if label_line != "" and not is_comment:
+                    split_line = line.split(",", 1)
+                    if len(split_line) != 2:
+                        raise UserError(f"Label lines must be <colour code>, <label name>. Line: {label_line}")
+                    label_colour = split_line[0].strip()
+                    label_name = split_line[1].strip()
+                    if label_name == "":
+                        raise UserError(f"Label name must not be empty. Line: {label_line}")
+                    if label_colour == "":
+                        raise UserError(f"Label colour must not be empty. Line: {label_line}")
 
-                labels.append((label_name, label_colour))
+                    labels.append((label_name, label_colour))
         if len(labels) == 0:
             if has_comment:
                 raise UserError("Labels file has no entries in. "
@@ -117,7 +119,7 @@ def _get_labels_from(filename):
             else:
                 raise UserError("Labels file has no entries in")
     except IOError as ex:
-        raise UserError("Can not open labels file, {0}".format(ex))
+        raise UserError(f"Can not open labels file, {ex}")
     return labels
 
 
@@ -161,28 +163,28 @@ def _parse_command_line():
 
     if len(sys.argv) == 1:
         sys.stderr.write('You need to use commandline arguments and you passed none. If in windows make sure your *.py '
-                         'is linked to \"...\python.exe "%1" %*\" or use python change_repos.py <args> \n')
+                         'is linked to \"...\\python.exe "%1" %*\" or use python change_repos.py <args> \n')
 
     settings = parser.parse_args()
 
     if settings.date_from is not None or settings.date_to is not None:
         if settings.date_from is None or settings.date_to is None:
-            print "Error from and to date for milestone must be set if one is"
+            print("Error from and to date for milestone must be set if one is")
             exit(-1)
         try:
             RepositoryManipulator.get_checked_date(settings.date_from)
         except UserError as ex:
-            print "Error in from date: {0}".format(ex)
+            print(f"Error in from date: {ex}")
             exit(-1)
         try:
             RepositoryManipulator.get_checked_date(settings.date_to)
         except UserError as ex:
-            print "Error in to date: {0}".format(ex)
+            print(f"Error in to date: {ex}")
             exit(-1)
 
     if settings.ensure_label is not None or settings.ensure_label_colour is not None:
         if settings.ensure_label is None or settings.ensure_label_colour is None:
-            print "Error label name and colour must both be set if one is"
+            print("Error label name and colour must both be set if one is")
             exit(-1)
 
     return settings
@@ -197,19 +199,19 @@ def _get_user_token():
     while token == "":
         token = getpass('GitHub token for user (blank for help): ')
         if token == "":
-            print "To get a personal token from git hub"
-            print "  1. Log into git hub"
-            print "  2. Open Your Setting (from icon top right)"
-            print "  3. Click Personal access tokens"
-            print "  4. Generate new token"
-            print "  5. Add token description"
-            print "  6. Select repo (Full control of private repositories)"
-            print "  7. Generate token"
-            print "  8. Copy the token an store it somewhere safe"
+            print("To get a personal token from git hub")
+            print("  1. Log into git hub")
+            print("  2. Open Your Setting (from icon top right)")
+            print("  3. Click Personal access tokens")
+            print("  4. Generate new token")
+            print("  5. Add token description")
+            print("  6. Select repo (Full control of private repositories)")
+            print("  7. Generate token")
+            print("  8. Copy the token an store it somewhere safe")
     return token
 
 
 if __name__ == '__main__':
     exit(
         main(_parse_command_line(), _get_user_token())
-        )
+    )

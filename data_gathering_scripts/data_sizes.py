@@ -34,7 +34,7 @@ files_in_dir = {
 FNULL = open(os.devnull, 'w')
 
 
-class CalibrationsFolder(object):
+class CalibrationsFolder:
     """
     Context manager for accessing calibration folders on remote instruments.
     """
@@ -46,7 +46,7 @@ class CalibrationsFolder(object):
         """
         Returns: True if disconnect is successful, else False.
         """
-        return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), '/del', '/y'],
+        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', '/del', '/y'],
                                stdout=FNULL, stderr=FNULL) == 0
 
     def connect_to_drive(self):
@@ -54,13 +54,13 @@ class CalibrationsFolder(object):
         Returns: True if the connection is successful, else False
         """
         print("connecting")
-        net_use_cmd_line = ['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), self.network_location,
-                     '/user:{}'.format(self.username_with_domain), self.password]
+        net_use_cmd_line = ['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', self.network_location,
+                            f'/user:{self.username_with_domain}', self.password]
         return subprocess.call(net_use_cmd_line,
                                stdout=FNULL, stderr=FNULL) == 0
 
     def __init__(self, instrument_host, username, password):
-        self.username_with_domain = "{}\\{}".format(instrument_host, username)
+        self.username_with_domain = f"{instrument_host}\\{username}"
         self.network_location = r'\\{}\c$\Instrument'.format(instrument_host)
         self.password = password
 
@@ -96,12 +96,11 @@ def size_of_dir_tree(start_path='.'):
     return total_size
 
 
-
 def get_for_instrument(instrument_host, username, password):
 
     with CalibrationsFolder(instrument_host, username, password) as repo:
         templates = {"HOST_NAME": instrument_host,
-                     "INST_PATH": "{}:\\".format(repo.DRIVE_LETTER)}
+                     "INST_PATH": f"{repo.DRIVE_LETTER}:\\"}
 
         sizes = {}
 
@@ -129,7 +128,7 @@ if __name__ == "__main__":
     inst_names = []
 
     for index, inst in enumerate(["NDXSANDALS", "NDXVESUVIO", "NDXZOOM", "NDXALF", "NDXEMMA-A", "NDXENGINX", "NDXGEM", "NDXHRPD", "NDXIMAT", "NDXIRIS", "NDXLARMOR", "NDEMUONFE", "NDXMERLIN", "NDXPOLARIS"]):
-        print("-- {} --".format(inst))
+        print(f"-- {inst} --")
         sizes = get_for_instrument(inst, username, password)
         print(sizes)
         inst_names.append(inst)

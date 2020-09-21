@@ -38,7 +38,7 @@ def get_web_content_as_json(url, auth):
     contents = page_to_get.json()
     try:
         message = contents["message"]
-        raise Exception("URL returned message: {}".format(message))
+        raise Exception(f"URL returned message: {message}")
     except (KeyError, TypeError):
         pass
     page_to_get.close()
@@ -174,13 +174,11 @@ def get_open_tickets(auth, label):
     # An error check should be considered for the next iteration.
     number_of_pages = (total_open/100) + 1
 
-
-
     # Open the file for writing during paignation.
     with open("out.txt", "w") as f:
         # Open each page, looking at 100 open issues
         for page_number in range(number_of_pages):
-            print("Looking at page {}".format(page_number + 1))
+            print(f"Looking at page {page_number + 1}")
             url = BASE_URL_PROPOSALS.format(page_number=page_number + 1, num_per_page=100, label=label)
             contents = get_web_content_as_json(url, auth)["items"]
             for entry in contents:
@@ -323,5 +321,5 @@ if __name__ == "__main__":
     elif label[0] == "i":
         label = '"in+progress"'
 
-    print label
+    print(label)
     get_tickets_generate_doc(auth_pair, from_file, label)

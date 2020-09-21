@@ -2,12 +2,12 @@ import os
 import socket
 from datetime import date
 
-from ibex_install_utils.ca_utils import CaWrapper
-from ibex_install_utils.file_utils import FileUtils
-from ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
+from installation_and_upgrade.ibex_install_utils.ca_utils import CaWrapper
+from installation_and_upgrade.ibex_install_utils.file_utils import FileUtils
+from installation_and_upgrade.ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
 
 
-class BaseTasks(object):
+class BaseTasks:
     def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
                  ibex_version, file_utils=FileUtils()):
         """
@@ -59,10 +59,10 @@ class BaseTasks(object):
         Returns: The backup dir, will create it if needed (both old and dir).
         Raises: IOError if the base dir doesn't exist
         """
-        new_backup_dir = os.path.join(BACKUP_DIR, "ibex_backup_{}".format(BaseTasks._today_date_for_filenames()))
+        new_backup_dir = os.path.join(BACKUP_DIR, f"ibex_backup_{BaseTasks._today_date_for_filenames()}")
 
         if not os.path.exists(BACKUP_DATA_DIR):
-            raise IOError("Base directory does not exist {} should be a provided linked dir".format(BACKUP_DATA_DIR))
+            raise IOError(f"Base directory does not exist {BACKUP_DATA_DIR} should be a provided linked dir")
         if not os.path.exists(BACKUP_DIR):
             os.mkdir(BACKUP_DIR)
         if not os.path.exists(new_backup_dir):

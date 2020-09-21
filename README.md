@@ -6,7 +6,7 @@ Python scripts to manipulate the ibex repositories.
 
 ### Installation
 
-    cd ibex_utils\repo-tool
+    cd ibex_utils\repo_tool
     pip install .
 
 ### Usage

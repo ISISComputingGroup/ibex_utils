@@ -10,11 +10,11 @@ build_area = r"\\isis\inst$\kits$\CompGroup\ICP"
 
 def winapi_path(dos_path):
     path = os.path.abspath(dos_path)
-    long_path_identifier = u"\\\\?\\"
+    long_path_identifier = "\\\\?\\"
     if path.startswith(long_path_identifier):
         win_path = path
-    elif path.startswith(u"\\\\"):
-        win_path = long_path_identifier + u"UNC\\" + path[2:]
+    elif path.startswith("\\\\"):
+        win_path = long_path_identifier + "UNC\\" + path[2:]
     else:
         win_path = long_path_identifier + path
     return win_path
@@ -26,19 +26,19 @@ def rmtree_error(func, path, exc_info):
             os.chmod(path, stat.S_IWUSR)
         func(winapi_path(path))
     except Exception as e:
-        print("Unable to delete file: {}".format(e))
+        print(f"Unable to delete file: {e}")
 
 
 def delete_dir(directory):
-    print("Deleting directory: {}".format(directory))
+    print(f"Deleting directory: {directory}")
     try:
         shutil.rmtree(winapi_path(directory), onerror=rmtree_error)
     except Exception as e:
-        print("Unable to delete directory {}: {}".format(directory, e))
+        print(f"Unable to delete directory {directory}: {e}")
 
 
 def old_enough_to_delete(f):
-    return datetime.now()-datetime.fromtimestamp(os.path.getmtime(f)) > timedelta(days=max_build_age_in_days)
+    return datetime.now() - datetime.fromtimestamp(os.path.getmtime(f)) > timedelta(days=max_build_age_in_days)
 
 
 def is_build_dir(d):
@@ -48,7 +48,7 @@ def is_build_dir(d):
 def deletion_directories(project_areas):
     dirs = []
     for project_area in project_areas:
-        print("Identifying old builds for deletion in: {}".format(project_area))
+        print(f"Identifying old builds for deletion in: {project_area}")
         project_dirs = [os.path.join(project_area, sub_dir) for sub_dir in os.listdir(project_area)]
         build_dirs_by_age = sorted(filter(is_build_dir, project_dirs), key=os.path.getmtime, reverse=True)
         build_dirs_we_could_delete = build_dirs_by_age[minimum_number_of_builds_to_keep:]
@@ -65,7 +65,7 @@ def purge(dry_run=False):
 
     for d in deletion_directories(project_areas):
         if dry_run:
-            print("{}".format(d))
+            print(f"{d}")
         else:
             delete_dir(d)
     print("Archive purge complete.")

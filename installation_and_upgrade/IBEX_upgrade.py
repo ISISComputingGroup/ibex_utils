@@ -7,10 +7,10 @@ import os
 import re
 import sys
 
-from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
-from ibex_install_utils.exceptions import UserStop, ErrorInTask
-from ibex_install_utils.user_prompt import UserPrompt
-from ibex_install_utils.file_utils import get_latest_directory_path
+from installation_and_upgrade.ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
+from installation_and_upgrade.ibex_install_utils.exceptions import UserStop, ErrorInTask
+from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
+from installation_and_upgrade.ibex_install_utils.file_utils import get_latest_directory_path
 
 
 def _get_latest_release_path(release_dir):
@@ -20,10 +20,10 @@ def _get_latest_release_path(release_dir):
     releases = list(filter(regex.match, releases))
 
     if len(releases) == 0:
-        print("Error: No releases found in '{0}'".format(release_dir))
+        print(f"Error: No releases found in '{release_dir}'")
         sys.exit(3)
     current_release = max(releases)
-    return os.path.join(release_dir, "{}".format(current_release))
+    return os.path.join(release_dir, f"{current_release}")
 
 
 if __name__ == "__main__":
@@ -47,10 +47,11 @@ if __name__ == "__main__":
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
 
-    deployment_types = ["{}: {}".format(choice, deployment_types)
+    deployment_types = [f"{choice}: {deployment_types}"
                         for choice, (_, deployment_types) in UPGRADE_TYPES.items()]
     parser.add_argument('deployment_type', choices=UPGRADE_TYPES.keys(),
-                        help="What upgrade should be performed. ( {})".format(", \n".join(deployment_types)))
+                        help="What upgrade should be performed. ( {})"
+                        .format(", \n".join(deployment_types)))
 
     args = parser.parse_args()
     client_e4_dir = args.client_e4_dir
@@ -59,7 +60,7 @@ if __name__ == "__main__":
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
         current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
         if args.release_suffix != "":
-            current_release_dir += "-{}".format(args.release_suffix)
+            current_release_dir += f"-{args.release_suffix}"
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
@@ -82,7 +83,7 @@ if __name__ == "__main__":
             genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
             genie_python3_dir = get_latest_directory_path(genie_python3_build_dir, "BUILD-")
         except IOError as e:
-            print(e.message)
+            print(e)
             sys.exit(3)
 
     elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
@@ -107,7 +108,7 @@ if __name__ == "__main__":
         print("User stopped upgrade")
         sys.exit(2)
     except ErrorInTask as error_in_run_ex:
-        print("Error in upgrade: {0}".format(error_in_run_ex.message))
+        print(f"Error in upgrade: {error_in_run_ex}")
         sys.exit(1)
 
     print("Finished upgrade")

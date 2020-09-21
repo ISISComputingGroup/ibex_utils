@@ -3,15 +3,15 @@ import shutil
 import tempfile
 from time import sleep
 
-from ibex_install_utils.admin_runner import AdminCommandBuilder
-from ibex_install_utils.run_process import RunProcess
-from ibex_install_utils.task import task
-from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, INST_SHARE_AREA, EPICS_PATH, APPS_BASE_DIR, \
+from installation_and_upgrade.ibex_install_utils.admin_runner import AdminCommandBuilder
+from installation_and_upgrade.ibex_install_utils.run_process import RunProcess
+from installation_and_upgrade.ibex_install_utils.task import task
+from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
+from installation_and_upgrade.ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, INST_SHARE_AREA, EPICS_PATH, APPS_BASE_DIR, \
     SETTINGS_CONFIG_PATH, VAR_DIR
 
 
-class Vhd(object):
+class Vhd:
     def __init__(self, name, source_filename, dest_filename, mount_point):
         self.name = name
         self.source_filename = source_filename
@@ -60,15 +60,15 @@ class VHDTasks(BaseTasks):
         with open(filename, "w") as f:
             f.write("")
 
-        print("Waiting for file at {} to be deleted...".format(filename))
+        print(f"Waiting for file at {filename} to be deleted...")
         for _ in range(timeout):
             if not os.path.exists(filename):
                 break
             sleep(1)
         else:
             os.remove(filename)
-            raise IOError("File at {} still existed after {}s, check VHD scheduled task is running correctly"
-                          .format(filename, timeout))
+            raise IOError(f"File at {filename} still existed after {timeout}s, check VHD scheduled task is running "
+                          f"correctly ")
 
     @task("Request VHDs to be mounted")
     def request_mount_vhds(self):
@@ -88,13 +88,13 @@ class VHDTasks(BaseTasks):
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
 
         for vhd in VHDS:
-            driveletter_file = os.path.join(tempfile.gettempdir(), "{}_driveletter.txt".format(vhd.name))
+            driveletter_file = os.path.join(tempfile.gettempdir(), f"{vhd.name}_driveletter.txt")
             if os.path.exists(driveletter_file):
                 os.remove(driveletter_file)
 
             if os.path.exists(vhd.mount_point):
                 admin_commands.add_command("move",
-                                           '"{mount_point}" "{mount_point}_backup"'.format(mount_point=vhd.mount_point),
+                                           f'"{vhd.mount_point}" "{vhd.mount_point}_backup"',
                                            expected_return_val=None)
 
             # Mount the VHD and write it's assigned drive letter to a file.
@@ -141,14 +141,14 @@ class VHDTasks(BaseTasks):
             # Remove directory junction
             admin_commands.add_command(
                 "cmd",
-                r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
+                r'/c f"rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
                 expected_return_val=None,
             )
 
             # Restore previous directories to where they were before mounting VHDS
-            if os.path.exists("{}_backup".format(vhd.mount_point)):
+            if os.path.exists(f"{vhd.mount_point}_backup"):
                 admin_commands.add_command("move",
-                                           '"{mount_point}_backup" "{mount_point}"'.format(mount_point=vhd.mount_point),
+                                           f'"{vhd.mount_point}_backup" "{vhd.mount_point}"',
                                            expected_return_val=None)
 
         admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
@@ -163,7 +163,7 @@ class VHDTasks(BaseTasks):
         os.makedirs(build_folder)
 
         for vhd in VHDS:
-            print("Deploying {} to '{}'".format(vhd.source_filename, build_folder))
+            print(f"Deploying {vhd.source_filename} to '{build_folder}'")
             shutil.copyfile(os.path.join(LOCAL_VHD_DIR, vhd.source_filename),
                             os.path.join(build_folder, vhd.dest_filename))
 
