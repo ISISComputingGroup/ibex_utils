@@ -2,7 +2,7 @@ import unittest
 
 from galil_ini_parser import Galil, Axis
 from parameterized import parameterized
-from sans2d_galils import zero_homeval_zero_offsets, nonzero_homeval_nonzero_offsets
+from sans2d_galils import zero_homeval_zero_offsets, nonzero_homeval_nonzero_offsets, setting_names
 
 GALIL_CRATE_INDEX = 1
 AXIS_INDEX = "A"
@@ -10,7 +10,78 @@ AXIS_INDEX = "A"
 SETTING_STRING_WITHOUT_AXIS = "{setting} = {value}"
 SETTING_STRING_WITH_AXIS = "Axis {axis_index} {setting} = {value}"
 
-float_setting = {"Setting": 1.2}
+# This change in coordinates from SECI to IBEX was verified by hand
+original_sans2d_axis = {
+    setting_names["OFFSET"]: 0.0,
+    setting_names["USER_OFFSET"]: 0.0,
+    setting_names["HOMEVAL"]: 1045.0,
+    setting_names["HLIM"]: 1045.0,
+    setting_names["LLIM"]: -10.0,
+}
+
+corrected_sans2d_axis = {
+    setting_names["OFFSET"]: 1045.0,
+    setting_names["USER_OFFSET"]: 0.0,
+    setting_names["HOMEVAL"]: 1045.0,
+    setting_names["HLIM"]: 0.0,
+    setting_names["LLIM"]: -1055.0
+}
+
+# These are dummy data sets corrected by hand
+nonzero_homeval_nonzero_offset_axis = {
+    setting_names["OFFSET"]: 10.0,
+    setting_names["USER_OFFSET"]: 5.0,
+    setting_names["HOMEVAL"]: 1045.0,
+    setting_names["HLIM"]: 1450.0,
+    setting_names["LLIM"]: -10.0,
+
+    setting_names["OFFSET"]: 7.0,
+    setting_names["USER_OFFSET"]: 3.0,
+    setting_names["HOMEVAL"]: 20.0,
+    setting_names["HLIM"]: 50.0,
+    setting_names["LLIM"]: 10.0,
+}
+
+corrected_nonzero_homeval_nonzero_offset_axis = {
+    setting_names["OFFSET"]: 1045.0,
+    setting_names["USER_OFFSET"]: 0.0,
+    setting_names["HOMEVAL"]: 1045.0,
+    setting_names["HLIM"]: 420.0,
+    setting_names["LLIM"]: -1040.0,
+
+    setting_names["OFFSET"]: 20.0,
+    setting_names["USER_OFFSET"]: 0.0,
+    setting_names["HOMEVAL"]: 20.0,
+    setting_names["HLIM"]: 40.0,
+    setting_names["LLIM"]: 0.0,
+}
+
+nonzero_homeval_zero_offset_axis = {
+    setting_names["OFFSET"]: 0.0,
+    setting_names["USER_OFFSET"]: 0.0,
+    setting_names["HOMEVAL"]: 20.0,
+    setting_names["HLIM"]: 50.0,
+    setting_names["LLIM"]: 10.0,
+}
+
+corrected_nonzero_homeval_zero_offset_axis = {
+    setting_names["OFFSET"]: 20.0,
+    setting_names["USER_OFFSET"]: 0.0,
+    setting_names["HOMEVAL"]: 20.0,
+    setting_names["HLIM"]: 30.0,
+    setting_names["LLIM"]: -10.0,
+}
+
+infinite_limits_axis = nonzero_homeval_nonzero_offset_axis
+infinite_limits_axis["LLIM"] = -1.0 * float("inf")
+infinite_limits_axis["HLIM"] = 1.0 * float("inf")
+
+corrected_infinite_limits_axis = corrected_nonzero_homeval_nonzero_offset_axis
+corrected_infinite_limits_axis["LLIM"] = -1.0 * float("inf")
+corrected_infinite_limits_axis["HLIM"] = 1.0 * float("inf")
+
+
+FLOAT_SETTING = {"Setting": 1.2}
 
 
 class GalilTests(unittest.TestCase):
@@ -167,13 +238,44 @@ class IniParserTests(unittest.TestCase):
     """
 
     def test_GIVEN_nonzero_homeval_and_nonzero_offsets_WHEN_new_limits_calculated_THEN_correct_values_returned(self):
-        pass
+        new_axis_values = nonzero_homeval_nonzero_offsets(infinite_limits_axis[setting_names["HOMEVAL"]],
+                                                          infinite_limits_axis[setting_names["OFFSET"]],
+                                                          infinite_limits_axis[setting_names["USER_OFFSET"]],
+                                                          infinite_limits_axis[setting_names["HLIM"]],
+                                                          infinite_limits_axis[setting_names["LLIM"]])
+        for key in new_axis_values.keys():
+            self.assertEqual(corrected_infinite_limits_axis[key], new_axis_values[key])
 
     def test_GIVEN_zero_homeval_and_nonzero_offsets_WHEN_new_limits_calculated_THEN_correct_values_returned(self):
-        pass
+        new_axis_values = zero_homeval_zero_offsets(original_sans2d_axis[setting_names["HOMEVAL"]],
+                                                    original_sans2d_axis[setting_names["HLIM"]],
+                                                    original_sans2d_axis[setting_names["LLIM"]])
+        for key in new_axis_values.keys():
+            self.assertEqual(corrected_sans2d_axis[key], new_axis_values[key])
 
     def test_GIVEN_nonzero_homeval_and_zero_offsets_WHEN_new_limits_calculated_THEN_correct_values_returned(self):
-        pass
+        new_axis_values = nonzero_homeval_nonzero_offsets(nonzero_homeval_zero_offset_axis[setting_names["HOMEVAL"]],
+                                                          nonzero_homeval_zero_offset_axis[setting_names["OFFSET"]],
+                                                          nonzero_homeval_zero_offset_axis[setting_names["USER_OFFSET"]],
+                                                          nonzero_homeval_zero_offset_axis[setting_names["HLIM"]],
+                                                          nonzero_homeval_zero_offset_axis[setting_names["LLIM"]])
+        for key in new_axis_values.keys():
+            self.assertEqual(corrected_nonzero_homeval_zero_offset_axis[key], new_axis_values[key])
 
     def test_GIVEN_both_calculation_WHEN_new_limits_calculated_THEN_they_are_equivalent(self):
-        pass
+        new_axis_values = nonzero_homeval_nonzero_offsets(original_sans2d_axis[setting_names["HOMEVAL"]],
+                                                          0.0,
+                                                          0.0,
+                                                          original_sans2d_axis[setting_names["HLIM"]],
+                                                          original_sans2d_axis[setting_names["LLIM"]])
+        for key in new_axis_values.keys():
+            self.assertEqual(corrected_sans2d_axis[key], new_axis_values[key])
+
+    def test_GIVEN_nonzero_homeval_and_infinite_limits_WHEN_new_limits_calculated_THEN_limits_are_unchanged(self):
+        new_axis_values = nonzero_homeval_nonzero_offsets(nonzero_homeval_nonzero_offset_axis[setting_names["HOMEVAL"]],
+                                                          nonzero_homeval_nonzero_offset_axis[setting_names["OFFSET"]],
+                                                          nonzero_homeval_nonzero_offset_axis[setting_names["USER_OFFSET"]],
+                                                          nonzero_homeval_nonzero_offset_axis[setting_names["HLIM"]],
+                                                          nonzero_homeval_nonzero_offset_axis[setting_names["LLIM"]])
+        for key in new_axis_values.keys():
+            self.assertEqual(corrected_nonzero_homeval_nonzero_offset_axis[key], new_axis_values[key])

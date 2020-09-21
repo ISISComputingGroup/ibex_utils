@@ -1,3 +1,4 @@
+from enum import Enum
 from galil_ini_parser import Galil, Axis
 
 from typing import Optional, Dict
@@ -9,6 +10,8 @@ output_file = ""
 # I used this to check all the values against the galil ini file made by Tom and David
 reference_file = ""
 
+from filenames import input_file, output_file, reference_file
+
 HOMEVAL = "Home Position"
 USER_OFFSET = "User Offset"
 OFFSET = "Offset"
@@ -19,9 +22,22 @@ ENCODER_RES = "Encoder Steps Per Unit"
 MOTOR_RES = "Motor Steps Per Unit"
 
 
+setting_names = {
+    "HOMEVAL": "Home Position",
+    "USER_OFFSET": "User Offset",
+    "OFFSET": "Offset",
+    "LLIM": "Soft Min",
+    "HLIM": "Soft Max",
+    "NEGATED": "Negate Motor Direction",
+    "ENCODER_RES": "Encoder Steps Per Unit",
+    "MOTOR_RES": "Motor Steps Per Unit"
+}
+
+
 def get_motor_resolution(axis: Axis):
     """
-    Calculates the smallest detectable movement for this axis
+    Calculates the smallest detectable movement for this axis.
+    Movements smaller than this value are equivalent to zero movement.
     """
     motor_res = axis.get_value(MOTOR_RES, float)
     encoder_res = axis.get_value(ENCODER_RES, float)
@@ -61,9 +77,9 @@ def zero_homeval_zero_offsets(old_homeval: float, old_hlim: float, old_llim: flo
         new_llim = None
 
     new_settings = {
-        OFFSET: float_to_setting_string(new_offset),
-        HLIM: float_to_setting_string(new_hlim),
-        LLIM: float_to_setting_string(new_llim),
+        OFFSET: new_offset,
+        HLIM: new_hlim,
+        LLIM: new_llim,
     }
 
     return new_settings
@@ -113,10 +129,10 @@ def nonzero_homeval_nonzero_offsets(old_homeval: float,
         new_llim = None
 
     new_settings = {
-        OFFSET: float_to_setting_string(new_offset),
-        HLIM: float_to_setting_string(new_hlim),
-        LLIM: float_to_setting_string(new_llim),
-        USER_OFFSET: float_to_setting_string(new_user_offset)
+        OFFSET: new_offset,
+        HLIM: new_hlim,
+        LLIM: new_llim,
+        USER_OFFSET: new_user_offset
     }
     return new_settings
 
@@ -148,13 +164,9 @@ with open(reference_file, 'r') as f:
             # Not a setting or new galil crate, skip this line
             pass
 
-# # This threshold should be a fraction of the min(encoder or motor res)
-# lowerthresh = 1e-5
-
-
 for galil in galil_crates.values():
     for axis in galil.axes.values():
-        lowerthresh = get_motor_resolution(axis)
+        lowerthresh = 0.5 * get_motor_resolution(axis)
         #print("Galil {} Axis {}".format(galil.crate_index, axis.axis_index))
 
         axis_negated = axis.get_value(NEGATED, bool)
@@ -170,18 +182,21 @@ for galil in galil_crates.values():
             new_settings = zero_homeval_zero_offsets(old_homeval, old_hlim, old_llim)
             # new_settings = nonzero_homeval_nonzero_offsets(old_homeval, old_offset, old_user_offset, old_hlim, old_llim)
             for setting, value in new_settings.items():
-                axis.set_value(setting, value)
+                if value is not None:
+                    axis.set_value(setting, float_to_setting_string(value))
 
         elif (abs(old_homeval) > lowerthresh) and (abs(old_offset + old_user_offset) > lowerthresh):
             new_settings = nonzero_homeval_nonzero_offsets(old_homeval, old_offset, old_user_offset, old_hlim, old_llim)
             for setting, value in new_settings.items():
-                axis.set_value(setting, value)
+                if value is not None:
+                    axis.set_value(setting, float_to_setting_string(value))
 
         elif (abs(old_homeval) > lowerthresh) and (abs(old_offset + old_user_offset) > lowerthresh) and axis_negated:
             print("Warning! This axis has a negated direction, check its output is sane")
             new_settings = nonzero_homeval_nonzero_offsets(old_homeval, old_offset, old_user_offset, old_hlim, old_llim)
             for setting, value in new_settings.items():
-                axis.set_value(setting, value)
+                if value is not None:
+                    axis.set_value(setting, float_to_setting_string(value))
 
 # NEED TO MAKE SURE THESE TWO IF STATEMENTS GIVE THE SAME ANSWER WHEN OFFSETS = 0
 # If they do, can delete the first one
