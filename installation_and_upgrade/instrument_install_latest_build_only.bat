@@ -8,7 +8,7 @@ REM with prefix specified will use {prefix}_win7_x64 and {prefix}_CLEAN_win7_x64
  
 set PYTHONUNBUFFERED=TRUE
 
-call "%~dp0\define_latest_genie_python.bat"
+call "%~dp0\define_latest_genie_python.bat" 3
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server.bat"
