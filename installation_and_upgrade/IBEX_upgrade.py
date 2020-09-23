@@ -7,10 +7,10 @@ import os
 import re
 import sys
 
-from installation_and_upgrade.ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
-from installation_and_upgrade.ibex_install_utils.exceptions import UserStop, ErrorInTask
-from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
-from installation_and_upgrade.ibex_install_utils.file_utils import get_latest_directory_path
+from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
+from ibex_install_utils.exceptions import UserStop, ErrorInTask
+from ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.file_utils import get_latest_directory_path
 
 
 def _get_latest_release_path(release_dir):

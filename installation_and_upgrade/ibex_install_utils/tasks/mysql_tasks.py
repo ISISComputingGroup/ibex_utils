@@ -4,13 +4,13 @@ import subprocess
 import zipfile
 from time import sleep
 
-from installation_and_upgrade.ibex_install_utils.admin_runner import AdminCommandBuilder
-from installation_and_upgrade.ibex_install_utils.exceptions import ErrorInRun
-from installation_and_upgrade.ibex_install_utils.run_process import RunProcess
-from installation_and_upgrade.ibex_install_utils.task import task
-from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
-from installation_and_upgrade.ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
-from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.admin_runner import AdminCommandBuilder
+from ibex_install_utils.exceptions import ErrorInRun
+from ibex_install_utils.run_process import RunProcess
+from ibex_install_utils.task import task
+from ibex_install_utils.tasks import BaseTasks
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
+from ibex_install_utils.user_prompt import UserPrompt
 
 try:
     from subprocess import DETACHED_PROCESS

@@ -2,9 +2,9 @@ import os
 import socket
 from datetime import date
 
-from installation_and_upgrade.ibex_install_utils.ca_utils import CaWrapper
-from installation_and_upgrade.ibex_install_utils.file_utils import FileUtils
-from installation_and_upgrade.ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
+from ibex_install_utils.ca_utils import CaWrapper
+from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
 
 
 class BaseTasks:
