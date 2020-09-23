@@ -17,7 +17,12 @@ output_file = pathlib.Path(args.output_file)
 if input_file == output_file:
     raise RuntimeError("Output file cannot overwrite input file")
 
-galil_crates = extract_galil_settings_from_file(input_file)
+with open(input_file) as f:
+    file_contents = f.readlines()
+
+galil_crates = extract_galil_settings_from_file(file_contents)
+
+output_contents = []
 
 for galil in galil_crates.values():
     for axis in galil.axes.values():
@@ -46,17 +51,20 @@ for galil in galil_crates.values():
                 ))
                 axis.set_value(setting, "{:8.6f}".format(value))
 
+    output_contents.extend(galil.get_save_strings())
+
 with open(output_file, 'w') as f:
-    for galil in galil_crates.values():
-        f.write(galil.get_save_string())
-        f.write("\n")
+    f.write("\n".join(output_contents))
+    f.write("\n")
 
 if args.reference_file is not None:
     # Compare the new galil settings to a reference file (hand-migrated)
     reference_file = pathlib.Path(args.reference_file)
-    reference_galils = extract_galil_settings_from_file(reference_file)
+    with open(reference_file, 'r') as f:
+        reference_contents = f.readlines()
+    reference_galils = extract_galil_settings_from_file(reference_contents)
 
-    galils_with_new_settings = extract_galil_settings_from_file(output_file)
+    galils_with_new_settings = extract_galil_settings_from_file(output_contents)
     for galil in galils_with_new_settings.values():
         reference_galil = reference_galils[galil.crate_index]
         for axis in galil.axes.values():

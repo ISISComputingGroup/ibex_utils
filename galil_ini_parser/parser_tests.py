@@ -1,9 +1,10 @@
 import unittest
 
 from galil_ini_parser import Galil, Axis
-from galil_ini_parser import apply_home_shift, common_setting_names
-from parameterized import parameterized
+from galil_ini_parser import apply_home_shift, common_setting_names, extract_galil_settings_from_file
 
+from mock import patch, call
+from parameterized import parameterized
 from typing import Dict
 
 GALIL_CRATE_INDEX = "G1"
@@ -103,7 +104,7 @@ class GalilTests(unittest.TestCase):
         self.assertEqual(self.galil.axes[axis_index].settings[new_setting], setting_value)
 
     def test_GIVEN_settings_on_crate_WHEN_save_string_requested_THEN_first_line_is_crate_identifier(self):
-        galil_save_string = self.galil.get_save_string().split("\n")
+        galil_save_string = self.galil.get_save_strings()
         self.assertEqual(galil_save_string[0], "[{}]".format(GALIL_CRATE_INDEX))
 
     def test_GIVEN_settings_on_crate_and_axes_WHEN_save_string_requested_THEN_settings_from_crate_and_axes_are_present(self):
@@ -120,7 +121,7 @@ class GalilTests(unittest.TestCase):
         self.galil.axes[axis_index] = axis
         self.galil.settings[crate_setting] = crate_setting_value
 
-        save_string = self.galil.get_save_string().split("\n")
+        save_string = self.galil.get_save_strings()
 
         self.assertIn(SETTING_STRING_WITHOUT_AXIS.format(setting=crate_setting, value=crate_setting_value), save_string)
         self.assertIn(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index, setting=axis_setting, value=axis_setting_value),
@@ -213,3 +214,21 @@ class IniParserTests(unittest.TestCase):
 
         for key in new_axis_values.keys():
             self.assertEqual(corrected_axis[key], new_axis_values[key])
+
+    def test_GIVEN_sample_ini_file_WHEN_parsed_THEN_new_galil_objects_created(self):
+        galil_1_name = "G0"
+        galil_2_name = "G1"
+
+        split_ini_file = [
+            "[{}]".format(galil_1_name),
+            "setting = value",
+            "Axis A setting = value",
+            "[{}]".format(galil_2_name),
+            "setting = value",
+            "Axis B setting = value",
+        ]
+
+        with patch("galil_ini_parser.Galil") as mock_galil:
+            extract_galil_settings_from_file(split_ini_file)
+            mock_galil.assert_any_call(galil_1_name)
+            mock_galil.assert_any_call(galil_2_name)

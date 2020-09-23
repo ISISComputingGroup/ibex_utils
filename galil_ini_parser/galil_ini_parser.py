@@ -1,7 +1,7 @@
 import re
 
 from collections import OrderedDict
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 
 AXIS_NUMBER_REGEX = r"(?<=Axis )\S+"
 
@@ -103,9 +103,9 @@ class Galil:
         else:
             return None
 
-    def get_save_string(self) -> str:
+    def get_save_strings(self) -> List[str]:
         """
-        Returns a string which can be written to file containing the settings for all axes on this crate
+        Returns a strings can containing all settings for all axes on this crate
         """
         settings = []
         settings.append("[{}]".format(self.crate_index))
@@ -117,7 +117,7 @@ class Galil:
                 settings.append("Axis {axis_letter} {setting} = {value}".format(axis_letter=axis_letter,
                                                                                 setting=setting,
                                                                                 value=value))
-        return "\n".join(settings)
+        return settings
 
 
 class Axis:
@@ -195,26 +195,25 @@ class Axis:
         return 1.0/min(motor_res, encoder_res)
 
 
-def extract_galil_settings_from_file(filename: str) -> Dict[str, Galil]:
+def extract_galil_settings_from_file(file: List[str]) -> Dict[str, Galil]:
     """
     Given a file contatining galil settings, extract the settings as Galil objects
 
     Args:
-        filename: The name of the file containing galil settings
+        file: List of lines from the settings files
 
     Returns:
         galil_crates: Dictionary containing the Galil settings held in file
     """
     galil_crates = {}
-    with open(filename, 'r') as f:
-        for line in f:
-            # New galil crate if line starts [Gx]
-            if line.startswith("[G"):
-                crate_index = line.strip().strip("[]")
-                galil_crates[crate_index] = Galil(crate_index)
-            elif "=" in line:
-                galil_crates[crate_index].add_ini_line(line)
-            else:
-                print("Line did not contain valid setting or galil identifier information, ignoring: {}".format(line))
+    for line in file:
+        # New galil crate if line starts [Gx]
+        if line.startswith("[G"):
+            crate_index = line.strip().strip("[]")
+            galil_crates[crate_index] = Galil(crate_index)
+        elif "=" in line:
+            galil_crates[crate_index].add_ini_line(line)
+        else:
+            print("Line did not contain valid setting or galil identifier information, ignoring: {}".format(line))
 
     return galil_crates
