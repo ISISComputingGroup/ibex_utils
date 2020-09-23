@@ -17,6 +17,8 @@ common_setting_names = {
 }
 
 
+
+
 def apply_home_shift(old_homeval: float,
                      old_offset: float,
                      old_user_offset: float,
@@ -183,3 +185,28 @@ class Axis:
             self.settings[setting] = value
         elif make_new:
             self.settings[setting] = value
+
+
+def extract_galil_settings_from_file(filename: str) -> Dict[str, Galil]:
+    """
+    Given a file contatining galil settings, extract the settings as Galil objects
+
+    Args:
+        filename: The name of the file containing galil settings
+
+    Returns:
+        galil_crates: Dictionary containing the Galil settings held in file 
+    """
+    galil_crates = {}
+    with open(filename, 'r') as f:
+        for line in f:
+            # New galil crate if line starts [Gx]
+            if line.startswith("[G"):
+                crate_index = int(line[2])
+                galil_crates[crate_index] = Galil(crate_index)
+            elif "=" in line:
+                galil_crates[crate_index].add_ini_line(line)
+            else:
+                print("Line did not contain valid setting or galil identifier information, ignoring: {}".format(line))
+
+    return galil_crates

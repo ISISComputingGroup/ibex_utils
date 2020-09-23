@@ -1,6 +1,6 @@
 import argparse
 import pathlib
-from galil_ini_parser import Galil, Axis, apply_home_shift, common_setting_names
+from galil_ini_parser import Galil, Axis, apply_home_shift, common_setting_names, extract_galil_settings_from_file
 
 from typing import Optional
 
@@ -38,32 +38,8 @@ def float_to_setting_string(value: Optional[float]) -> Optional[str]:
         return "{:8.6f}".format(value)
 
 
-galil_crates = {}
-
-with open(input_file, 'r') as f:
-    for line in f:
-        # New galil crate if line starts [Gx]
-        if line.startswith("[G"):
-            crate_index = int(line[2])
-            galil_crates[crate_index] = Galil(crate_index)
-        elif "=" in line:
-            galil_crates[crate_index].add_ini_line(line)
-        else:
-            # Not a setting or new galil crate, skip this line
-            pass
-
-reference_galils = {}
-with open(reference_file, 'r') as f:
-    for line in f:
-        # New galil crate if line starts [Gx]
-        if line.startswith("[G"):
-            crate_index = int(line[2])
-            reference_galils[crate_index] = Galil(crate_index)
-        elif "=" in line:
-            reference_galils[crate_index].add_ini_line(line)
-        else:
-            # Not a setting or new galil crate, skip this line
-            pass
+galil_crates = extract_galil_settings_from_file(input_file)
+reference_galils = extract_galil_settings_from_file(reference_file)
 
 for galil in galil_crates.values():
     for axis in galil.axes.values():
