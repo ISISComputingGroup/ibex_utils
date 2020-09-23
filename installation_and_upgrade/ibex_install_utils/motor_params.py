@@ -6,7 +6,7 @@ load the script into a genie_python console and run as a standard user script.
 import csv
 from genie_python import genie as g
 
-g.set_instrument(None)
+g.set_instrument(None, import_instrument_init=False)
 
 VELOCITY_UNITS = "EGU per sec"
 

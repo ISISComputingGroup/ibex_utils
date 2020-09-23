@@ -3,8 +3,8 @@ Task infrastructure.
 """
 import traceback
 
-from installation_and_upgrade.ibex_install_utils.exceptions import UserStop, ErrorInTask
-from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.exceptions import UserStop, ErrorInTask
+from ibex_install_utils.user_prompt import UserPrompt
 
 
 def _run_task_to_completion(task_name, prompt, self_decorated_method, func, args, kwargs):

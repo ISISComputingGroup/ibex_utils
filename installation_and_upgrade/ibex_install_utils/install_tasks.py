@@ -4,14 +4,14 @@ Tasks associated with install
 
 import os
 
-from installation_and_upgrade.ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
-from installation_and_upgrade.ibex_install_utils.tasks.backup_tasks import BackupTasks
-from installation_and_upgrade.ibex_install_utils.tasks.client_tasks import ClientTasks
-from installation_and_upgrade.ibex_install_utils.tasks.mysql_tasks import MysqlTasks
-from installation_and_upgrade.ibex_install_utils.tasks.python_tasks import PythonTasks
-from installation_and_upgrade.ibex_install_utils.tasks.server_tasks import ServerTasks
-from installation_and_upgrade.ibex_install_utils.tasks.system_tasks import SystemTasks
-from installation_and_upgrade.ibex_install_utils.tasks.vhd_tasks import VHDTasks
+from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
+from ibex_install_utils.tasks.backup_tasks import BackupTasks
+from ibex_install_utils.tasks.client_tasks import ClientTasks
+from ibex_install_utils.tasks.mysql_tasks import MysqlTasks
+from ibex_install_utils.tasks.python_tasks import PythonTasks
+from ibex_install_utils.tasks.server_tasks import ServerTasks
+from ibex_install_utils.tasks.system_tasks import SystemTasks
+from ibex_install_utils.tasks.vhd_tasks import VHDTasks
 
 
 class UpgradeInstrument:

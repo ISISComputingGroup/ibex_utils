@@ -5,7 +5,7 @@ import lxml.etree
 import os
 import subprocess
 
-from installation_and_upgrade.ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.user_prompt import UserPrompt
 
 try:
     from contextlib import contextmanager
@@ -14,15 +14,15 @@ except ImportError:
 
 import git
 
-from installation_and_upgrade.ibex_install_utils.exceptions import ErrorInTask, ErrorInRun
-from installation_and_upgrade.ibex_install_utils.motor_params import get_params_and_save_to_file
-from installation_and_upgrade.ibex_install_utils.run_process import RunProcess
-from installation_and_upgrade.ibex_install_utils.task import task
-from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
-from installation_and_upgrade.ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
+from ibex_install_utils.exceptions import ErrorInTask, ErrorInRun
+from ibex_install_utils.motor_params import get_params_and_save_to_file
+from ibex_install_utils.run_process import RunProcess
+from ibex_install_utils.task import task
+from ibex_install_utils.tasks import BaseTasks
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
-from installation_and_upgrade.ibex_install_utils.file_utils import LABVIEW_DAE_DIR, get_latest_directory_path
-from installation_and_upgrade.ibex_install_utils.admin_runner import AdminCommandBuilder
+from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, get_latest_directory_path
+from ibex_install_utils.admin_runner import AdminCommandBuilder
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -184,7 +184,7 @@ class ServerTasks(BaseTasks):
         else:
             exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
                                         "C:\Instrument\Settings\config\common")
-            if exit_code is not 0:
+            if exit_code != 0:
                 raise ErrorInRun("Failed to set up common calibration directory.")
 
     @task("Updating calibrations repository")

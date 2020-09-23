@@ -1,16 +1,15 @@
 import filecmp
 import os
-import shutil
 
 import psutil
 
-from installation_and_upgrade.ibex_install_utils.admin_runner import AdminCommandBuilder
-from installation_and_upgrade.ibex_install_utils.exceptions import UserStop
-from installation_and_upgrade.ibex_install_utils.kafka_utils import add_required_topics
-from installation_and_upgrade.ibex_install_utils.run_process import RunProcess
-from installation_and_upgrade.ibex_install_utils.task import task
-from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
-from installation_and_upgrade.ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH
+from ibex_install_utils.admin_runner import AdminCommandBuilder
+from ibex_install_utils.exceptions import UserStop
+from ibex_install_utils.kafka_utils import add_required_topics
+from ibex_install_utils.run_process import RunProcess
+from ibex_install_utils.task import task
+from ibex_install_utils.tasks import BaseTasks
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH
 
 GIGABYTE = 1024 ** 3
 

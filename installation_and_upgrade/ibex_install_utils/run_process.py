@@ -5,7 +5,7 @@ Running processes infrastructure.
 import os
 import subprocess
 
-from installation_and_upgrade.ibex_install_utils.exceptions import ErrorInRun
+from ibex_install_utils.exceptions import ErrorInRun
 
 
 class RunProcess:

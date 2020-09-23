@@ -2,9 +2,9 @@ import os
 import shutil
 
 
-from installation_and_upgrade.ibex_install_utils.task import task
-from installation_and_upgrade.ibex_install_utils.tasks import BaseTasks
-from installation_and_upgrade.ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
+from ibex_install_utils.task import task
+from ibex_install_utils.tasks import BaseTasks
+from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
     PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH, GUI_PATH_E4
 
 ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH)

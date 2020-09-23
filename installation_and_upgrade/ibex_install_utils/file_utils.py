@@ -5,7 +5,7 @@ Filesystem utility classes
 import os
 import shutil
 import time
-from installation_and_upgrade.ibex_install_utils.exceptions import UserStop
+from ibex_install_utils.exceptions import UserStop
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
