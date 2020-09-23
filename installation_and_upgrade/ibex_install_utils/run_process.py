@@ -69,7 +69,7 @@ class RunProcess:
                 output = subprocess.Popen(command_line, cwd=self._working_dir,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
-                output_lines, err = output.communicate(" ")
+                output_lines, err = output.communicate(b" ")
 
                 for line in output_lines.splitlines():
                     print(f"    > {line}")
