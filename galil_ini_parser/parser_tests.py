@@ -6,7 +6,7 @@ from parameterized import parameterized
 
 from typing import Dict
 
-GALIL_CRATE_INDEX = 1
+GALIL_CRATE_INDEX = "G1"
 AXIS_INDEX = "A"
 
 SETTING_STRING_WITHOUT_AXIS = "{setting} = {value}"
@@ -43,7 +43,7 @@ TEST_AXIS_CASES = ([
 
     ("Infinite limits",
      POPULATE_AXIS(7.0, 3.0, 20.0, float("inf"), -1.0*float("inf")),
-     POPULATE_AXIS(20.0, 0.0, 20.0, float("inf"), -1.0*float("inf")))
+     POPULATE_AXIS(20.0, 0.0, 20.0, None, None))
 
 ])
 
@@ -104,7 +104,7 @@ class GalilTests(unittest.TestCase):
 
     def test_GIVEN_settings_on_crate_WHEN_save_string_requested_THEN_first_line_is_crate_identifier(self):
         galil_save_string = self.galil.get_save_string().split("\n")
-        self.assertEqual(galil_save_string[0], "[G{}]".format(GALIL_CRATE_INDEX))
+        self.assertEqual(galil_save_string[0], "[{}]".format(GALIL_CRATE_INDEX))
 
     def test_GIVEN_settings_on_crate_and_axes_WHEN_save_string_requested_THEN_settings_from_crate_and_axes_are_present(self):
         axis_index = "A"

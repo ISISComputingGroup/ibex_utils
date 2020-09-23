@@ -17,21 +17,19 @@ common_setting_names = {
 }
 
 
-
-
 def apply_home_shift(old_homeval: float,
                      old_offset: float,
                      old_user_offset: float,
                      old_hlim: float,
-                     old_llim: float) -> Dict[str, str]:
+                     old_llim: float) -> Dict[str, Optional[str]]:
     """
     Combines both the user and axis offsets into one (the new axis offset).
     Shifts the axis limits by the difference between the old and new home position
 
     Args:
         old_homeval: The current Home Postion in the settings file
-        old_hlim: The current soft max limit in the settings file
-        old_llim: The current soft min limit in the settings file
+        old_hlim: The current soft max limit in the settings file. Returns None (no change) if the limit is infinite
+        old_llim: The current soft min limit in the settings file. Returns None (no change) if the limit is infinite
         old_user_offset: The current user offset in the settings file
         old_offset: The current axis offset in the settings file
     Returns:
@@ -54,12 +52,12 @@ def apply_home_shift(old_homeval: float,
     if abs(old_hlim) != float('inf'):
         new_hlim = old_hlim + difference_in_schemes
     else:
-        new_hlim = old_hlim
+        new_hlim = None
 
     if abs(old_llim) != float('inf'):
         new_llim = old_llim + difference_in_schemes
     else:
-        new_llim = old_llim
+        new_llim = None
 
     new_settings = {
         common_setting_names["OFFSET"]: new_offset,
@@ -110,7 +108,7 @@ class Galil:
         Returns a string which can be written to file containing the settings for all axes on this crate
         """
         settings = []
-        settings.append("[G{}]".format(self.crate_index))
+        settings.append("[{}]".format(self.crate_index))
         for crate_setting, setting_value in self.settings.items():
             settings.append("{setting} = {value}".format(setting=crate_setting, value=setting_value))
         for axis_letter in self.axes.keys():
@@ -149,6 +147,7 @@ class Axis:
         setting = self.scrub_axis_prefix(ini_line)
         split_line = setting.split("=")
         key = split_line[0].strip()
+
         # This captures settings which contain an equals sign in them
         value = "=".join(split_line[1:]).strip()
         self.set_value(key, value, make_new=True)
@@ -186,6 +185,15 @@ class Axis:
         elif make_new:
             self.settings[setting] = value
 
+    def get_motor_resolution(self) -> float:
+        """
+        Calculates the smallest detectable movement for this axis.
+        Movements smaller than this value are equivalent to zero movement.
+        """
+        motor_res = self.get_value(common_setting_names["MOTOR_RES"], float)
+        encoder_res = self.get_value(common_setting_names["ENCODER_RES"], float)
+        return 1.0/min(motor_res, encoder_res)
+
 
 def extract_galil_settings_from_file(filename: str) -> Dict[str, Galil]:
     """
@@ -195,14 +203,14 @@ def extract_galil_settings_from_file(filename: str) -> Dict[str, Galil]:
         filename: The name of the file containing galil settings
 
     Returns:
-        galil_crates: Dictionary containing the Galil settings held in file 
+        galil_crates: Dictionary containing the Galil settings held in file
     """
     galil_crates = {}
     with open(filename, 'r') as f:
         for line in f:
             # New galil crate if line starts [Gx]
             if line.startswith("[G"):
-                crate_index = int(line[2])
+                crate_index = line.strip().strip("[]")
                 galil_crates[crate_index] = Galil(crate_index)
             elif "=" in line:
                 galil_crates[crate_index].add_ini_line(line)

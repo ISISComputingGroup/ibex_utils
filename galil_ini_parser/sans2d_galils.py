@@ -1,8 +1,9 @@
 import argparse
 import pathlib
-from galil_ini_parser import Galil, Axis, apply_home_shift, common_setting_names, extract_galil_settings_from_file
 
-from typing import Optional
+from distutils.util import strtobool
+
+from galil_ini_parser import apply_home_shift, common_setting_names, extract_galil_settings_from_file
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input_file", help="Input file location", action="store", required=True)
@@ -12,41 +13,17 @@ args = parser.parse_args()
 
 input_file = pathlib.Path(args.input_file)
 output_file = pathlib.Path(args.output_file)
-reference_file = pathlib.Path(args.reference_file)
 
 if input_file == output_file:
     raise RuntimeError("Output file cannot overwrite input file")
 
-#from filenames import input_file, output_file, reference_file
-
-
-def get_motor_resolution(axis: Axis) -> float:
-    """
-    Calculates the smallest detectable movement for this axis.
-    Movements smaller than this value are equivalent to zero movement.
-    """
-    motor_res = axis.get_value(common_setting_names["MOTOR_RES"], float)
-    encoder_res = axis.get_value(common_setting_names["ENCODER_RES"], float)
-    return 1.0/min(motor_res, encoder_res)
-
-
-def float_to_setting_string(value: Optional[float]) -> Optional[str]:
-    """
-    If the input value is not none, return the float as a galil ini string
-    """
-    if value is not None:
-        return "{:8.6f}".format(value)
-
-
 galil_crates = extract_galil_settings_from_file(input_file)
-reference_galils = extract_galil_settings_from_file(reference_file)
 
 for galil in galil_crates.values():
     for axis in galil.axes.values():
-        lowerthresh = 0.5 * get_motor_resolution(axis)
-        #print("Galil {} Axis {}".format(galil.crate_index, axis.axis_index))
+        lowerthresh = 0.5 * axis.get_motor_resolution()
 
-        axis_negated = axis.get_value(common_setting_names["NEGATED"], bool)
+        axis_negated = axis.get_value(common_setting_names["NEGATED"], strtobool)
 
         old_offset = axis.get_value(common_setting_names["OFFSET"], float)
         old_user_offset = axis.get_value(common_setting_names["USER_OFFSET"], float)
@@ -61,21 +38,33 @@ for galil in galil_crates.values():
         new_settings = apply_home_shift(old_homeval, old_offset, old_user_offset, old_hlim, old_llim)
         for setting, value in new_settings.items():
             if value is not None:
-                axis.set_value(setting, float_to_setting_string(value))
-
-for galil in galil_crates.values():
-    reference_galil = reference_galils[galil.crate_index]
-    for axis in galil.axes.values():
-        print("Galil {} Axis {}".format(galil.crate_index, axis.axis_index))
-        reference_axis = reference_galil.axes[axis.axis_index]
-        for setting in axis.settings.keys():
-            # Loop though all the settings, see where the differences are
-            reference = reference_axis.get_value(setting, str)
-            script = axis.get_value(setting, str)
-            if reference != script:
-                print("{} new: {} ref: {}".format(setting, script, reference))
+                print("Setting Galil {galil} Axis {axis} {setting} to {value}".format(
+                    galil=galil.crate_index,
+                    axis=axis.axis_index,
+                    setting=setting,
+                    value="{:8.6f}".format(value)
+                ))
+                axis.set_value(setting, "{:8.6f}".format(value))
 
 with open(output_file, 'w') as f:
     for galil in galil_crates.values():
         f.write(galil.get_save_string())
         f.write("\n")
+
+if args.reference_file is not None:
+    # Compare the new galil settings to a reference file (hand-migrated)
+    reference_file = pathlib.Path(args.reference_file)
+    reference_galils = extract_galil_settings_from_file(reference_file)
+
+    galils_with_new_settings = extract_galil_settings_from_file(output_file)
+    for galil in galils_with_new_settings.values():
+        reference_galil = reference_galils[galil.crate_index]
+        for axis in galil.axes.values():
+            print("Galil {} Axis {}".format(galil.crate_index, axis.axis_index))
+            reference_axis = reference_galil.axes[axis.axis_index]
+            for setting in axis.settings.keys():
+                # Loop though all the settings, see where the differences are
+                reference = reference_axis.get_value(setting, str)
+                script = axis.get_value(setting, str)
+                if reference != script:
+                    print("{} New value: {} Reference value: {}".format(setting, script, reference))
