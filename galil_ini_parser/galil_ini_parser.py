@@ -1,9 +1,71 @@
 import re
 
 from collections import OrderedDict
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 AXIS_NUMBER_REGEX = r"(?<=Axis )\S+"
+
+common_setting_names = {
+    "HOMEVAL": "Home Position",
+    "USER_OFFSET": "User Offset",
+    "OFFSET": "Offset",
+    "LLIM": "Soft Min",
+    "HLIM": "Soft Max",
+    "NEGATED": "Negate Motor Direction",
+    "ENCODER_RES": "Encoder Steps Per Unit",
+    "MOTOR_RES": "Motor Steps Per Unit"
+}
+
+
+def apply_home_shift(old_homeval: float,
+                     old_offset: float,
+                     old_user_offset: float,
+                     old_hlim: float,
+                     old_llim: float) -> Dict[str, str]:
+    """
+    Combines both the user and axis offsets into one (the new axis offset).
+    Shifts the axis limits by the difference between the old and new home position
+
+    Args:
+        old_homeval: The current Home Postion in the settings file
+        old_hlim: The current soft max limit in the settings file
+        old_llim: The current soft min limit in the settings file
+        old_user_offset: The current user offset in the settings file
+        old_offset: The current axis offset in the settings file
+    Returns:
+        new_settings: Dictionary containing the string representation of the updated values.
+    """
+
+    # Nonzero homeval, nonzero offsets
+    old_combined_offset = old_offset + old_user_offset
+    new_offset = old_homeval
+    new_user_offset = 0.0
+    # We need to change the limits to take into account the
+    # Only thing which changes is that the limits don't have the offsets applied,
+    # so need to remember how much we've changed offsets by and change the limits accordingly
+    difference_in_schemes = old_combined_offset - new_offset
+    # the homeval in motor coords needs to be zero
+    # => (homeval - any offsets ) == 0
+    # => new_homeval = combined offsets
+
+    # Infinite limits do not get changed
+    if abs(old_hlim) != float('inf'):
+        new_hlim = old_hlim + difference_in_schemes
+    else:
+        new_hlim = old_hlim
+
+    if abs(old_llim) != float('inf'):
+        new_llim = old_llim + difference_in_schemes
+    else:
+        new_llim = old_llim
+
+    new_settings = {
+        common_setting_names["OFFSET"]: new_offset,
+        common_setting_names["HLIM"]: new_hlim,
+        common_setting_names["LLIM"]: new_llim,
+        common_setting_names["USER_OFFSET"]: new_user_offset
+    }
+    return new_settings
 
 
 class Galil:

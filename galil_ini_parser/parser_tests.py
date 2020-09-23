@@ -78,7 +78,7 @@ class GalilTests(unittest.TestCase):
         extracted_axis_letter = self.galil.get_axis_letter_from_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
                                                                                                      setting=new_setting,
                                                                                                      value=setting_value))
-     
+
         self.assertEqual(axis_index, extracted_axis_letter)
 
     def test_GIVEN_setting_line_with_axis_label_WHEN_that_axis_does_not_exist_THEN_new_axis_is_made(self):
