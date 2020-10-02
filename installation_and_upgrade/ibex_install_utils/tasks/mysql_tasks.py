@@ -26,7 +26,7 @@ except ImportError:
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.19"
+MYSQL_LATEST_VERSION = "8.0.21"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          f"mysql-{MYSQL_LATEST_VERSION}-winx64.zip")
 
@@ -295,7 +295,7 @@ class MysqlTasks(BaseTasks):
         mysql_8_exe = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe")
 
         if os.path.exists(mysql_8_exe):
-            version = subprocess.check_output(f"{mysql_8_exe} --version")
+            version = subprocess.check_output(f"{mysql_8_exe} --version", encoding='UTF-8')
             if MYSQL_LATEST_VERSION in version and not force:
                 answer = self.prompt.prompt(f"MySQL already appears to be on the latest version ({MYSQL_LATEST_VERSION}) "
                                             f"- would you like to "
