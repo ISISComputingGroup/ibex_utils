@@ -1,4 +1,3 @@
-setlocal
 REM Upgrade a training machine
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases

@@ -1,5 +1,3 @@
-setlocal EnableDelayedExpansion
-
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 rem set "RELEASE-SUFFIX="
 
@@ -22,7 +20,7 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
   set "PYTHONHOME=%LATEST_PYTHON_DIR%"
   set "PYTHONPATH=%LATEST_PYTHON_DIR%"
   call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_pre_stop
-  IF !errorlevel! neq 0 goto ERROR
+  IF ERRORLEVEL 1 goto ERROR
   ENDLOCAL
   start /wait cmd /c "%STOP_IBEX%")
 )

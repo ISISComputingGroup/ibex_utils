@@ -1,4 +1,3 @@
-setlocal
 call "%~dp0\define_latest_genie_python.bat" 3
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases\4.0.0"
 
