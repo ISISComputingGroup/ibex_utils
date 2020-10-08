@@ -2,7 +2,7 @@ setlocal
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 set "SUFFIX=%1"
-call "%~dp0\define_latest_genie_python.bat"
+call "%~dp0\define_latest_genie_python.bat" 3
 IF %errorlevel% neq 0 (
     echo Cannot define latest python.
     EXIT /b %errorlevel%

@@ -6,13 +6,15 @@ load the script into a genie_python console and run as a standard user script.
 import csv
 from genie_python import genie as g
 
+g.set_instrument(None, import_instrument_init=False)
+
 VELOCITY_UNITS = "EGU per sec"
 
 PV, AXIS_NAME = "PV", "Axis Name"
 SETPOINT, POSITION = "Setpoint", "Position"
 OFF = "User Offset"
 LOW_LIM, HIGH_LIM = "Soft Low Limit", "Soft High Limit"
-VELO, MAX_VELO = "Velocity ({})".format(VELOCITY_UNITS), "Max Velocity ({})".format(VELOCITY_UNITS)
+VELO, MAX_VELO = f"Velocity ({VELOCITY_UNITS})", f"Max Velocity ({VELOCITY_UNITS})"
 ACCEL = "Acceleration (Time to Velocity)"
 UNITS = "Units"
 MOTOR_RES, INV_MOTOR_RES = "Motor Step Size (EGU per step)", "Motor Step Size (step per EGU)"
@@ -100,10 +102,10 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
         for axis in range(1, 9):
             axis_pv = g.prefix_pv_name("MOT:MTR{:02d}{:02d}".format(motor, axis))
             if pv_exists(axis_pv):
-                print("Gathering data for {}".format(axis_pv))
+                print(f"Gathering data for {axis_pv}")
                 data.append(get_params_for_one_axis(axis_pv))
 
-    print("Saving to {}".format(file_reference.name))
+    print(f"Saving to {file_reference.name}")
 
     writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction='ignore')
     writer.writeheader()

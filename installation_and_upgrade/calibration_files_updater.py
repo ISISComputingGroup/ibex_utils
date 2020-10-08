@@ -15,7 +15,7 @@ from six.moves import input
 FNULL = open(os.devnull, 'w')
 
 
-class CalibrationsFolder(object):
+class CalibrationsFolder:
     """
     Context manager for accessing calibration folders on remote instruments.
     """
@@ -27,19 +27,19 @@ class CalibrationsFolder(object):
         """
         Returns: True if disconnect is successful, else False.
         """
-        return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), '/del', '/y'],
+        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', '/del', '/y'],
                                stdout=FNULL, stderr=FNULL) == 0
 
     def connect_to_drive(self):
         """
         Returns: True if the connection is successful, else False
         """
-        return subprocess.call(['net', 'use', '{}:'.format(CalibrationsFolder.DRIVE_LETTER), self.network_location,
-                                '/user:{}'.format(self.username_with_domain), self.password],
+        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', self.network_location,
+                                f'/user:{self.username_with_domain}', self.password],
                                stdout=FNULL, stderr=FNULL) == 0
 
     def __init__(self, instrument_host, username, password):
-        self.username_with_domain = "{}\\{}".format(instrument_host, username)
+        self.username_with_domain = f"{instrument_host}\\{username}"
         self.network_location = r'\\{}\c$\Instrument\Settings\config\common'.format(instrument_host)
         self.password = password
 
@@ -75,26 +75,26 @@ def update_instrument(host, username, password, logger, dry_run=False):
     Returns:
         Success: Whether the update completed successfully
     """
-    logging.info("Updating {}".format(host))
+    logging.info(f"Updating {host}")
     success = False
     with CalibrationsFolder(host, username, password) as repo:
         if repo is None:
-            logger.warning("Unable to connect to host, {}".format(host))
+            logger.warning(f"Unable to connect to host, {host}")
         elif "master" not in repo.git.branch():
-            logger.warning("The calibrations folder on {} does not point at the master branch".format(host))
+            logger.warning(f"The calibrations folder on {host} does not point at the master branch")
         elif len(repo.git.diff()) > 0:
-            logger.warning("The calibrations folder on {} has uncommitted changes".format(host))
+            logger.warning(f"The calibrations folder on {host} has uncommitted changes")
         elif dry_run:
-            logger.info("{} has passed all status checks, but not updated as this is a dry run".format(host))
+            logger.info(f"{host} has passed all status checks, but not updated as this is a dry run")
             success = True
         else:
             try:
-                logger.info("Performing git pull on {}".format(host))
+                logger.info(f"Performing git pull on {host}")
                 repo.git.pull()
                 logger.info("Pull successful")
                 success = True
             except git.GitCommandError as e:
-                logger.error("Git pull on {} failed with error: {}".format(host, e))
+                logger.error(f"Git pull on {host} failed with error: {e}")
     return success
 
 

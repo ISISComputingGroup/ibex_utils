@@ -7,35 +7,36 @@ TICKET = "Ticket2162:"
 
 # Severe log line
 SEVERE = "SEVERE:"
-SEVERE_LINE_START = "{0} {1}".format(SEVERE, TICKET)
+SEVERE_LINE_START = f"{SEVERE} {TICKET}"
 
-class LogLine():
+
+class LogLine:
     def __init__(self, time, pv, message):
         self.time = time
         self.message = message.strip()
         self.pv = pv.strip()
+
     def __repr__(self):
-        dateTimeString = datetime.strftime(self.time, "%H:%M:%S.%f")
-        return "{time}: {message}".format(time=dateTimeString, message=self.message)
+        date_time_string = datetime.strftime(self.time, "%H:%M:%S.%f")
+        return f"{date_time_string}: {self.message}"
 
 
 def parse_severe_line(previous_line, line):
 
-
     # Mar 22, 2017 12:04:24 PM org.epics.pvmanager.SourceDesiredRateDecoupler sendDesiredRateEvent
     pattern = r"(.* (?:AM|PM)).*"
     match = re.match(pattern, previous_line)
-    dateString, = match.groups()
-    dateTime = datetime.strptime(dateString, '%b %d, %Y %I:%M:%S %p')
+    date_string, = match.groups()
+    date_time = datetime.strptime(date_string, '%b %d, %Y %I:%M:%S %p')
     # SEVERE: Ticket2162: TE:NDW1407:CS:IOC:INSTETC_01:DEVIOS:TOD - PVDirector event connected true
 
     match = re.match(SEVERE_LINE_START + "(.*) - (.*)", line)
     if match is None:
-        exit("ERROR: servere message not match {0}".format(line))
+        exit(f"ERROR: servere message not match {line}")
 
     pv, message = match.groups()
 
-    return LogLine(dateTime, pv, message)
+    return LogLine(date_time, pv, message)
 
 
 def parse_normal_line(line):
@@ -44,7 +45,7 @@ def parse_normal_line(line):
     pattern = r"\*(.*) \[.*" + TICKET + r"(.*) - (.*)"
     match = re.match(pattern, line)
     if match is None:
-        print "Can not understand {0}".format(line)
+        print(f"Can not understand {line}")
         return None
 
     time_string, pv, message = match.groups()
@@ -66,7 +67,7 @@ def check_time(time, start_time_hour, start_time_mins, start_time_secs):
 
 def print_and_log(log_file, message):
     print(message)
-    log_file.write("\n{0}".format(message))
+    log_file.write(f"\n{message}")
 
 
 def read_log_files(log_file, day, month):
@@ -77,19 +78,18 @@ def read_log_files(log_file, day, month):
     pvChanges = []
     previous_line = ""
     for filepath in filepaths:
-        print_and_log(log_file, "Reading: {0}".format(filepath))
+        print_and_log(log_file, f"Reading: {filepath}")
+        with open(filepath) as file:
+            for line in file:
+                if TICKET in line:
+                    if line.startswith(SEVERE):
+                        pvChange = parse_severe_line(previous_line, line)
+                    else:
+                        pvChange = parse_normal_line(line)
 
-        for line in file(filepath):
-
-            if TICKET in line:
-                if line.startswith(SEVERE):
-                    pvChange = parse_severe_line(previous_line, line)
-                else:
-                    pvChange = parse_normal_line(line)
-
-                if pvChange is not None:
-                    pvChanges.append(pvChange)
-            previous_line = line
+                    if pvChange is not None:
+                        pvChanges.append(pvChange)
+                previous_line = line
 
     return sorted(pvChanges, key=lambda student: student.time)
 
@@ -97,19 +97,19 @@ def read_log_files(log_file, day, month):
 def log_changed_pvs(log_file, pvChanges):
     print_and_log(log_file, "PVS:")
     for pv_name in set([x.pv for x in pvChanges]):
-        print_and_log(log_file, "    {0}".format(pv_name))
+        print_and_log(log_file, f"    {pv_name}")
     print_and_log(log_file, "\n\n")
 
 
 def log_pv_timeline(log_file, pvChanges, wanted_pvs):
-    print_and_log(log_file, "Timeline for {0}".format(wanted_pvs))
+    print_and_log(log_file, f"Timeline for {wanted_pvs}")
     for pvChange in pvChanges:
         if pvChange.pv in wanted_pvs:
             print_and_log(log_file, "{0:>20} = {1}".format(pvChange.pv.strip()[-20:], pvChange))
 
 
 def log_events_after_time(log_file, pvChanges, start_time_hour, start_time_mins, start_time_secs):
-    print_and_log(log_file, "Timeline after {0}:{1}:{2}".format(start_time_hour, start_time_mins, start_time_secs))
+    print_and_log(log_file, f"Timeline after {start_time_hour}:{start_time_mins}:{start_time_secs}")
     for pvChange in pvChanges:
         if check_time(pvChange.time, start_time_hour, start_time_mins, start_time_secs):
             print_and_log(log_file, "{0:>20} = {1}".format(pvChange.pv.strip()[-20:], pvChange))
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     start_time_mins = 24
     start_time_secs = 00
 
-    with file(r"c:\tmp\ibexLog{0}-{1}.txt".format(month, day), mode="w") as log_file:
+    with open(r"c:\tmp\ibexLog{0}-{1}.txt".format(month, day), mode="w") as log_file:
         pvChanges = read_log_files(log_file, day, month)
 
         log_changed_pvs(log_file, pvChanges)
@@ -140,6 +140,6 @@ if __name__ == "__main__":
         log_pv_timeline(log_file, pvChanges, ["TE:NDW1407:CS:SB:TEMP1", "all"])
         # log_pv_timeline(log_file, pvChanges, ["TE:NDW1407:SIMPLE:NUMBERED1", "unknown", "buffer"])
 
-        #log_events_after_time(log_file, pvChanges, start_time_hour, start_time_mins, start_time_secs)
+        # log_events_after_time(log_file, pvChanges, start_time_hour, start_time_mins, start_time_secs)
 
-        #log_flow_control(log_file, pvChanges)
+        # log_flow_control(log_file, pvChanges)

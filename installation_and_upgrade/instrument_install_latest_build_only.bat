@@ -7,7 +7,9 @@ REM normally will use EPICS_win7_x64 or EPICS_CLEAN_win7_x64 depending on increm
 REM with prefix specified will use {prefix}_win7_x64 and {prefix}_CLEAN_win7_x64 for server install source directory
 setlocal
 
-call "%~dp0\define_latest_genie_python.bat"
+set PYTHONUNBUFFERED=TRUE
+
+call "%~dp0\define_latest_genie_python.bat" 3
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server.bat"
@@ -27,12 +29,8 @@ set errcode=%ERRORLEVEL%
 popd
 IF %errcode% neq 0 GOTO :ERROR
 
-call "%~dp0install_latest_isisicp.bat" 2
-IF %ERRORLEVEL% neq 0 GOTO :ERROR
-
 GOTO :EOF
 
 :ERROR
-popd
 echo "Error on Install"
 exit /b 2

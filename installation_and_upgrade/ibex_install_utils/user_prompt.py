@@ -5,7 +5,7 @@ from .exceptions import UserStop
 import six.moves
 
 
-class UserPrompt(object):
+class UserPrompt:
     """
     A user prompt object to ask the user questions.
     """
@@ -23,7 +23,7 @@ class UserPrompt(object):
         self._automatic = automatic
         self._confirm_steps = confirm_steps
 
-    def prompt(self, prompt_text, possibles, default, case_sensitive=False):
+    def prompt(self, prompt_text, possibles, default, case_sensitive=False, show_automatic_answer=True):
         """
         Prompt the user for an answer and check that answer. If in auto mode just answer the default
         Args:
@@ -31,12 +31,14 @@ class UserPrompt(object):
             possibles: allowed answers
             default: default answer if in automatic mode, if None still ask the user even in automatic mode
             case_sensitive: is the answer case sensitive
+            show_automatic_answer: whether the default answer should be printed in automatic mode
 
         Returns: answer from possibles
 
         """
         if self._automatic and default is not None:
-            print("{prompt} : {default}".format(prompt=prompt_text, default=default))
+            _answer = default if show_automatic_answer else "(hidden)"
+            print(f"{prompt_text} : {_answer}")
             return default
         elif possibles is UserPrompt.ANY:
             return six.moves.input(prompt_text).strip()
@@ -49,7 +51,7 @@ class UserPrompt(object):
             for possible in possibles:
                 if answer == possible or (not case_sensitive and possible.lower() == answer.lower()):
                     return possible
-            print("Answer is not allowed can be one of ({0})".format(possibles))
+            print(f"Answer is not allowed can be one of ({possibles})")
 
     def confirm_step(self, step_text):
         """
@@ -62,7 +64,7 @@ class UserPrompt(object):
         """
         if not self._confirm_steps or self._automatic:
             return True
-        return self._get_user_answer("Do step '{0}'? : ".format(step_text), ("Y", "N")) == "Y"
+        return self._get_user_answer(f"Do step '{step_text}'? : ", ("Y", "N")) == "Y"
 
     def prompt_and_raise_if_not_yes(self, message, default="N"):
         """
@@ -73,5 +75,5 @@ class UserPrompt(object):
             default: default answer if in automatic mode
         Raises UserStop: if the user does not answer Y
         """
-        if self.prompt("{}\nType Y when done.".format(message), possibles=["Y", "N"], default=default) != "Y":
+        if self.prompt(f"{message}\nType Y when done.", possibles=["Y", "N"], default=default) != "Y":
             raise UserStop

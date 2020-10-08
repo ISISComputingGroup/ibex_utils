@@ -1,13 +1,9 @@
-import json
 import os
 
-import zlib
-
-import six
-from genie_python import genie as g
+from genie_python.utilities import dehex_and_decompress
 
 
-class CaWrapper(object):
+class CaWrapper:
     """
     Wrapper around genie python's channel access class providing some useful abstractions.
     """
@@ -17,7 +13,18 @@ class CaWrapper(object):
         Setting instrument is necessary because genie_python is being run from a network drive so it may not know
         where it is.
         """
-        g.set_instrument(os.getenv("MYPVPREFIX"))
+        self.g = None
+
+    def _get_genie(self):
+
+        # Do import locally (late) as otherwise it writes logs to c:\instrument\var which interferes with VHD deploy.
+        if self.g is not None:
+            return self.g
+
+        from genie_python import genie as g
+        self.g = g
+        self.g.set_instrument(os.getenv("MYPVPREFIX"), import_instrument_init=False)
+        return g
 
     def get_local_pv(self, name):
         """
@@ -29,7 +36,7 @@ class CaWrapper(object):
         Returns:
             None if the PV was not connected
         """
-        return g.get_pv(name, is_local=True)
+        return self._get_genie().get_pv(name, is_local=True)
 
     def get_object_from_compressed_hexed_json(self, name):
         """
@@ -45,20 +52,24 @@ class CaWrapper(object):
         if data is None:
             return None
         else:
-            return json.loads(zlib.decompress(data.decode('hex')))
+            return dehex_and_decompress(data)
 
-    @six.wraps(g.get_blocks)
     def get_blocks(self):
         """
         Returns:
             A collection of blocks, or None if the PV was not connected
         """
-        return g.get_blocks()
+        return self._get_genie().get_blocks()
 
-    @six.wraps(g.cget)
     def cget(self, block):
         """
         Returns:
             A collection of blocks, or None if the PV was not connected.
         """
-        return g.cget(block)
+        return self._get_genie().cget(block)
+
+    def set_pv(self, *args, **kwargs):
+        """
+        Sets the value of a PV.
+        """
+        return self._get_genie().set_pv(*args, **kwargs)

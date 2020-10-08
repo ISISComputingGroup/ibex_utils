@@ -3,7 +3,6 @@
 Uses h5py to extract given log values from an ISIS NeXus file over a given time period. It is assumed
 that the control software has logged when values changed.
 """
-from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 # std imports
 from argparse import ArgumentParser
@@ -12,7 +11,6 @@ from datetime import datetime, timedelta
 import logging
 import os.path as osp
 import sys
-
 # third party imports
 from h5py import (File as HDF5File)
 import numpy as np
@@ -83,7 +81,7 @@ def find_log_info(h5group, start_timestamp, rel_time_start):
     """
     Assumes that the times in the time array are relative to run start
     :param h5group: The open log entry group
-    :param start_time: Start datetime of run
+    :param start_timestamp: Start datetime of run
     :param rel_time_start: A time relative to run start to begin processing logs
     :return: A tuple of (time, value) pairs for each change in log value
     """
@@ -92,11 +90,11 @@ def find_log_info(h5group, start_timestamp, rel_time_start):
     # find first time entry
     rel_time_indices = np.where(all_times >= -rel_time_start)[0]
     if rel_time_indices.size == 0:
-        LOGGER.warning('No times found within given time frame in "{}"'.format(h5group.name))
+        LOGGER.warning(f'No times found within given time frame in "{h5group.name}"')
         return None
     all_values = times_and_values[VALUE_ENTRY].value
     if all_values.size != all_times.size:
-        LOGGER.warning('times/values array size mismatch in "{}"'.format(h5group.name))
+        LOGGER.warning(f'times/values array size mismatch in "{h5group.name}"')
         return None
 
     # find indices where the values change
@@ -125,7 +123,7 @@ def find_log_info(h5group, start_timestamp, rel_time_start):
 def write_out(info, out_file):
     """
     :param info: The dictionary of log information
-    :param outfile: Destination to write output
+    :param out_file: Destination to write output
     """
     for log_name, values in iteritems(info):
         out_file.write(log_name + "\n")
@@ -144,7 +142,7 @@ def main():
     args = parse_args()
 
     if not osp.exists(args.filepath):
-        fatal('File {} does exist.'.format(args.filepath))
+        fatal(f'File {args.filepath} does not exist.')
 
     try:
         h5file = HDF5File(args.filepath, mode='r')

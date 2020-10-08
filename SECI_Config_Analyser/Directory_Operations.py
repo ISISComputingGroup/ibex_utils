@@ -8,7 +8,7 @@ from fnmatch import fnmatch
 import xml.etree.ElementTree as ET
 
 
-class ReadConfigFiles(object):
+class ReadConfigFiles:
     """
     Reads SECI configuration files and extracts VI names
     """
@@ -53,33 +53,31 @@ class ReadConfigFiles(object):
         vis_in_files = []
 
         for filename in filenames:
-
             filename_and_path = self.full_path + filename
             vis_in_file = self._parse_file(filename_and_path)
             vis_in_files.extend(vis_in_file)
 
         return vis_in_files
 
-    def _parse_file(self, filename_and_path):
+    @staticmethod
+    def _parse_file(filename_and_path):
         """
         reads XML file and creates list of values for "FilePath" tag
         :param filename_and_path: absolute path of file to be parsed
         :return: vis_in_file: list of  VIs in file
         """
 
-        # print "File being processed: " + filename_and_path
-
         vis_in_file = []
         tree = ET.parse(filename_and_path)
         root = tree.getroot()
         for child in root.iter('FilePath'):
-
             vi_path = ET.tostring(child, encoding=None, method="text")
             vis_in_file.append(vi_path.strip())
 
         return vis_in_file
 
-    def _remove_duplicates(self, input_list):
+    @staticmethod
+    def _remove_duplicates(input_list):
         """
         remove duplicates from list, then sort alphabetically
         :param input_list: input list
@@ -113,12 +111,6 @@ class ReadConfigFiles(object):
         """
 
         config_vis = self._remove_duplicates(self._parse_vis_from_files(self.config_filenames))
-        comp_vis   = self._remove_duplicates(self._parse_vis_from_files(self.comp_filenames))
-
-        # print "Config VIs"
-        # print "\n".join(config_vis)
-        #
-        # print "Component VIs"
-        # print "\n".join(comp_vis)
+        comp_vis = self._remove_duplicates(self._parse_vis_from_files(self.comp_filenames))
 
         return config_vis, comp_vis
