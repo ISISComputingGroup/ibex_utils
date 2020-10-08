@@ -2,7 +2,6 @@ setlocal EnableDelayedExpansion
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 rem set "RELEASE-SUFFIX="
-call "%~dp0\define_latest_genie_python.bat"
 
 git --version
 

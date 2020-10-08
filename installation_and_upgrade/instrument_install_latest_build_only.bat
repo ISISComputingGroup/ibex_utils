@@ -25,9 +25,7 @@ if "%1" == "INCR" (
 )
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --quiet %INSTALL_TYPE%
-set errcode=%ERRORLEVEL%
-popd
-IF %errcode% neq 0 GOTO :ERROR
+IF %errorlevel% neq 0 GOTO :ERROR
 
 GOTO :EOF
 

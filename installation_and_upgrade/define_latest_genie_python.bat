@@ -5,7 +5,6 @@ REM   LATEST_PYTHON is set to a version on genie_python that can be run
 
 set "KITS_ICP_PATH=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"
 
-set "KITS_ICP_PATH=%cd%"
 if "%1" == "3" (
     set "GENIE_DIR=%KITS_ICP_PATH%\genie_python_3"
 ) else (
