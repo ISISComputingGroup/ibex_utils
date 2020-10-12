@@ -68,7 +68,7 @@ class GalilTests(unittest.TestCase):
     def test_GIVEN_setting_line_with_no_axis_label_THEN_line_gets_added_to_crate_settings(self):
         new_setting = "Setting"
         setting_value = "value"
-        self.galil.add_ini_line(SETTING_STRING_WITHOUT_AXIS.format(setting=new_setting, value=setting_value))
+        self.galil.parse_line(SETTING_STRING_WITHOUT_AXIS.format(setting=new_setting, value=setting_value))
 
         self.assertEqual(self.galil.settings[new_setting], setting_value)
 
@@ -89,7 +89,7 @@ class GalilTests(unittest.TestCase):
 
         self.assertNotIn(axis_index, self.galil.axes.keys())
 
-        self.galil.add_ini_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
+        self.galil.parse_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
                                                                 setting=new_setting, value=setting_value))
 
         self.assertIn(axis_index, self.galil.axes.keys())
@@ -98,7 +98,7 @@ class GalilTests(unittest.TestCase):
         axis_index = "A"
         new_setting = "Setting"
         setting_value = "value"
-        self.galil.add_ini_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
+        self.galil.parse_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
                                                                 setting=new_setting, value=setting_value))
 
         self.assertEqual(self.galil.axes[axis_index].settings[new_setting], setting_value)

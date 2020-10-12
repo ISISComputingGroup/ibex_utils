@@ -26,7 +26,7 @@ output_contents = []
 
 for galil in galil_crates.values():
     for axis in galil.axes.values():
-        lowerthresh = 0.5 * axis.get_motor_resolution()
+        lowerthresh = 0.5 * axis.get_smallest_movement()
 
         axis_negated = axis.get_value(common_setting_names["NEGATED"], strtobool)
 

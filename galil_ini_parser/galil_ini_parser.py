@@ -28,27 +28,24 @@ def apply_home_shift(old_homeval: float,
 
     Args:
         old_homeval: The current Home Postion in the settings file
-        old_hlim: The current soft max limit in the settings file. Returns None (no change) if the limit is infinite
-        old_llim: The current soft min limit in the settings file. Returns None (no change) if the limit is infinite
+        old_hlim: The current soft max limit in the settings file.
+        old_llim: The current soft min limit in the settings file.
         old_user_offset: The current user offset in the settings file
         old_offset: The current axis offset in the settings file
     Returns:
         new_settings: Dictionary containing the string representation of the updated values.
     """
 
-    # Nonzero homeval, nonzero offsets
     old_combined_offset = old_offset + old_user_offset
+
+    # Set offset = homeval, so home position written to device is (homeval - offset) = 0
     new_offset = old_homeval
     new_user_offset = 0.0
-    # We need to change the limits to take into account the
-    # Only thing which changes is that the limits don't have the offsets applied,
-    # so need to remember how much we've changed offsets by and change the limits accordingly
-    difference_in_schemes = old_combined_offset - new_offset
-    # the homeval in motor coords needs to be zero
-    # => (homeval - any offsets ) == 0
-    # => new_homeval = combined offsets
 
-    # Infinite limits do not get changed
+    # Distance to shift the limits by to maintain distance from limits to home position
+    difference_in_schemes = old_combined_offset - new_offset
+
+    # Infinite limits do not get changed (set to None)
     if abs(old_hlim) != float('inf'):
         new_hlim = old_hlim + difference_in_schemes
     else:
@@ -74,12 +71,13 @@ class Galil:
         self.settings = OrderedDict()
         self.axes = {}
 
-    def add_ini_line(self, line) -> None:
+    def parse_line(self, line) -> None:
         """
         Adds a line of the galil ini file to this class
         """
         axis_index = self.get_axis_letter_from_line(line)
         if axis_index is None:
+            # Not referring to an axis so is a global setting for crate
             setting, value = line.split("=")
             setting = setting.strip()
             value = value.strip()
@@ -107,8 +105,7 @@ class Galil:
         """
         Returns a strings can containing all settings for all axes on this crate
         """
-        settings = []
-        settings.append("[{}]".format(self.crate_index))
+        settings = ["[{}]".format(self.crate_index)]
         for crate_setting, setting_value in self.settings.items():
             settings.append("{setting} = {value}".format(setting=crate_setting, value=setting_value))
         for axis_letter in self.axes.keys():
@@ -134,11 +131,9 @@ class Axis:
             ini_line: Line from the ini file
 
         Returns:
-            setting: String containing "setting_name = value" pair 
+            String containing "setting_name = value" pair 
         """
-        # Scrub the Axis prefix from the line
-        setting = ini_line[len(self.axis_line_prefix):].strip()
-        return setting
+        return ini_line[len(self.axis_line_prefix):].strip()
 
     def add_setting_from_ini_line(self, ini_line: str):
         """
@@ -158,7 +153,7 @@ class Axis:
 
         Args:
             setting: The name of the setting to get
-            type: Function which casts string to expected type of setting
+            caster: Function which casts string to expected type of setting
 
         Returns:
             value: The setting, cast to 'type'. Is None if the setting does not exist for this axis
@@ -180,12 +175,10 @@ class Axis:
             value: A string representation of the value to set
             make_new: If True, create a new setting even if it does not currently exist
         """
-        if setting in self.settings.keys():
-            self.settings[setting] = value
-        elif make_new:
+        if setting in self.settings.keys() or make_new:
             self.settings[setting] = value
 
-    def get_motor_resolution(self) -> float:
+    def get_smallest_movement(self) -> float:
         """
         Calculates the smallest detectable movement for this axis.
         Movements smaller than this value are equivalent to zero movement.
@@ -212,7 +205,7 @@ def extract_galil_settings_from_file(file: List[str]) -> Dict[str, Galil]:
             crate_index = line.strip().strip("[]")
             galil_crates[crate_index] = Galil(crate_index)
         elif "=" in line:
-            galil_crates[crate_index].add_ini_line(line)
+            galil_crates[crate_index].parse_line(line)
         else:
             print("Line did not contain valid setting or galil identifier information, ignoring: {}".format(line))
 
