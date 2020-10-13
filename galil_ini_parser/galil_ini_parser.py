@@ -132,7 +132,7 @@ class Axis:
             ini_line: Line from the ini file
 
         Returns:
-            String containing "setting_name = value" pair 
+            String containing "setting_name = value" pair
         """
         return ini_line[len(self.axis_line_prefix):].strip()
 
@@ -148,26 +148,28 @@ class Axis:
         value = "=".join(split_line[1:]).strip()
         self.set_value(key, value, make_new=True)
 
-    def get_value(self, setting: str, caster: Any) -> Optional[Any]:
+    def get_value(self, setting: str, caster: Any, default_value: Any = None) -> Optional[Any]:
         """
         Attempts to get the setting for this axis and cast it to type 'type'.
 
         Args:
             setting: The name of the setting to get
             caster: Function which casts string to expected type of setting
+            default_value: If present, this is the value to be returned if the setting was not found
 
         Returns:
-            value: The setting, cast to 'type'. Is None if the setting does not exist for this axis
+            value: The setting, cast using supplied caster.
+                   Is None if the setting does not exist on this axis and default_value not set
         """
 
         try:
             value = caster(self.settings[setting])
         except KeyError:
-            value = None
+            value = default_value if default_value is not None else None
 
         return value
 
-    def set_value(self, setting: str, value: str, make_new=False) -> None:
+    def set_value(self, setting: str, value: str, make_new: bool = False) -> None:
         """
         Sets the setting with the specified value
 

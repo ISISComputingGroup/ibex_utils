@@ -28,8 +28,8 @@ for galil in galil_crates.values():
     for axis in galil.axes.values():
         axis_negated = axis.get_value(common_setting_names["NEGATED"], strtobool)
 
-        old_offset = axis.get_value(common_setting_names["OFFSET"], float)
-        old_user_offset = axis.get_value(common_setting_names["USER_OFFSET"], float)
+        old_offset = axis.get_value(common_setting_names["OFFSET"], float, default_value=0.0)
+        old_user_offset = axis.get_value(common_setting_names["USER_OFFSET"], float, default_value=0.0)
         old_homeval = axis.get_value(common_setting_names["HOMEVAL"], float)
 
         old_hlim = axis.get_value(common_setting_names["HLIM"], float)
