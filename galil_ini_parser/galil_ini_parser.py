@@ -1,5 +1,6 @@
 import re
 
+from math import isclose
 from collections import OrderedDict
 from typing import Optional, Any, Dict, List
 
@@ -45,7 +46,7 @@ def apply_home_shift(old_homeval: float,
     # Distance to shift the limits by to maintain distance from limits to home position
     difference_in_schemes = old_combined_offset - new_offset
 
-    # Infinite limits do not get changed (set to None)
+    # Infinite limits do not get changed (set to None so can be ignored)
     if abs(old_hlim) != float('inf'):
         new_hlim = old_hlim + difference_in_schemes
     else:
@@ -177,15 +178,6 @@ class Axis:
         """
         if setting in self.settings.keys() or make_new:
             self.settings[setting] = value
-
-    def get_smallest_movement(self) -> float:
-        """
-        Calculates the smallest detectable movement for this axis.
-        Movements smaller than this value are equivalent to zero movement.
-        """
-        motor_res = self.get_value(common_setting_names["MOTOR_RES"], float)
-        encoder_res = self.get_value(common_setting_names["ENCODER_RES"], float)
-        return 1.0/min(motor_res, encoder_res)
 
 
 def extract_galil_settings_from_file(file: List[str]) -> Dict[str, Galil]:
