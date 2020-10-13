@@ -23,6 +23,7 @@ with open(input_file) as f:
 galil_crates = extract_galil_settings_from_file(file_contents)
 
 output_contents = []
+warnings = []
 
 for galil in galil_crates.values():
     for axis in galil.axes.values():
@@ -36,7 +37,7 @@ for galil in galil_crates.values():
         old_llim = axis.get_value(common_setting_names["LLIM"], float)
 
         if axis_negated:
-            print("Warning! This axis has a negated direction, check its output is sane")
+            warnings.append("Warning! Script untested on axes with NEGATED set to True. Manually verify distances from home position to limits are unchanged for axis {}/{}.".format(galil.crate_index, axis.axis_index))
 
         new_settings = apply_home_shift(old_homeval, old_offset, old_user_offset, old_hlim, old_llim)
         for setting, value in new_settings.items():
@@ -74,3 +75,6 @@ if args.reference_file is not None:
                 script = axis.get_value(setting, str)
                 if reference != script:
                     print("{} New value: {} Reference value: {}".format(setting, script, reference))
+
+for warning in warnings:
+    print(warning)
