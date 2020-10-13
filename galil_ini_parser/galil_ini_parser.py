@@ -1,6 +1,5 @@
 import re
 
-from math import isclose
 from collections import OrderedDict
 from typing import Optional, Any, Dict, List
 
