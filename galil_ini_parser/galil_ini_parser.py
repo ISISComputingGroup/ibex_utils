@@ -154,17 +154,16 @@ class Axis:
         Args:
             setting: The name of the setting to get
             caster: Function which casts string to expected type of setting
-            default_value: If present, this is the value to be returned if the setting was not found
+            default_value: The value to be returned if the setting was not found
 
         Returns:
-            value: The setting, cast using supplied caster.
-                   Is None if the setting does not exist on this axis and default_value not set
+            value: The setting, cast using supplied caster. Equals default_value if setting does not exist on this axis
         """
 
         try:
             value = caster(self.settings[setting])
         except KeyError:
-            value = default_value if default_value is not None else None
+            value = default_value
 
         return value
 
