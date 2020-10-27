@@ -28,6 +28,8 @@ CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master"
 
 CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 
+INST_SCRIPTS_PATH = os.path.join(INSTRUMENT_BASE_DIR, "Scripts")
+
 SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
@@ -171,6 +173,33 @@ class ServerTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
 
         RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
+
+    @task("Install shared instrument scripts repository")
+    def install_shared_scripts_repository(self):
+        """
+        Install shared instrument scripts repository containing
+        """
+        if os.path.isdir(INST_SCRIPTS_PATH):
+            if self.prompt.prompt("Scripts directory already exists. Update Scripts repository?",
+                                  ["Y", "N"], "Y") == "Y":
+                self.update_shared_scripts_repository()
+        else:
+            exit_code = subprocess.call("git clone https://github.com/ISISNeutronMuon/InstrumentScripts.git "
+                                        "{}".format(INST_SCRIPTS_PATH))
+            if exit_code != 0:
+                raise ErrorInRun("Failed to install shared scripts repository.")
+
+    @task("Set up shared instrument scripts library")
+    def update_shared_scripts_repository(self):
+        """
+        Update the shared instrument scripts repository containing
+        """
+        try:
+            repo = git.Repo(INST_SCRIPTS_PATH)
+            repo.git.pull()
+        except git.GitCommandError:
+            self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the shared scripts repo.\n"
+                                                    "Manually pull it. Path='{}'".format(INST_SCRIPTS_PATH))
 
     @task("Set up calibrations repository")
     def setup_calibrations_repository(self):
