@@ -4,13 +4,13 @@ Convert RHFE sensor data into the correct format for ISIS
 
 import os
 from io import open
-import glob
 import argparse
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 ORIGINAL_FILE_EXTENSION = ".dat"
 OUTPUT_FILE_EXTENSION = ".txt"
+
 
 def get_input_output_folders():
     parser = argparse.ArgumentParser(description='Get the input and output folder')
@@ -50,10 +50,10 @@ if __name__ == "__main__":
             if original_file_name.endswith(ORIGINAL_FILE_EXTENSION):
                 print(f"Found dat file {original_file_name}")
                 output_file_name = "{}{}".format(
-                    original_file_name.strip(ORIGINAL_FILE_EXTENSION),OUTPUT_FILE_EXTENSION
+                    original_file_name.strip(ORIGINAL_FILE_EXTENSION), OUTPUT_FILE_EXTENSION
                 )
                 with open(os.path.join(root, original_file_name), mode='r', encoding='utf-8') as original_file,\
-                    open(os.path.join(output_folder, output_file_name), mode='w+', encoding='utf-8') as output_file:
+                        open(os.path.join(output_folder, output_file_name), mode='w+', encoding='utf-8') as output_file:
                     # Strip first 3 lines from file
                     for x in range(3):
                         next(original_file)
@@ -66,7 +66,6 @@ if __name__ == "__main__":
                 break
         else:
             print(f"Could not find {ORIGINAL_FILE_EXTENSION} file in {root}")
-            
 
     print(
         "Finished converting, please check files and then copy and commit to the correct repo "
