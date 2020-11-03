@@ -311,7 +311,4 @@ UPGRADE_TYPES = {
     'dismount_vhds': (
         UpgradeInstrument.dismount_vhds,
         "task to dismount VHDs if needed"),
-    'windows_10_vhd_deploy': (
-        UpgradeInstrument.windows_10_vhd_deploy,
-        "task to configure IBEX on a machine which has had IBEX VHDs mounted on it"),
 }
