@@ -264,7 +264,7 @@ class UpgradeInstrument:
         """
         Task which configures IBEX on a machine where the VHDs have been mounted.
         """
-        self._mysql_tasks.install_mysql(force=True)
+        self._mysql_tasks.setup_mysql_service(clean_install=False)
 
 
 # All possible upgrade tasks

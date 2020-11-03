@@ -210,7 +210,12 @@ class MysqlTasks(BaseTasks):
             clean_install: True to destroy and recreate data directories
         """
         self._create_mysql_binaries()
+        self.setup_mysql_service(clean_install)
 
+        if clean_install:
+            self._setup_database_users_and_tables(vhd_install=False)
+
+    def setup_mysql_service(self, clean_install):
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         admin_commands = AdminCommandBuilder()
@@ -240,9 +245,6 @@ class MysqlTasks(BaseTasks):
         admin_commands.run_all()
 
         sleep(5)  # Time for service to start
-
-        if clean_install:
-            self._setup_database_users_and_tables(vhd_install=False)
 
     @task("Install latest MySQL for VHD deployment")
     def install_mysql_for_vhd(self):
