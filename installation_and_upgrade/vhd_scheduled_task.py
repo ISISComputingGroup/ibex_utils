@@ -12,7 +12,7 @@ from ibex_install_utils.user_prompt import UserPrompt
 if __name__ == "__main__":
     try:
         prompt = UserPrompt(automatic=True, confirm_steps=False)
-        upgrade_instrument = UpgradeInstrument(prompt, None, None, None, None)
+        upgrade_instrument = UpgradeInstrument(prompt, None, None, None, None, None)
         upgrade_instrument.dismount_vhds()
         upgrade_instrument.mount_vhds()
     except UserStop:
