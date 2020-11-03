@@ -260,6 +260,12 @@ class UpgradeInstrument:
         """
         self._vhd_tasks.dismount_vhds()
 
+    def windows_10_vhd_deploy(self):
+        """
+        Task which configures IBEX on a machine where the VHDs have been mounted.
+        """
+        self._mysql_tasks.install_mysql(force=True)
+
 
 # All possible upgrade tasks
 UPGRADE_TYPES = {
@@ -305,4 +311,7 @@ UPGRADE_TYPES = {
     'dismount_vhds': (
         UpgradeInstrument.dismount_vhds,
         "task to dismount VHDs if needed"),
+    'windows_10_vhd_deploy': (
+        UpgradeInstrument.windows_10_vhd_deploy,
+        "task to configure IBEX on a machine which has had IBEX VHDs mounted on it"),
 }
