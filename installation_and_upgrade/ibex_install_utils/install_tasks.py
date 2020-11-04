@@ -248,6 +248,10 @@ class UpgradeInstrument:
 
         self._vhd_tasks.deploy_vhds()
 
+    def run_patch_release(self):
+        self.run_truncate_database()
+        self._system_tasks.copy_dll()
+
     def mount_vhds(self):
         """
         Task which actually mounts the VHDs (will be run as admin)
@@ -305,4 +309,8 @@ UPGRADE_TYPES = {
     'dismount_vhds': (
         UpgradeInstrument.dismount_vhds,
         "task to dismount VHDs if needed"),
+    'patch_release': (
+        UpgradeInstrument.run_patch_release,
+        "patch release fix"
+    )
 }

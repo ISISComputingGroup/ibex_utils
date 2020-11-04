@@ -1,5 +1,6 @@
 import filecmp
 import os
+import shutil
 
 import psutil
 
@@ -9,7 +10,8 @@ from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, INST_SHARE_AREA
+from ibex_install_utils.file_utils import FileUtils
 
 GIGABYTE = 1024 ** 3
 
@@ -17,6 +19,8 @@ RAM_MIN = 7.5 * GIGABYTE  # 8 GB minus a small tolerance.
 RAM_NORMAL_INSTRUMENT = 13 * GIGABYTE  # Should be 14GB ideally, but allow anything over 13GB.
 FREE_DISK_MIN = 30 * GIGABYTE
 
+COM_DLL_PATH_DEST = os.path.join(APPS_BASE_DIR, "Epics", "base", "master", "bin", "windows-x64")
+COM_DLL_PATH_FROM_SRC = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "epics_dll", "com.dll")
 
 USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
 PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
@@ -265,6 +269,18 @@ class SystemTasks(BaseTasks):
         admin_commands.add_command("del", f'"{to_path}"')
         admin_commands.add_command("copy", f'"{from_path}" "{to_path}"')
         admin_commands.run_all()
+
+    @task("copy dll")
+    def copy_dll(self):
+        """
+        copy dll over to fix 49.7 days roll over issue
+        :return:
+        """
+        if os.path.exists(COM_DLL_PATH_FROM_SRC):
+            print("copying dll over to {}".format(COM_DLL_PATH_DEST))
+            shutil.copy(COM_DLL_PATH_FROM_SRC, COM_DLL_PATH_DEST)
+        else:
+            print("{} does not exist".format(COM_DLL_PATH_FROM_SRC))
 
     @task("Restrict Internet Explorer")
     def restrict_ie(self):
