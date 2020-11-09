@@ -244,12 +244,10 @@ class UpgradeInstrument:
             self._server_tasks.setup_calibrations_repository()
             self._server_tasks.update_calibrations_repository()
             self._vhd_tasks.initialize_var_dir()
-        except Exception as e:
-            raise e
-        else:
-            self._vhd_tasks.deploy_vhds()
         finally:
             self._vhd_tasks.request_dismount_vhds()
+
+        self._vhd_tasks.deploy_vhds()
 
     def mount_vhds(self):
         """
