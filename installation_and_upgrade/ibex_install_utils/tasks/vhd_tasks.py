@@ -144,7 +144,7 @@ class VHDTasks(BaseTasks):
             # Remove directory junction
             admin_commands.add_command(
                 "cmd",
-                r'/c f"rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
+                r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
                 expected_return_val=None,
             )
 
