@@ -129,8 +129,12 @@ class ServerTasks(BaseTasks):
         inst_scripts_path = os.path.join(inst_config_path, "Python")
         if not os.path.exists(os.path.join(inst_scripts_path, f"init_{inst_name.lower()}.py")):
             try:
-                os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
-                          os.path.join(inst_scripts_path, f"init_{inst_name.lower()}.py"))
+                generic_inst_file = os.path.join(inst_scripts_path, "init_inst_name.py")
+                specific_inst_file = os.path.join(inst_scripts_path, f"init_{inst_name.lower()}.py")
+                if not os.path.exists(specific_inst_file):
+                    if not os.path.exists(generic_inst_file):
+                        raise IOError("Generic inst file at {} did not exist - cannot proceed".format(generic_inst_file))
+                    os.rename(generic_inst_file, specific_inst_file)
                 subprocess.call(f"git add init_{inst_name.lower()}.py", cwd=inst_scripts_path)
                 subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
                 subprocess.call('git commit -m"create initial python"', cwd=inst_config_path)
