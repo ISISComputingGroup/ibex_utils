@@ -67,6 +67,15 @@ class VHDTasks(BaseTasks):
             sleep(1)
         else:
             os.remove(filename)
+            print("---")
+            print("--- start scheduled task output ---")
+            print("---")
+            with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
+                for line in f.readlines():
+                    print("output from scheduled task: {}".format(line))
+            print("---")
+            print("--- end scheduled task output ---")
+            print("---")
             raise IOError(f"File at {filename} still existed after {timeout}s, check VHD scheduled task is running "
                           f"correctly ")
 
