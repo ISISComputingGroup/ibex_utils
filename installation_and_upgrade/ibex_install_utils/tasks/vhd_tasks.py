@@ -129,6 +129,9 @@ class VHDTasks(BaseTasks):
 
         admin_commands = AdminCommandBuilder()
 
+        # Belt and braces - mysql should already be stopped, but make sure by explicitly stopping it again.
+        admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
+
         for vhd in VHDS:
             # Dismount the VHD
             admin_commands.add_command(
