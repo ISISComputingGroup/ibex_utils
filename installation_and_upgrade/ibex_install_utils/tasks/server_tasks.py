@@ -28,7 +28,7 @@ CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master"
 
 CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 
-SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
+SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
 
