@@ -5,7 +5,7 @@ REM argument 1 is CLEAN or INCR for type of build touse (default: CLEAN)
 REM argument 2 is a server build prefix
 REM normally will use EPICS_win7_x64 or EPICS_CLEAN_win7_x64 depending on incremental/clean
 REM with prefix specified will use {prefix}_win7_x64 and {prefix}_CLEAN_win7_x64 for server install source directory
- 
+
 set PYTHONUNBUFFERED=TRUE
 
 call "%~dp0\define_latest_genie_python.bat" 3
@@ -24,7 +24,7 @@ if "%1" == "INCR" (
 )
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --quiet %INSTALL_TYPE%
-IF ERRORLEVEL 1 GOTO :ERROR
+IF %errorlevel% neq 0 GOTO :ERROR
 
 GOTO :EOF
 
