@@ -95,6 +95,7 @@ class UpgradeInstrument:
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_e4_ibex_client()
         self._server_tasks.upgrade_instrument_configuration()
+        self._server_tasks.install_shared_scripts_repository()
 
     def run_instrument_tests(self):
         """
