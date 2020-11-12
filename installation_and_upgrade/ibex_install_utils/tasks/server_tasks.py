@@ -367,22 +367,6 @@ class ServerTasks(BaseTasks):
         """
         register_icp_commands = AdminCommandBuilder()
 
-        if BaseTasks._get_machine_name() == "NDEMUONFE":
-            print("NDEMUONFE requires an old IOC")
-            for filename in os.listdir(RELEASE_5_5_0_ISISDAE_DIR):
-                if filename.lower() == "isisdae-ioc-01.exe":
-                    continue
-
-                source_path = os.path.join(RELEASE_5_5_0_ISISDAE_DIR, filename)
-                dest_path = os.path.join(EPICS_PATH, "ioc", "master", "ISISDAE", "bin", "windows-x64", filename)
-
-                print(f"Patching {filename}")
-                if os.path.exists(dest_path):
-                    os.remove(dest_path)
-                shutil.copy2(source_path, dest_path)
-            print("ISISDAE successfully patched")
-            return
-
         if icp_in_labview_modules:
             config_filepath = os.path.join(LABVIEW_DAE_DIR, "icp_config.xml")
             root = lxml.etree.parse(config_filepath)
