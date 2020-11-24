@@ -27,6 +27,8 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
 
 REM Set python as share just for script call
 call "%~dp0\define_latest_genie_python.bat" 3
+IF %errorlevel% neq 0 goto ERROR
+
 SETLOCAL
 set "PYTHONDIR=%LATEST_PYTHON_DIR%"
 set "PYTHONHOME=%LATEST_PYTHON_DIR%"
