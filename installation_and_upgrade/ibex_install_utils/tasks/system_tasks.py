@@ -286,7 +286,7 @@ class SystemTasks(BaseTasks):
         git_path = os.path.join(os.path.expanduser("~"), "AppData", "Local", "Programs", "Git", "cmd", "git.exe")
         if os.path.exists(git_path):
             os.system("{} update-git-for-windows".format(git_path))
-            self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly")
+            self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly", default="Y")
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
 

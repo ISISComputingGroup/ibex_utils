@@ -23,7 +23,7 @@ if exist "%GENIE_DIR%\LATEST_BUILD.txt" (
 
 @echo LATEST PYTHON: %LATEST_PYTHON%
 
-goto :EOF
+exit /b 0
 
 :ERROR
 @echo define_latest_genie_python failed

@@ -28,6 +28,8 @@ CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master"
 
 CALIBRATION_PATH = os.path.join(SETTINGS_CONFIG_PATH, "common")
 
+INST_SCRIPTS_PATH = os.path.join(INSTRUMENT_BASE_DIR, "Scripts")
+
 SOURCE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 SOURCE_MACHINE_SETTINGS_CONFIG_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "NDXOTHER")
 SOURCE_MACHINE_SETTINGS_COMMON_PATH = os.path.join(SOURCE_FOLDER, SETTINGS_CONFIG_FOLDER, "common")
@@ -125,10 +127,18 @@ class ServerTasks(BaseTasks):
             subprocess.call(f"git checkout -b {inst_name}", cwd=inst_config_path)
 
         inst_scripts_path = os.path.join(inst_config_path, "Python")
-        if not os.path.exists(os.path.join(inst_scripts_path, f"init_{inst_name.lower()}.py")):
+
+        generic_inst_file = os.path.join(inst_scripts_path, "init_inst_name.py")
+
+        # Specific inst file postfix is inst_name.lower()[3:] as we need to trim off NDE/NDX/NDH/NDW
+        specific_inst_file = os.path.join(inst_scripts_path, f"init_{inst_name.lower()[3:]}.py")
+
+        if not os.path.exists(os.path.join(inst_scripts_path, specific_inst_file)):
             try:
-                os.rename(os.path.join(inst_scripts_path, "init_inst_name.py"),
-                          os.path.join(inst_scripts_path, f"init_{inst_name.lower()}.py"))
+                if not os.path.exists(specific_inst_file):
+                    if not os.path.exists(generic_inst_file):
+                        raise IOError("Generic inst file at {} did not exist - cannot proceed".format(generic_inst_file))
+                    os.rename(generic_inst_file, specific_inst_file)
                 subprocess.call(f"git add init_{inst_name.lower()}.py", cwd=inst_scripts_path)
                 subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
                 subprocess.call('git commit -m"create initial python"', cwd=inst_config_path)
@@ -171,6 +181,33 @@ class ServerTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
 
         RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
+
+    @task("Install shared instrument scripts repository")
+    def install_shared_scripts_repository(self):
+        """
+        Install shared instrument scripts repository containing
+        """
+        if os.path.isdir(INST_SCRIPTS_PATH):
+            if self.prompt.prompt("Scripts directory already exists. Update Scripts repository?",
+                                  ["Y", "N"], "Y") == "Y":
+                self.update_shared_scripts_repository()
+        else:
+            exit_code = subprocess.call("git clone https://github.com/ISISNeutronMuon/InstrumentScripts.git "
+                                        "{}".format(INST_SCRIPTS_PATH))
+            if exit_code != 0:
+                raise ErrorInRun("Failed to install shared scripts repository.")
+
+    @task("Set up shared instrument scripts library")
+    def update_shared_scripts_repository(self):
+        """
+        Update the shared instrument scripts repository containing
+        """
+        try:
+            repo = git.Repo(INST_SCRIPTS_PATH)
+            repo.git.pull()
+        except git.GitCommandError:
+            self.prompt.prompt_and_raise_if_not_yes("There was an error pulling the shared scripts repo.\n"
+                                                    "Manually pull it. Path='{}'".format(INST_SCRIPTS_PATH))
 
     @task("Set up calibrations repository")
     def setup_calibrations_repository(self):
@@ -329,22 +366,6 @@ class ServerTasks(BaseTasks):
             register_icp (bool): whether to re-register the ISISICP program (requires admin rights; interactive only)
         """
         register_icp_commands = AdminCommandBuilder()
-
-        if BaseTasks._get_machine_name() == "NDEMUONFE":
-            print("NDEMUONFE requires an old IOC")
-            for filename in os.listdir(RELEASE_5_5_0_ISISDAE_DIR):
-                if filename.lower() == "isisdae-ioc-01.exe":
-                    continue
-
-                source_path = os.path.join(RELEASE_5_5_0_ISISDAE_DIR, filename)
-                dest_path = os.path.join(EPICS_PATH, "ioc", "master", "ISISDAE", "bin", "windows-x64", filename)
-
-                print(f"Patching {filename}")
-                if os.path.exists(dest_path):
-                    os.remove(dest_path)
-                shutil.copy2(source_path, dest_path)
-            print("ISISDAE successfully patched")
-            return
 
         if icp_in_labview_modules:
             config_filepath = os.path.join(LABVIEW_DAE_DIR, "icp_config.xml")

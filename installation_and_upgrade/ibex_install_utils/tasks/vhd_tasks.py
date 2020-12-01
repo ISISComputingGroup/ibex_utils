@@ -67,6 +67,15 @@ class VHDTasks(BaseTasks):
             sleep(1)
         else:
             os.remove(filename)
+            print("---")
+            print("--- start scheduled task output ---")
+            print("---")
+            with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
+                for line in f.readlines():
+                    print("output from scheduled task: {}".format(line))
+            print("---")
+            print("--- end scheduled task output ---")
+            print("---")
             raise IOError(f"File at {filename} still existed after {timeout}s, check VHD scheduled task is running "
                           f"correctly ")
 
@@ -129,6 +138,9 @@ class VHDTasks(BaseTasks):
 
         admin_commands = AdminCommandBuilder()
 
+        # Belt and braces - mysql should already be stopped, but make sure by explicitly stopping it again.
+        admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
+
         for vhd in VHDS:
             # Dismount the VHD
             admin_commands.add_command(
@@ -141,7 +153,7 @@ class VHDTasks(BaseTasks):
             # Remove directory junction
             admin_commands.add_command(
                 "cmd",
-                r'/c f"rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
+                r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
                 expected_return_val=None,
             )
 

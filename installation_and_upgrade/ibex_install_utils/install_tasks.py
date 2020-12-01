@@ -74,6 +74,9 @@ class UpgradeInstrument:
         self._server_tasks.install_ibex_server()
         self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
+        self._mysql_tasks.install_mysql()
+        self._server_tasks.upgrade_instrument_configuration()
+        self._server_tasks.install_wiring_tables()
         self._client_tasks.install_ibex_client()
         self._system_tasks.upgrade_notepad_pp()
 
@@ -92,6 +95,7 @@ class UpgradeInstrument:
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_e4_ibex_client()
         self._server_tasks.upgrade_instrument_configuration()
+        self._server_tasks.install_shared_scripts_repository()
 
     def run_instrument_tests(self):
         """
