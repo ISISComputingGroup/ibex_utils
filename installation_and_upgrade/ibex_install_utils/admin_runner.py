@@ -69,5 +69,3 @@ def temp_bat_file(contents):
         yield f.name
     finally:
         os.remove(f.name)
-
-
