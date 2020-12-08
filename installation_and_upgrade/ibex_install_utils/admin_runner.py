@@ -71,6 +71,3 @@ def temp_bat_file(contents):
         os.remove(f.name)
 
 
-if __name__ == '__main__':
-    cmd = AdminCommandBuilder()
-    cmd.run_all()
