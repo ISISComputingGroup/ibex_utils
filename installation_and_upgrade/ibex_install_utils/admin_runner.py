@@ -1,5 +1,7 @@
-import os
+import contextlib
+import tempfile
 from time import sleep
+import os
 
 
 class AdminRunner:
@@ -52,13 +54,19 @@ class AdminCommandBuilder:
 
         bat_file += "exit /B 0\r\n"
 
-        filename = os.path.join("C:\\", "Instrument", "temp.bat")
-        with open(filename, "w") as f:
-            f.write(bat_file)
+        with temp_bat_file(bat_file) as f:
+            print(f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. Contents:\r\n{bat_file}")
+            sleep(1)  # Wait for file handle to be closed etc
+            AdminRunner.run_command("cmd", f"/c {f}")
+            sleep(1)  # Wait for commands to fully die etc
 
-        print(f"Executing bat script as admin. Saved as {filename}. Check for an admin prompt. Contents:\r\n{bat_file}")
 
-        sleep(1)  # Wait for file handle to be closed etc
-        AdminRunner.run_command("cmd", f"/c {filename}")
-        sleep(1)  # Wait for commands to fully die etc
-        os.remove(filename)
+@contextlib.contextmanager
+def temp_bat_file(contents):
+    try:
+        f = tempfile.NamedTemporaryFile(mode="w+t", suffix=".bat", delete=False)
+        f.write(contents)
+        f.close()
+        yield f.name
+    finally:
+        os.remove(f.name)
