@@ -51,7 +51,7 @@ class AdminCommandBuilder:
                 bat_file += f"if %errorlevel% neq {expected_return_val} exit /B 1\r\n"
 
         bat_file += "exit /B 0\r\n"
-        file = tempfile.TemporaryFile()
+        file = tempfile.NamedTemporaryFile(suffix=".bat")
 
         try:
             file.write(bat_file.encode("utf-8"))
@@ -63,3 +63,8 @@ class AdminCommandBuilder:
         finally:
             # Closing the file will delete it
             file.close()
+
+
+if __name__ == '__main__':
+    cmd = AdminCommandBuilder()
+    cmd.run_all()
