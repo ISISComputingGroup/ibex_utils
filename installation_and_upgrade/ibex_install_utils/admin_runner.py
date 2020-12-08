@@ -1,4 +1,3 @@
-import os
 import tempfile
 from time import sleep
 
