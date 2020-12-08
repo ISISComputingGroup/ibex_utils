@@ -1,4 +1,5 @@
 import os
+import tempfile
 from time import sleep
 
 
@@ -51,14 +52,15 @@ class AdminCommandBuilder:
                 bat_file += f"if %errorlevel% neq {expected_return_val} exit /B 1\r\n"
 
         bat_file += "exit /B 0\r\n"
+        file = tempfile.TemporaryFile()
 
-        filename = os.path.join("C:\\", "Instrument", "temp.bat")
-        with open(filename, "w") as f:
-            f.write(bat_file)
-
-        print(f"Executing bat script as admin. Saved as {filename}. Check for an admin prompt. Contents:\r\n{bat_file}")
-
-        sleep(1)  # Wait for file handle to be closed etc
-        AdminRunner.run_command("cmd", f"/c {filename}")
-        sleep(1)  # Wait for commands to fully die etc
-        os.remove(filename)
+        try:
+            file.write(bat_file.encode("utf-8"))
+            file.flush()
+            print(f"Executing bat script as admin. Saved as {file.name}. Check for an admin prompt. Contents:\r\n{bat_file}")
+            sleep(1)  # Wait for file handle to be closed etc
+            AdminRunner.run_command("cmd", f"/c {file.name}")
+            sleep(1)  # Wait for commands to fully die etc
+        finally:
+            # Closing the file will delete it
+            file.close()
