@@ -13,7 +13,12 @@ IF %errorlevel% neq 0 GOTO ERROR
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server.bat"
-IF EXIST "C:\Instrument\Apps\EPICS" (call "%STOP_IBEX%")
+IF EXIST "C:\Instrument\Apps\EPICS" (
+    call "%STOP_IBEX%"
+) else (
+    REM in case one has been left around running in the background
+    taskkill /f /im caRepeater.exe
+)
 
 if not "%2" == "" (
     @echo Using server build prefix %2
