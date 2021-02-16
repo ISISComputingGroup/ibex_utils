@@ -65,14 +65,15 @@ class AdminCommandBuilder:
             with temp_bat_file(bat_file) as f:
                 print(f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. Contents:\r\n{bat_file}")
                 sleep(1)  # Wait for file handle to be closed etc
-                AdminRunner.run_command("cmd", f"/c {f}", expected_return_val=0)
+                try:
+                    AdminRunner.run_command("cmd", f"/c {f}", expected_return_val=0)
+                except IOError as e:
+                    print(f"Error while executing bat script: {e}.")
+                    with open(log_file.name) as f:
+                        for line in f.readlines():
+                            print("bat script output: {}".format(line.rstrip()))
+                    raise
                 sleep(1)  # Wait for commands to fully die etc
-        except Exception:
-            print("Error while executing bat script.")
-            with open(log_file.name) as f:
-                for line in f.readlines():
-                    print("bat script output: {}".format(line.rstrip()))
-            raise
         finally:
             os.remove(log_file.name)
 
