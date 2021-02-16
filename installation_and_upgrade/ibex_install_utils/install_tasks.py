@@ -264,6 +264,12 @@ class UpgradeInstrument:
         """
         self._vhd_tasks.dismount_vhds()
 
+    def request_dismount_vhds(self):
+        """
+        Standalone task to request VHDs to be dismounted
+        """
+        self._vhd_tasks.request_dismount_vhds()
+
 
 # All possible upgrade tasks
 UPGRADE_TYPES = {
@@ -309,4 +315,7 @@ UPGRADE_TYPES = {
     'dismount_vhds': (
         UpgradeInstrument.dismount_vhds,
         "task to dismount VHDs if needed"),
+    'request_dismount_vhds': (
+        UpgradeInstrument.request_dismount_vhds,
+        "task to request a dismount of VHDs if needed"),
 }

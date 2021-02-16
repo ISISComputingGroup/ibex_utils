@@ -72,7 +72,7 @@ class VHDTasks(BaseTasks):
             print("---")
             with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
                 for line in f.readlines():
-                    print("output from scheduled task: {}".format(line))
+                    print("output from scheduled task: {}".format(line.rstrip()))
             print("---")
             print("--- end scheduled task output ---")
             print("---")
@@ -137,6 +137,10 @@ class VHDTasks(BaseTasks):
             return
 
         admin_commands = AdminCommandBuilder()
+
+        # Belt and braces - terminate any stray ibex processes that may accidentally be left over
+        if os.path.exists(os.path.join(EPICS_PATH), "stop_ibex_server.bat"):
+            admin_commands.add_command("cmd", "/c C:/Instrument/Apps/EPICS/stop_ibex_server.bat")
 
         # Belt and braces - mysql should already be stopped, but make sure by explicitly stopping it again.
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
