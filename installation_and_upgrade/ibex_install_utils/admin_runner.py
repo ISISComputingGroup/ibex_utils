@@ -68,8 +68,8 @@ class AdminCommandBuilder:
                 AdminRunner.run_command("cmd", f"/c {f}", expected_return_val=0)
             except IOError as e:
                 print(f"Error while executing bat script: {e}.")
-                with open(log_file.name) as f:
-                    for line in f.readlines():
+                with open(log_file.name, "r") as logfile:
+                    for line in logfile.readlines():
                         print("bat script output: {}".format(line.rstrip()))
                 raise
             sleep(1)  # Wait for commands to fully die etc
