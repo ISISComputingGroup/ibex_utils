@@ -51,31 +51,28 @@ class AdminCommandBuilder:
         log_file = tempfile.NamedTemporaryFile(mode="w+t", suffix=".log", delete=False)
         log_file.close()
 
-        try:
-            for cmd, parameters, expected_return_val in self._commands:
+        for cmd, parameters, expected_return_val in self._commands:
 
-                bat_file += f"echo running command: {cmd} {parameters} >> {log_file.name} 2>&1\r\n"
-                bat_file += f"{cmd} {parameters} >> {log_file.name} 2>&1\r\n"
+            bat_file += f"echo running command: {cmd} {parameters} >> {log_file.name} 2>&1\r\n"
+            bat_file += f"{cmd} {parameters} >> {log_file.name} 2>&1\r\n"
 
-                if expected_return_val is not None:
-                    bat_file += f"if %errorlevel% neq {expected_return_val} exit /B 1\r\n"
+            if expected_return_val is not None:
+                bat_file += f"if %errorlevel% neq {expected_return_val} exit /B 1\r\n"
 
-            bat_file += "exit /B 0\r\n"
+        bat_file += "exit /B 0\r\n"
 
-            with temp_bat_file(bat_file) as f:
-                print(f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. Contents:\r\n{bat_file}")
-                sleep(1)  # Wait for file handle to be closed etc
-                try:
-                    AdminRunner.run_command("cmd", f"/c {f}", expected_return_val=0)
-                except IOError as e:
-                    print(f"Error while executing bat script: {e}.")
-                    with open(log_file.name) as f:
-                        for line in f.readlines():
-                            print("bat script output: {}".format(line.rstrip()))
-                    raise
-                sleep(1)  # Wait for commands to fully die etc
-        finally:
-            os.remove(log_file.name)
+        with temp_bat_file(bat_file) as f:
+            print(f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. Contents:\r\n{bat_file}")
+            sleep(1)  # Wait for file handle to be closed etc
+            try:
+                AdminRunner.run_command("cmd", f"/c {f}", expected_return_val=0)
+            except IOError as e:
+                print(f"Error while executing bat script: {e}.")
+                with open(log_file.name) as f:
+                    for line in f.readlines():
+                        print("bat script output: {}".format(line.rstrip()))
+                raise
+            sleep(1)  # Wait for commands to fully die etc
 
 
 @contextlib.contextmanager
