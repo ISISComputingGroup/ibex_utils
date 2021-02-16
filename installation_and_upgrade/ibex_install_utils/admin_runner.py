@@ -71,7 +71,7 @@ class AdminCommandBuilder:
                     print("bat script output: {}".format(line.rstrip()))
             raise
         finally:
-            os.remove(f.name)
+            os.remove(log_file.name)
 
 
 @contextlib.contextmanager
