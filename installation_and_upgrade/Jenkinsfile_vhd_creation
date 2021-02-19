@@ -30,6 +30,22 @@ pipeline {
       }
     }
   }
+
+  post {
+    failure {
+        bat """
+            set BUILD_NUMBER=${env.BUILD_NUMBER}
+            installation_and_upgrade/vhd_build_force_cleanup.bat
+            """
+    }
+
+    unstable {
+        bat """
+            set BUILD_NUMBER=${env.BUILD_NUMBER}
+            installation_and_upgrade/vhd_build_force_cleanup.bat
+            """
+    }
+  }
   
   // The options directive is for configuration that applies to the whole job.
   options {

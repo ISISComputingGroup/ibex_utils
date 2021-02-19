@@ -72,7 +72,7 @@ class VHDTasks(BaseTasks):
             print("---")
             with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
                 for line in f.readlines():
-                    print("output from scheduled task: {}".format(line))
+                    print("output from scheduled task: {}".format(line.rstrip()))
             print("---")
             print("--- end scheduled task output ---")
             print("---")
@@ -150,12 +150,21 @@ class VHDTasks(BaseTasks):
                 expected_return_val=None,
             )
 
-            # Remove directory junction
-            admin_commands.add_command(
-                "cmd",
-                r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
-                expected_return_val=None,
-            )
+            if os.path.exists(f"{vhd.mount_point}_backup") and os.path.exists(f"{vhd.mount_point}"):
+                # Can delete aggressively if we have a backup that we're moving
+                admin_commands.add_command(
+                    "cmd",
+                    r'/c "del /s /q {mount_point}"'.format(mount_point=vhd.mount_point),
+                    expected_return_val=None,
+                )
+            else:
+                # If we don't have a backup then use rmdir to only delete the mount point (does nothing if the dir
+                # is non-empty)
+                admin_commands.add_command(
+                    "cmd",
+                    r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
+                    expected_return_val=None,
+                )
 
             # Restore previous directories to where they were before mounting VHDS
             if os.path.exists(f"{vhd.mount_point}_backup"):
