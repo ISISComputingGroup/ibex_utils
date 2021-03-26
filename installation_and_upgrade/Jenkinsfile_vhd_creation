@@ -32,7 +32,7 @@ pipeline {
   }
 
   post {
-    always {
+    cleanup {
         bat """
             set BUILD_NUMBER=${env.BUILD_NUMBER}
             installation_and_upgrade/vhd_build_force_cleanup.bat
