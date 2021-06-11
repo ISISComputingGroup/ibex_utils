@@ -5,16 +5,12 @@ REM   LATEST_PYTHON is set to a version on genie_python that can be run
 
 set "KITS_ICP_PATH=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"
 
-if "%1" == "3" (
-    set "GENIE_DIR=%KITS_ICP_PATH%\genie_python_3"
-) else (
-    set "GENIE_DIR=%KITS_ICP_PATH%\genie_python"
-)
+set "GENIE_DIR=%KITS_ICP_PATH%\genie_python_3"
 
 if exist "%GENIE_DIR%\LATEST_BUILD.txt" (
 	for /f %%i in ( %GENIE_DIR%\LATEST_BUILD.txt ) do (
-	    set LATEST_PYTHON_DIR=%GENIE_DIR%\BUILD-%%i\Python\
-	    set LATEST_PYTHON=%GENIE_DIR%\BUILD-%%i\Python\python.exe
+	    set LATEST_PYTHON_DIR=%GENIE_DIR%\BUILD-%%i\Python3\
+	    set LATEST_PYTHON=%GENIE_DIR%\BUILD-%%i\Python3\python.exe
 	)
 ) else (
 	@echo Could not access LATEST_BUILD.txt
