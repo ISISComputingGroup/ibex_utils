@@ -70,9 +70,12 @@ class VHDTasks(BaseTasks):
             print("---")
             print("--- start scheduled task output ---")
             print("---")
-            with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
-                for line in f.readlines():
-                    print("output from scheduled task: {}".format(line.rstrip()))
+            try:
+                with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
+                    for line in f.readlines():
+                        print("output from scheduled task: {}".format(line.rstrip()))
+            except FileNotFoundError:
+                print("File {} doesn't exist no log available".format(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy")))
             print("---")
             print("--- end scheduled task output ---")
             print("---")
