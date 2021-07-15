@@ -15,7 +15,7 @@ set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 IF EXIST "C:\Instrument\Apps\EPICS" (
   REM use python 3 for pre stop as requires genie
   SETLOCAL
-  call "%~dp0define_latest_genie_python.bat" 3
+  call "%~dp0define_latest_genie_python.bat"
   call C:\Instrument\Apps\EPICS\config_env.bat
   set "PYTHONDIR=!LATEST_PYTHON_DIR!"
   set "PYTHONHOME=!LATEST_PYTHON_DIR!"
@@ -27,7 +27,7 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
 )
 
 REM Set python as share just for script call
-call "%~dp0define_latest_genie_python.bat" 3
+call "%~dp0define_latest_genie_python.bat"
 IF %errorlevel% neq 0 goto ERROR
 
 SETLOCAL
