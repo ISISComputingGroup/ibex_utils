@@ -26,7 +26,7 @@ except ImportError:
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.21"
+MYSQL_LATEST_VERSION = "8.0.25"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          f"mysql-{MYSQL_LATEST_VERSION}-winx64.zip")
 
@@ -116,6 +116,7 @@ class MysqlTasks(BaseTasks):
 
         if clean_install:
             self._remove_old_mysql_data_dir()
+
 
     def _remove_old_mysql_data_dir(self):
         if os.path.exists(MYSQL_FILES_DIR):
