@@ -17,6 +17,7 @@ pipeline {
     stage("Checkout") {
       steps {
         timeout(time: 100, unit: 'MINUTES') {
+          bat "echo %USERNAME%"
           echo "Branch: ${env.BRANCH_NAME}"
           checkout scm
         }
