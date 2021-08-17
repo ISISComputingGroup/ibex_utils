@@ -1,7 +1,7 @@
 setlocal
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 set "SUFFIX=%1"
-call "%~dp0\define_latest_genie_python.bat" 3
+call "%~dp0\define_latest_genie_python.bat"
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
 git --version
