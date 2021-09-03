@@ -23,20 +23,20 @@ def connect_to_mysql(host, username, password, database):
         print("Connection closed")
 
 
-def get_blocks(connection):
+def get_alarm_history_of_blocks(connection):
     cursor = connection.cursor()
-    query = "SELECT channel_id, name FROM archive.channel WHERE name like '%CS:SB%';"
+    query = "SELECT archive.sample.channel_id, blocks.name, smpl_time, severity_id, status_id, nanosecs FROM (archive.sample INNER JOIN (SELECT channel_id, name FROM archive.channel WHERE name like '%CS:SB%') AS blocks ON archive.sample.channel_id = blocks.channel_id) WHERE severity_id != 1 AND severity_id != 5;"
     cursor.execute(query)
-    blocks = [(channel_id, name) for channel_id, name in cursor]
+    alarm_history_of_blocks = [(channel_id, name, smpl_time, severity_id, status_id, nanosecs) for channel_id, name, smpl_time, severity_id, status_id, nanosecs in cursor]
     cursor.close()
-    return blocks
+    return alarm_history_of_blocks
     
 
 def main(host, username, password, database):
     with connect_to_mysql(host, username, password, database) as connection:
         print(f"Connected with {connection}")
-        blocks = get_blocks(connection)
-        print(blocks)
+        alarm_history_of_blocks = get_alarm_history_of_blocks(connection)
+        print(alarm_history_of_blocks)
 
 
 
