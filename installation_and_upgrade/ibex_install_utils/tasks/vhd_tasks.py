@@ -120,6 +120,13 @@ class VHDTasks(BaseTasks):
                     .format(driveletter_file=driveletter_file)
             )
 
+            # If parent of mount point doesn't exist mklink will fail, create it to avoid this 
+            vhd_mount_point_parent = os.path.dirname(vhd.mount_point)
+            if not os.path.exists(vhd_mount_point_parent):
+                admin_commands.add_command(
+                "powershell",
+                r'-command "&cmd /c mkdir {mount_point_parent}"'.format(mount_point_parent=vhd_mount_point_parent))
+
             # Create a directory junction from the mount point to the disk's assigned drive letter
             admin_commands.add_command(
                 "powershell",
