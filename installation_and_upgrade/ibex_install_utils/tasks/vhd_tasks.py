@@ -70,9 +70,12 @@ class VHDTasks(BaseTasks):
             print("---")
             print("--- start scheduled task output ---")
             print("---")
-            with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
-                for line in f.readlines():
-                    print("output from scheduled task: {}".format(line.rstrip()))
+            try:
+                with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
+                    for line in f.readlines():
+                        print("output from scheduled task: {}".format(line.rstrip()))
+            except FileNotFoundError:
+                print("File {} doesn't exist no log available".format(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy")))
             print("---")
             print("--- end scheduled task output ---")
             print("---")
@@ -120,6 +123,13 @@ class VHDTasks(BaseTasks):
                     .format(driveletter_file=driveletter_file)
             )
 
+            # If parent of mount point doesn't exist mklink will fail, create it to avoid this 
+            vhd_mount_point_parent = os.path.dirname(vhd.mount_point)
+            if not os.path.exists(vhd_mount_point_parent):
+                admin_commands.add_command(
+                "powershell",
+                r'-command "&cmd /c mkdir {mount_point_parent}"'.format(mount_point_parent=vhd_mount_point_parent))
+
             # Create a directory junction from the mount point to the disk's assigned drive letter
             admin_commands.add_command(
                 "powershell",
@@ -157,14 +167,13 @@ class VHDTasks(BaseTasks):
                     r'/c "del /s /q {mount_point}"'.format(mount_point=vhd.mount_point),
                     expected_return_val=None,
                 )
-            else:
-                # If we don't have a backup then use rmdir to only delete the mount point (does nothing if the dir
-                # is non-empty)
-                admin_commands.add_command(
-                    "cmd",
-                    r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
-                    expected_return_val=None,
-                )
+            # If we don't have a backup then use rmdir to only delete the mount point (does nothing if the dir
+            # is non-empty)
+            admin_commands.add_command(
+                "cmd",
+                r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
+                expected_return_val=None,
+            )
 
             # Restore previous directories to where they were before mounting VHDS
             if os.path.exists(f"{vhd.mount_point}_backup"):
