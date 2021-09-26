@@ -290,6 +290,20 @@ class SystemTasks(BaseTasks):
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
 
+    @task("Select galil driver")
+    def select_galil_driver(self):
+        """
+        Select galil driver to use
+        """
+        print("Do you wish the old (N) or new (Y) galil driver to be the current default to run?")
+        print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
+        print("(This defaults to Y purely to help system test automated installs)")
+        answer = self.prompt.prompt("Use new Galil driver? [Y/N]", ["Y", "N"], "Y")
+        if answer == "Y":
+            RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["NEW"]).run()
+        else:
+            RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
+
     def confirm(self, message):
         """
         Ask user to confirm correct script was chosen.
