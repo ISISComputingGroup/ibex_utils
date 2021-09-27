@@ -297,8 +297,7 @@ class SystemTasks(BaseTasks):
         """
         print("Should the old (N) or new (Y) Galil driver be the current default to run?")
         print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
-        print("(This defaults to new (Y) purely to help system test automated installs)")
-        answer = self.prompt.prompt("Make new Galil driver the default? [Y/N]", ["Y", "N"], "Y")
+        answer = self.prompt.prompt("Make new Galil driver the default? [Y/N]", ["Y", "N"], "N")
         if answer == "Y":
             RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["NEW"]).run()
         else:

@@ -94,7 +94,10 @@ class UpgradeInstrument:
         self._server_tasks.update_icp(self.icp_in_labview_modules(), register_icp=False)
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_e4_ibex_client()
-        self._system_tasks.select_galil_driver()
+## this is used by install_latest_build_only which is used by jenkins system tests. We would like the default 
+## for instrument install/deploy to be old driver for now, so need to leave this commented out to
+## get new driver in jenkins 
+#        self._system_tasks.select_galil_driver()
         self._server_tasks.upgrade_instrument_configuration()
         self._server_tasks.install_shared_scripts_repository()
 
