@@ -5,6 +5,7 @@ REM argument 1 is CLEAN or INCR for type of build touse (default: CLEAN)
 REM argument 2 is a server build prefix
 REM normally will use EPICS_win7_x64 or EPICS_CLEAN_win7_x64 depending on incremental/clean
 REM with prefix specified will use {prefix}_win7_x64 and {prefix}_CLEAN_win7_x64 for server install source directory
+setlocal
 
 set PYTHONUNBUFFERED=TRUE
 
