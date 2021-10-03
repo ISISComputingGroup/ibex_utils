@@ -203,23 +203,9 @@ class MysqlTasks(BaseTasks):
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
 
-    def _install_latest_mysql8(self, clean_install):
-        """
-        Install the latest mysql. If this is a clean install remove old data directories first and create a new
-        database
-        Args:
-            clean_install: True to destroy and recreate data directories
-        """
-        self._create_mysql_binaries()
-
+    def _setup_mysql8_service(self):
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
-
         admin_commands = AdminCommandBuilder()
-        if clean_install:
-            os.makedirs(MYSQL_FILES_DIR)
-
-            admin_commands.add_command(mysqld, '--datadir="{}" --initialize-insecure --console --log-error-verbosity=3'
-                                       .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
         # Wait for initialize since admin runner can't wait for completion.
         # Maybe we can detect completion another way?
@@ -239,6 +225,26 @@ class MysqlTasks(BaseTasks):
                                             r"program=C:\Instrument\Apps\MySQL\Bin\mysqld.exe enable=yes")
 
         admin_commands.run_all()
+
+    def _install_latest_mysql8(self, clean_install):
+        """
+        Install the latest mysql. If this is a clean install remove old data directories first and create a new
+        database
+        Args:
+            clean_install: True to destroy and recreate data directories
+        """
+        self._create_mysql_binaries()
+
+        if clean_install:
+            os.makedirs(MYSQL_FILES_DIR)
+            mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
+
+            admin_commands = AdminCommandBuilder()
+            admin_commands.add_command(mysqld, '--datadir="{}" --initialize-insecure --console --log-error-verbosity=3'
+                                       .format(os.path.join(MYSQL_FILES_DIR, "data")))
+            admin_commands.run_all()
+
+        self._setup_mysql8_service()
 
         sleep(5)  # Time for service to start
 
@@ -314,6 +320,15 @@ class MysqlTasks(BaseTasks):
         self._configure_mysql()
         if backup_data:
             self._reload_backup_data()
+
+    @task("Configure MySQL for VHD post install")
+    def configure_mysql_for_vhd_post_install(self):
+        """
+        configure mysql after vhd is deployed to an instrukent/mdt build
+        """
+        self._setup_mysql8_service()
+
+        sleep(5)  # Time for service to start
 
     @task("Backup database")
     def backup_database(self):

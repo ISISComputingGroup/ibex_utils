@@ -248,6 +248,7 @@ class UpgradeInstrument:
             self._python_tasks.install_genie_python3()
             self._mysql_tasks.install_mysql_for_vhd()
             self._client_tasks.install_e4_ibex_client()
+            self._system_tasks.select_galil_driver()
             self._server_tasks.setup_config_repository()
             self._server_tasks.upgrade_instrument_configuration()
             self._server_tasks.setup_calibrations_repository()
@@ -276,6 +277,14 @@ class UpgradeInstrument:
         """
         self._vhd_tasks.request_dismount_vhds()
 
+    def run_vhd_post_install(self):
+        """
+        This job is run by the MDT build system when it has built a windows image and mounted the VHDS
+        It will tidy up and remaining jobs that were not possible when the vdh was created e.g. register mysql service
+        """
+        #self._system_tasks.select_galil_driver()
+        #self._server_tasks.update_icp(self.icp_in_labview_modules())
+        self._mysql_tasks.configure_mysql_for_vhd_post_install()
 
 # All possible upgrade tasks
 UPGRADE_TYPES = {
@@ -324,4 +333,7 @@ UPGRADE_TYPES = {
     'request_dismount_vhds': (
         UpgradeInstrument.request_dismount_vhds,
         "task to request a dismount of VHDs if needed"),
+    'run_vhd_post_install' : (
+        UpgradeInstrument.run_vhd_post_install,
+        "Run final task on system after VHD has been mounted locally"),
 }
