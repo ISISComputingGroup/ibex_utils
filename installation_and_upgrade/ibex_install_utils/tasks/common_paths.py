@@ -5,6 +5,7 @@ APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
 INST_SHARE_AREA = os.path.join(r"\\isis.cclrc.ac.uk", "inst$")
 
+SETTINGS_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Settings")
 SETTINGS_CONFIG_FOLDER = os.path.join("Settings", "config")
 SETTINGS_CONFIG_PATH = os.path.join(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER)
 
