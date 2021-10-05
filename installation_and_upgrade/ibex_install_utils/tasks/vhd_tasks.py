@@ -33,7 +33,7 @@ VHD_MOUNT_DISMOUNT_TIMEOUT = 300
 
 
 REMOTE_VHD_SRC_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "chris")
-REMOTE_VHD_DEST_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "ICP", "VHDS")
+REMOTE_VHD_DEST_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "ICP", "W10Clone", "VHDS")
 LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
 
 
@@ -192,7 +192,7 @@ class VHDTasks(BaseTasks):
         if self._ibex_version is not None:
             build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Releases", "{}".format(self._ibex_version))
         else:
-            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Build{}".format(os.environ["BUILD_NUMBER"]))
+            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Builds", "Build{}".format(os.environ["BUILD_NUMBER"]))
         os.makedirs(build_folder)
 
         for vhd in VHDS:
