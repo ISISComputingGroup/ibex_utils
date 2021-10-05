@@ -8,11 +8,7 @@ pipeline {
       label "create_vhd"
     }
   }
-  
-  triggers {
-    upstream(upstreamProjects: 'EPICS_IOC_Windows7_x64_CLEAN', threshold: hudson.model.Result.SUCCESS)
-  }
-  
+    
   stages {  
     stage("Checkout") {
       steps {
