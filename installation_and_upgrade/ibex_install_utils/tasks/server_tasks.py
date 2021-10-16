@@ -383,7 +383,7 @@ class ServerTasks(BaseTasks):
             else:
                 print(f"DAE type {dae_type} not recognised, not installing ICP")
                 return
-            self.prompt.confirm_step(f"Upgrade DAE{dae_type} type ICP found in Labview Modules")
+            self.prompt.confirm_step(f"Upgrade ICP found in Labview Modules? (Detected type: DAE{dae_type})")
             icp_path = get_latest_directory_path(os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "ISISICP",
                                                               f"DAE{dae_type}"), "")
 
