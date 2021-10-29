@@ -9,7 +9,7 @@ from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_IOC_PATH, EPICS_PATH
 
 GIGABYTE = 1024 ** 3
 
@@ -289,19 +289,37 @@ class SystemTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly", default="Y")
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
+    
+    def ioc_dir_exists(self, ioc_dirname):
+        full_ioc_path = os.path.join(EPICS_IOC_PATH, ioc_dirname)
+        return os.path.exists(full_ioc_path)
 
     @task("Select galil driver")
     def select_galil_driver(self):
         """
         Select galil driver to use
         """
-        print("Should the old (N) or new (Y) Galil driver be the current default to run?")
-        print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
-        answer = self.prompt.prompt("Make new Galil driver the default? [Y/N]", ["Y", "N"], "N")
-        if answer == "Y":
+        if not self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
+            print("Should the old (N) or new (Y) Galil driver be the current default to run?")
+            print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
+            answer = self.prompt.prompt("Make new Galil driver the default? [Y/N]", ["Y", "N"], "N")
+            if answer == "Y":
+                RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["NEW"]).run()
+            else:
+                RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
+            return False
+        elif self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
             RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["NEW"]).run()
-        else:
-            RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
+            print("Step to swap galil back to the old version after install will need to be run (this is part of the install script, just need to select yes).")
+            return True
+        return False
+    
+    @task("Swap galil back to old")
+    def swap_galil_to_old(self):
+        """
+        Swap galil back to old.
+        """
+        RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
 
     def confirm(self, message):
         """
