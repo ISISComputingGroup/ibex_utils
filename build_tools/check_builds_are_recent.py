@@ -1,6 +1,7 @@
 import os
 from typing import Union
 from datetime import datetime
+import sys
 
 def format_build_num_without_dash(build_num):
     return f"BUILD{build_num}"
@@ -35,27 +36,39 @@ def modified_in_last_x_days(dir, x_days):
     timedelta_since_last_modification = datetime_now - datetime_of_last_modification
     return timedelta_since_last_modification.days < x_days
 
-def confirm_success_or_failure(latest_build):
+def was_modified_recently(latest_build):
     x_days = 5
     last_modified_datetime = get_formatted_last_modified_datetime(latest_build)
-    if modified_in_last_x_days(latest_build, x_days):
+    modified_recently = modified_in_last_x_days(latest_build, x_days)
+    if modified_recently:
         print(f"SUCCESS: {latest_build} has been modified in the last {x_days} days. Last modified: {last_modified_datetime}")
     else:
         print(f"WARNING: {latest_build} modified longer than {x_days} ago. Last modified: {last_modified_datetime}")
+    return modified_recently
 
 def check_build_dir(build_dir, directory_formatter):
     latest_build = get_latest_build(build_dir, directory_formatter)
+    modified_recently = False
     if latest_build is None:
-            print(f"WARNING: Could not get latest build dir from {build_dir}")
+        print(f"WARNING: Could not get latest build dir from {build_dir}")
     else:
-        confirm_success_or_failure(latest_build)
+        modified_recently = was_modified_recently(latest_build)
+    return modified_recently
 
 def check_build_dirs(build_dirs):
+    build_dirs_not_modified_recently = []
     for build_dir in build_dirs:
         directory = build_dir[0]
         directory_formatter = build_dir[1]
         build_dir_full_path = os.path.join(kits_root, directory)
-        check_build_dir(build_dir_full_path, directory_formatter)
+        modified_recently = check_build_dir(build_dir_full_path, directory_formatter)
+        if not modified_recently:
+            build_dirs_not_modified_recently.append(build_dir_full_path)
+    return build_dirs_not_modified_recently
 
 if __name__ == "__main__":
-    check_build_dirs(build_dirs)
+    build_dirs_not_modified_recently = check_build_dirs(build_dirs)
+    if build_dirs_not_modified_recently:
+        sys.exit(1)
+    else:
+        sys.exit(0)

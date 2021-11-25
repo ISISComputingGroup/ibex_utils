@@ -1,0 +1,32 @@
+#!groovy
+
+pipeline {
+
+    agent {  
+        label {
+            label "scriptchecker"
+        }
+    }
+
+    triggers {
+        cron('H 1 * * *')
+    }
+
+    stages {  
+
+        stage("Checkout") {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage("Check Instrument Scripts") {
+            steps {
+                bat """
+                    dir
+                    call check_builds_are_recent.bat
+                """
+            }
+        }
+    }
+}
