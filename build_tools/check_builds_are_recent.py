@@ -2,14 +2,22 @@ import os
 from typing import Union
 from datetime import datetime
 
-kits_root = r"\\isis\inst$\kits$\CompGroup\ICP"
-build_dirs = ["Client_E4"]
+def format_build_num_without_dash(build_num):
+    return f"BUILD{build_num}"
 
-def get_latest_build(dir) -> Union[None, str]:
+def format_build_num_with_dash(build_num):
+    return f"BUILD-{build_num}"
+
+kits_root = r"\\isis\inst$\kits$\CompGroup\ICP"
+epics_builds = ["EPICS_CLEAN_win10_x64", "EPICS_win7_x64", "EPICS_CLEAN_win7_x86", "EPICS_win7_x64_devel", "EPICS_STATIC_CLEAN_win7_x64"]
+epics_build_dirs = [(f"EPICS\\{build}", format_build_num_with_dash) for build in epics_builds] 
+build_dirs = [("Client_E4", format_build_num_without_dash), ("genie_python_3", format_build_num_with_dash)] + epics_build_dirs
+
+def get_latest_build(dir, directory_formatter) -> Union[None, str]:
     latest_build = None
     with open(os.path.join(dir, "LATEST_BUILD.txt")) as latest_build_file:
         latest_build = latest_build_file.readline().strip()
-    latest_build_dir = os.path.join(dir, f"BUILD{latest_build}") if latest_build is not None else None
+    latest_build_dir = os.path.join(dir, directory_formatter(latest_build)) if latest_build is not None else None
     return latest_build_dir
 
 def get_last_modified_datetime(dir):
@@ -35,8 +43,8 @@ def confirm_success_or_failure(latest_build):
     else:
         print(f"WARNING: {latest_build} modified longer than {x_days} ago. Last modified: {last_modified_datetime}")
 
-def check_build_dir(build_dir):
-    latest_build = get_latest_build(build_dir)
+def check_build_dir(build_dir, directory_formatter):
+    latest_build = get_latest_build(build_dir, directory_formatter)
     if latest_build is None:
             print(f"WARNING: Could not get latest build dir from {build_dir}")
     else:
@@ -44,8 +52,10 @@ def check_build_dir(build_dir):
 
 def check_build_dirs(build_dirs):
     for build_dir in build_dirs:
-        build_dir_full_path = os.path.join(kits_root, build_dir)
-        check_build_dir(build_dir_full_path)
+        directory = build_dir[0]
+        directory_formatter = build_dir[1]
+        build_dir_full_path = os.path.join(kits_root, directory)
+        check_build_dir(build_dir_full_path, directory_formatter)
 
 if __name__ == "__main__":
     check_build_dirs(build_dirs)
