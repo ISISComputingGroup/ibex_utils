@@ -23,7 +23,7 @@ pipeline {
         stage("Check Instrument Scripts") {
             steps {
                 bat """
-                    call builds_tools/check_builds_are_recent.bat
+                    call build_tools/check_builds_are_recent.bat
                 """
             }
         }
