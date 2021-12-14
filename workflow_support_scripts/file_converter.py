@@ -30,8 +30,8 @@ class FileConverter:
     def __init__(self, input_dir: str, output_dir: str):
         """
         Initialise the class
-        @param input_dir (str): The input directory
-        @param output_dir (str): The output directory
+        :param input_dir (str): The input directory
+        :param output_dir (str): The output directory
         """
         self.input_dir = input_dir
         self.output_dir = output_dir
@@ -39,7 +39,7 @@ class FileConverter:
     def exit_if_input_dir_not_exist(self) -> None:
         """
         Check the input directory exists and exit if it does not
-        @return None
+        :return None
         """
         if not self.check_dir_exists("input"):
             exit(f"Input folder {self.input_dir} does not exist")
@@ -47,7 +47,7 @@ class FileConverter:
     def check_dir_exists(self, input_output_dir) -> bool:
         """
         Get the input directory if it exists
-        @return input_dir (str): The input directory
+        :return input_dir (str): The input directory
         """
         exists = False
         if input_output_dir == "input":
@@ -62,7 +62,7 @@ class FileConverter:
     def file_overwrite_check() -> bool:
         """
         Check if the output file exists and if it should be overwritten
-        @return overwrite (bool): If the file should be overwritten
+        :return overwrite (bool): If the file should be overwritten
         """
         overwrite = False
         if input("This will overwrite the output folder, continue? Y/N ").lower()[0] == "y":
@@ -72,7 +72,7 @@ class FileConverter:
     def set_up_output_dir(self) -> None:
         """
         Set up the output directory
-        @return None
+        :return None
         """
         # Check if the path exists
         output_path_exists = self.check_dir_exists("output")
@@ -101,8 +101,8 @@ class FileConverter:
     def convert_file(root, original_file_name) -> None:
         """
         Convert RHFE sensor data into the correct format for ISIS
-        @param original_file_name: The original file name
-        @return None
+        :param original_file_name: The original file name
+        :return None
         """
         # If the file is in .curve format
         if original_file_name.endswith(FileTypes.ORIGINAL_CURVE_FILE_EXTENSION):
@@ -114,7 +114,7 @@ class FileConverter:
     def convert_all_files(self) -> None:
         """
         Convert all files in the input directory
-        @return None
+        :return None
         """
         for root, _, files in os.walk(self.input_dir):
             for original_file_name in files:
