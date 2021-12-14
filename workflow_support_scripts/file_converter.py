@@ -77,7 +77,7 @@ class FileConverter:
         # Check if the path exists
         output_path_exists = self.check_dir_exists("output")
         if output_path_exists:
-            # Check overwrite is okay
+            # Check is overwrite is okay
             can_overwrite = self.file_overwrite_check()
             # If output path and overwrite is okay overwrite files in output path
             if can_overwrite:
