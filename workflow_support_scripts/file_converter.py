@@ -53,7 +53,7 @@ class FileConverter:
         if input_output_dir == "input":
             if os.path.exists(self.input_dir):
                 exists = True
-        elif input_output_dir == "output":
+        if input_output_dir == "output":
             if os.path.exists(self.output_dir):
                 exists = True
         return exists
@@ -74,22 +74,22 @@ class FileConverter:
         Set up the output directory
         @return None
         """
-
         # Check path exists
         output_path_exists = self.check_dir_exists("output")
-        # Check overwrite is okay
-        can_overwrite = self.file_overwrite_check()
-        # If output path and overwrite is okay overwrite files in output path
-        if output_path_exists and can_overwrite:
-            for root, _, files in os.walk(self.output_dir):
-                for output_file in files:
-                    os.remove(os.path.join(root, output_file))
-        # If output path exists but overwrite is not okay exit
-        elif output_path_exists and not can_overwrite:
-            exit(
-                f"Output folder {self.output_dir} has not been"
-                f" overwritten and calibration files have not been converted."
-            )
+        if output_path_exists:
+            # Check overwrite is okay
+            can_overwrite = self.file_overwrite_check()
+            # If output path and overwrite is okay overwrite files in output path
+            if can_overwrite:
+                for root, _, files in os.walk(self.output_dir):
+                    for output_file in files:
+                        os.remove(os.path.join(root, output_file))
+            # If output path exists but overwrite is not okay exit
+            elif not can_overwrite:
+                exit(
+                    f"Output folder {self.output_dir} has not been"
+                    f" overwritten and calibration files have not been converted."
+                )
         # If output path does not exist create it
         elif not output_path_exists:
             print(f"Create directory {self.output_dir}")
