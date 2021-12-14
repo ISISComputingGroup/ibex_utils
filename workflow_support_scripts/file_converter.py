@@ -74,7 +74,7 @@ class FileConverter:
         Set up the output directory
         @return None
         """
-        # Check path exists
+        # Check if the path exists
         output_path_exists = self.check_dir_exists("output")
         if output_path_exists:
             # Check overwrite is okay
