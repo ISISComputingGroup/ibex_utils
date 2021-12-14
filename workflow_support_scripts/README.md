@@ -18,4 +18,4 @@ After finishing converting, please check files and then copy and commit to the c
 
 ### WIKI Page:
 
- `https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Calibration-Files/_edit`
+ `https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Calibration-Files/`

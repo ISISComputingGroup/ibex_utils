@@ -15,9 +15,9 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 def convert(original_file_name, output_folder, root):
     """
     Converts .curve calibration files to .txt files, adds a header and writes them to the output file
-    :param original_file_name: The original file name
-    :param output_folder: The output foldr
-    :param root: The root directory of the file
+    :param original_file_name (str): The name of the original file
+    :param output_folder (str): The output folder
+    :param root (str): The root name of the output file
     :return: None
     """
     output_file_name = utility.format_output_file_name(original_file_name, FileTypes.ORIGINAL_CURVE_FILE_EXTENSION, FileTypes.OUTPUT_FILE_EXTENSION)
@@ -34,7 +34,7 @@ def convert(original_file_name, output_folder, root):
 def generate_header(output_file):
     """
     Generate a header in ISIS Calibration File Format
-    :param output_file:
+    :param output_file (file): The output file
     :return: None
     """
     # Iterate over header block dictionary
