@@ -10,7 +10,7 @@ def format_build_num_with_dash(build_num):
     return f"BUILD-{build_num}"
 
 kits_root = r"\\isis\inst$\kits$\CompGroup\ICP"
-epics_builds = ["EPICS_CLEAN_win10_x64", "EPICS_win7_x64", "EPICS_CLEAN_win7_x86", "EPICS_win7_x64_devel", "EPICS_STATIC_CLEAN_win7_x64"]
+epics_builds = ["EPICS_CLEAN_win10_x64", "EPICS_CLEAN_win7_x64", "EPICS_win7_x64", "EPICS_CLEAN_win7_x86", "EPICS_STATIC_CLEAN_win7_x64"]
 epics_build_dirs = [(f"EPICS\\{build}", format_build_num_with_dash) for build in epics_builds] 
 build_dirs = [("Client_E4", format_build_num_without_dash), ("genie_python_3", format_build_num_with_dash)] + epics_build_dirs
 
