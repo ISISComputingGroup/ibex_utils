@@ -297,22 +297,23 @@ class SystemTasks(BaseTasks):
     @task("Select galil driver")
     def select_galil_driver(self):
         """
-        Select galil driver to use
+        Select galil driver to use. Return True if old driver in operation or should be used
         """
-        if not self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
-            print("Should the old (N) or new (Y) Galil driver be the current default to run?")
-            print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
-            answer = self.prompt.prompt("Make new Galil driver the default? [Y/N]", ["Y", "N"], "N")
-            if answer == "Y":
-                RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["NEW"]).run()
-            else:
-                RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
-            return False
-        elif self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
-            RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["NEW"]).run()
-            print("Step to swap galil back to the old version after install will need to be run (this is part of the install script, just need to select yes).")
+        if self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
+            # we don't need to swap back to new GALIL for the update as install will remove all files anyway
+            # we just need to record our current choice
+            print("Old galil driver version detected and will automatically be restored after update.")
             return True
-        return False
+        elif self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-OLD") and not self.ioc_dir_exists("GALIL-NEW"):
+            return False
+        else:
+            print("Should the old (Y) or new (N) Galil driver be the current default to run?")
+            print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
+            answer = self.prompt.prompt("Keep old Galil driver as default? [Y/N]", ["Y", "N"], "Y")
+            if answer == "Y":
+                return True
+            else:
+                return False
     
     @task("Swap galil back to old")
     def swap_galil_to_old(self):
