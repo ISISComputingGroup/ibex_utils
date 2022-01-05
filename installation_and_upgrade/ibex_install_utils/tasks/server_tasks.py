@@ -20,7 +20,7 @@ from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
-    SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA
+    SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA. EPICS_IOC_PATH
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, get_latest_directory_path
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 
@@ -92,12 +92,15 @@ class ServerTasks(BaseTasks):
         shutil.copytree(SOURCE_MACHINE_SETTINGS_COMMON_PATH, os.path.join(SETTINGS_CONFIG_PATH, "common"))
 
     @task("Installing IBEX Server")
-    def install_ibex_server(self):
+    def install_ibex_server(self, use_old_galil = None):
         """
         Install ibex server.
         """
+        if use_old_galil is None:
+            use_old_galil = self.select_galil_driver()
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
         RunProcess(self._server_source_dir, "install_to_inst.bat", prog_args=["NOLOG"]).run()
+        self._swap_galil_driver(use_old_galil)
 
     @task("Set up configuration repository")
     def setup_config_repository(self):
@@ -418,3 +421,36 @@ class ServerTasks(BaseTasks):
         else:
             print("No username/password provided - skipping step")
 
+    def select_galil_driver(self):
+        """
+        Select galil driver to use. Return True if old driver in operation or should be used
+        """
+        if self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
+            # we don't need to swap back to new GALIL for the update as install will remove all files anyway
+            # we just need to record our current choice
+            print("Old galil driver version detected and will automatically be restored after update.")
+            return True
+        elif self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-OLD") and not self.ioc_dir_exists("GALIL-NEW"):
+            return False
+        else:
+            print("Should the old (Y) or new (N) Galil driver be the current default to run?")
+            print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
+            answer = self.prompt.prompt("Keep old Galil driver as default? [Y/N]", ["Y", "N"], "Y")
+            if answer == "Y":
+                return True
+            else:
+                return False
+
+    def _swap_galil_driver(self, use_old):
+        """
+        Swap galil back to old if needed
+        Args:
+            use_old(bool): whether to restore old driver
+        """
+        if (use_old):
+            print("Restoring Old galil driver version.")
+            RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
+
+    def ioc_dir_exists(self, ioc_dirname):
+        full_ioc_path = os.path.join(EPICS_IOC_PATH, ioc_dirname)
+        return os.path.exists(full_ioc_path)

@@ -89,11 +89,9 @@ class UpgradeInstrument:
             "config/schema without any extra steps. Proceed?")
 
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
-        swap_back_to_old_galil: bool = self._system_tasks.select_galil_driver()
+        use_old_galil: bool = self._server_tasks.select_galil_driver()
         self._backup_tasks.remove_old_ibex()
-        self._server_tasks.install_ibex_server()
-        if swap_back_to_old_galil:
-            self._system_tasks.swap_galil_to_old()
+        self._server_tasks.install_ibex_server(use_old_galil)
         self._server_tasks.update_icp(self.icp_in_labview_modules(), register_icp=False)
         self._python_tasks.install_genie_python3()
         self._client_tasks.install_e4_ibex_client()
@@ -129,7 +127,6 @@ class UpgradeInstrument:
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
         self._client_tasks.install_ibex_client()
-        self._system_tasks.select_galil_driver()
         self._server_tasks.setup_config_repository()
         self._server_tasks.upgrade_instrument_configuration()
         self._system_tasks.configure_com_ports()
@@ -195,7 +192,6 @@ class UpgradeInstrument:
         self._system_tasks.apply_changes_noted_in_release_notes()
         self._system_tasks.update_release_notes()
         self._system_tasks.reapply_hotfixes()
-        self._system_tasks.select_galil_driver()
         self._python_tasks.update_script_definitions()
 
     def run_instrument_deploy_pre_stop(self):

@@ -9,7 +9,7 @@ from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_IOC_PATH, EPICS_PATH
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH
 
 GIGABYTE = 1024 ** 3
 
@@ -290,37 +290,6 @@ class SystemTasks(BaseTasks):
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
     
-    def ioc_dir_exists(self, ioc_dirname):
-        full_ioc_path = os.path.join(EPICS_IOC_PATH, ioc_dirname)
-        return os.path.exists(full_ioc_path)
-
-    @task("Select galil driver")
-    def select_galil_driver(self):
-        """
-        Select galil driver to use. Return True if old driver in operation or should be used
-        """
-        if self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
-            # we don't need to swap back to new GALIL for the update as install will remove all files anyway
-            # we just need to record our current choice
-            print("Old galil driver version detected and will automatically be restored after update.")
-            return True
-        elif self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-OLD") and not self.ioc_dir_exists("GALIL-NEW"):
-            return False
-        else:
-            print("Should the old (Y) or new (N) Galil driver be the current default to run?")
-            print("See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver")
-            answer = self.prompt.prompt("Keep old Galil driver as default? [Y/N]", ["Y", "N"], "Y")
-            if answer == "Y":
-                return True
-            else:
-                return False
-    
-    @task("Swap galil back to old")
-    def swap_galil_to_old(self):
-        """
-        Swap galil back to old.
-        """
-        RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
 
     def confirm(self, message):
         """
