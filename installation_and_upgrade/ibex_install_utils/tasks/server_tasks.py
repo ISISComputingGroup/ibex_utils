@@ -95,6 +95,8 @@ class ServerTasks(BaseTasks):
     def install_ibex_server(self, use_old_galil = None):
         """
         Install ibex server.
+        Args:
+            use_old_galil(bool): whether to restore old galil driver version       
         """
         if use_old_galil is None:
             use_old_galil = self.select_galil_driver()
@@ -445,7 +447,7 @@ class ServerTasks(BaseTasks):
         """
         Swap galil back to old if needed
         Args:
-            use_old(bool): whether to restore old driver
+            use_old(bool): whether to restore old driver version
         """
         if (use_old):
             print("Restoring Old galil driver version.")
