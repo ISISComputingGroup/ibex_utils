@@ -20,7 +20,7 @@ from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR, VAR_DIR, EPICS_PATH, \
-    SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA. EPICS_IOC_PATH
+    SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA, EPICS_IOC_PATH
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, get_latest_directory_path
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 
