@@ -6,6 +6,7 @@ import argparse
 import os
 import re
 import sys
+import semantic_version
 
 from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
 from ibex_install_utils.exceptions import UserStop, ErrorInTask
@@ -18,6 +19,7 @@ def _get_latest_release_path(release_dir):
 
     releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
     releases = list(filter(regex.match, releases))
+    releases = sorted(list(filter(regex.match, releases)), key=semantic_version.Version)
 
     if len(releases) == 0:
         print(f"Error: No releases found in '{release_dir}'")
