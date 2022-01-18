@@ -24,7 +24,7 @@ def _get_latest_release_path(release_dir):
     if len(releases) == 0:
         print(f"Error: No releases found in '{release_dir}'")
         sys.exit(3)
-    current_release = max(releases)
+    current_release = releases[-1]
     return os.path.join(release_dir, f"{current_release}")
 
 
