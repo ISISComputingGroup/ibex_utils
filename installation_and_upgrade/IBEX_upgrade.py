@@ -14,7 +14,7 @@ from ibex_install_utils.file_utils import get_latest_directory_path
 
 
 def _get_latest_release_path(release_dir):
-    regex = re.compile(r'^\d\.\d\.\d$')
+    regex = re.compile(r'^\d+\.\d+\.\d+$')
 
     releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
     releases = list(filter(regex.match, releases))
