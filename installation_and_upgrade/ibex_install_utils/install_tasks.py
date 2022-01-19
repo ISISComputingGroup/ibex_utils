@@ -276,7 +276,6 @@ class UpgradeInstrument:
         This job is run by the MDT build system when it has built a windows image and mounted the VHDS
         It will tidy up and remaining jobs that were not possible when the vdh was created e.g. register mysql service
         """
-        #self._system_tasks.select_galil_driver()
         #self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._mysql_tasks.configure_mysql_for_vhd_post_install()
 
