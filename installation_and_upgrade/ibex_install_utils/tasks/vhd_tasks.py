@@ -8,7 +8,7 @@ from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, INST_SHARE_AREA, EPICS_PATH, APPS_BASE_DIR, \
-    SETTINGS_CONFIG_PATH, VAR_DIR
+    SETTINGS_DIR, VAR_DIR
 
 
 class Vhd:
@@ -22,7 +22,7 @@ class Vhd:
 VHDS = [
     # Key = VHD location, Value = Mount point
     Vhd(name="Apps", source_filename="empty_apps.vhdx", dest_filename="apps.vhdx", mount_point=APPS_BASE_DIR),
-    Vhd(name="Settings", source_filename="empty_settings.vhdx", dest_filename="settings.vhdx", mount_point=SETTINGS_CONFIG_PATH),
+    Vhd(name="Settings", source_filename="empty_settings.vhdx", dest_filename="settings.vhdx", mount_point=SETTINGS_DIR),
     Vhd(name="Var", source_filename="empty_var.vhdx", dest_filename="var.vhdx", mount_point=VAR_DIR),
 ]
 
@@ -33,7 +33,7 @@ VHD_MOUNT_DISMOUNT_TIMEOUT = 300
 
 
 REMOTE_VHD_SRC_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "chris")
-REMOTE_VHD_DEST_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "ICP", "VHDS")
+REMOTE_VHD_DEST_DIR = os.path.join(INST_SHARE_AREA, "Kits$", "CompGroup", "ICP", "W10Clone", "VHDS")
 LOCAL_VHD_DIR = os.path.join("C:\\", "Instrument", "VHDS")
 
 
@@ -189,7 +189,10 @@ class VHDTasks(BaseTasks):
     @task("Deploy VHDS")
     def deploy_vhds(self):
 
-        build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Build{}".format(os.environ["BUILD_NUMBER"]))
+        if self._ibex_version is not None:
+            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Releases", "{}".format(self._ibex_version))
+        else:
+            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Builds", "Build{}".format(os.environ["BUILD_NUMBER"]))
         os.makedirs(build_folder)
 
         for vhd in VHDS:

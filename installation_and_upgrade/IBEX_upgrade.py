@@ -6,6 +6,7 @@ import argparse
 import os
 import re
 import sys
+import semantic_version
 
 from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
 from ibex_install_utils.exceptions import UserStop, ErrorInTask
@@ -14,15 +15,16 @@ from ibex_install_utils.file_utils import get_latest_directory_path
 
 
 def _get_latest_release_path(release_dir):
-    regex = re.compile(r'^\d\.\d\.\d$')
+    regex = re.compile(r'^\d+\.\d+\.\d+$')
 
     releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
     releases = list(filter(regex.match, releases))
+    releases = sorted(list(filter(regex.match, releases)), key=semantic_version.Version)
 
     if len(releases) == 0:
         print(f"Error: No releases found in '{release_dir}'")
         sys.exit(3)
-    current_release = max(releases)
+    current_release = releases[-1]
     return os.path.join(release_dir, f"{current_release}")
 
 
@@ -63,6 +65,7 @@ if __name__ == "__main__":
             current_release_dir += f"-{args.release_suffix}"
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
+        client_e4_dir = client_dir
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
 
     elif args.kits_icp_dir is not None:
