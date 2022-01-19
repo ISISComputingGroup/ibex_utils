@@ -243,7 +243,6 @@ class UpgradeInstrument:
             self._python_tasks.install_genie_python3()
             self._mysql_tasks.install_mysql_for_vhd()
             self._client_tasks.install_e4_ibex_client()
-            self._system_tasks.select_galil_driver()
             self._server_tasks.setup_config_repository()
             self._server_tasks.upgrade_instrument_configuration()
             self._server_tasks.setup_calibrations_repository()
