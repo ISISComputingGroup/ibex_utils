@@ -394,15 +394,15 @@ class ServerTasks(BaseTasks):
 
             RunProcess(os.getcwd(), "update_inst.cmd", prog_args=["NOINT"], executable_directory=icp_path).run()
 
-            register_icp_commands.add_command(f'cd "{LABVIEW_DAE_DIR}" && register_programs.cmd',
+            register_icp_commands.add_command(f'cd /d "{LABVIEW_DAE_DIR}" && register_programs.cmd',
                                               "Release NOINT", expected_return_val=None)
         else:
             self.prompt.confirm_step("Install into EPICS/ICP_Binaries")
             RunProcess(EPICS_PATH, "create_icp_binaries.bat").run()
 
-            icp_exe_path = os.path.join(EPICS_PATH, "ICP_Binaries", "isisdae", "x64", "Release")
-            register_icp_commands.add_command(os.path.join(icp_exe_path, "isisicp.exe"), r"/RegServer")
-            register_icp_commands.add_command(os.path.join(icp_exe_path, "isisdatasvr.exe"), r"/RegServer")
+            icp_top = os.path.join(EPICS_PATH, "ICP_Binaries", "isisdae")
+            register_icp_commands.add_command(f'cd /d "{icp_top}" && register_programs.bat',
+                                              expected_return_val=None)
 
         if register_icp:
             print("ICP updated successfully, registering ICP")
