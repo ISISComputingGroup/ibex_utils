@@ -402,7 +402,7 @@ class ServerTasks(BaseTasks):
 
             icp_top = os.path.join(EPICS_PATH, "ICP_Binaries", "isisdae")
             register_icp_commands.add_command(f'cd /d "{icp_top}" && register_programs.bat',
-                                              expected_return_val=None)
+                                              "", expected_return_val=None)
 
         if register_icp:
             print("ICP updated successfully, registering ICP")
