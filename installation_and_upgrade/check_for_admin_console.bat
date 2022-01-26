@@ -1,3 +1,4 @@
+setlocal EnableDelayedExpansion
 REM Prompt user if running console with Administrative privileges.
 net session >nul 2>&1
 if !errorLevel! equ 0 (
