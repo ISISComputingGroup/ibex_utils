@@ -10,7 +10,10 @@ setlocal EnableDelayedExpansion
 set PYTHONUNBUFFERED=TRUE
 
 call "%~dp0\define_latest_genie_python.bat"
-IF %errorlevel% neq 0 GOTO ERROR
+IF %errorlevel% neq 0 (
+    @echo Failed to define genie python
+    GOTO ERROR
+)
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server.bat"
@@ -39,7 +42,10 @@ if "%1" == "RELEASE" (
 ) else (
     call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --quiet !INSTALL_TYPE!
 )
-IF %errorlevel% neq 0 GOTO ERROR
+IF %errorlevel% neq 0 (
+    echo Error %errorlevel% returned from IBEX_upgrade script
+    GOTO ERROR
+)
 
 GOTO :EOF
 
