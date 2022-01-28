@@ -37,7 +37,7 @@ class ClientTasks(BaseTasks):
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
 
-        RunProcess(source_dir, "install_client.bat", press_any_key=True).run()
+        RunProcess(source_dir, "install_client.bat", prog_args=["NOINT"]).run()
 
     @task("Starting IBEX gui")
     def start_ibex_gui(self):

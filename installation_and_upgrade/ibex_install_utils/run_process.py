@@ -70,9 +70,10 @@ class RunProcess:
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
                 output_lines, err = output.communicate(b" ")
-
                 for line in output_lines.splitlines():
                     print(f"    > {line}")
+                if output.returncode != 0:
+                    raise subprocess.CalledProcessError(output.returncode, command_line)
             else:
                 process = subprocess.Popen(command_line, cwd=self._working_dir,
                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
