@@ -1,3 +1,4 @@
+setlocal
 call "%~dp0\define_latest_genie_python.bat"
 if %errorlevel% neq 0 exit /b %errorlevel%
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases\4.0.0"
