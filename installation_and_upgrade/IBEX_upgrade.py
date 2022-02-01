@@ -1,7 +1,7 @@
 """
 Script to install IBEX to various machines
 """
-
+# pylint: disable=import-error
 import argparse
 import os
 import re
@@ -17,7 +17,7 @@ from ibex_install_utils.file_utils import get_latest_directory_path
 def _get_latest_release_path(release_dir):
     regex = re.compile(r'^\d+\.\d+\.\d+$')
 
-    releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]
+    releases = [name for name in os.listdir(release_dir) if os.path.isdir(os.path.join(release_dir, name))]  # pylint: disable=line-too-long
     releases = list(filter(regex.match, releases))
     releases = sorted(list(filter(regex.match, releases)), key=semantic_version.Version)
 
@@ -37,10 +37,10 @@ if __name__ == "__main__":
     parser.add_argument("--release_suffix", dest="release_suffix", default="",
                         help="Suffix for specifying non-standard releases "
                              "(such as those including hot fixes)")
-    parser.add_argument("--server_build_prefix", default="EPICS", help="Prefix for build directory name")
-    parser.add_argument("--server_dir", default=None, help="Directory from which IBEX server should be installed")
-    parser.add_argument("--client_dir", default=None, help="Directory from which IBEX client should be installed")
-    parser.add_argument("--client_e4_dir", default=None, help="Directory from which IBEX E4 client should be installed")
+    parser.add_argument("--server_build_prefix", default="EPICS", help="Prefix for build directory name")  # pylint: disable=line-too-long
+    parser.add_argument("--server_dir", default=None, help="Directory from which IBEX server should be installed")  # pylint: disable=line-too-long
+    parser.add_argument("--client_dir", default=None, help="Directory from which IBEX client should be installed")  # pylint: disable=line-too-long
+    parser.add_argument("--client_e4_dir", default=None, help="Directory from which IBEX E4 client should be installed")  # pylint: disable=line-too-long
     parser.add_argument("--genie_python3_dir", default=None,
                         help="Directory from which genie_python_3 should be installed")
     parser.add_argument("--confirm_step", default=False, action="store_true",
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     client_e4_dir = args.client_e4_dir
     current_client_version = None
     if args.release_dir is not None:
-        current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
+        current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))  # pylint: disable=line-too-long
         current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
         if args.release_suffix != "":
             current_release_dir += f"-{args.release_suffix}"
@@ -70,9 +70,9 @@ if __name__ == "__main__":
 
     elif args.kits_icp_dir is not None:
         if args.deployment_type == 'install_latest_incr':
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")  # pylint: disable=line-too-long
         else:
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")  # pylint: disable=line-too-long
 
         try:
             server_dir = get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
@@ -85,12 +85,12 @@ if __name__ == "__main__":
 
             genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
             genie_python3_dir = get_latest_directory_path(genie_python3_build_dir, "BUILD-")
-        except IOError as e:
-            print(e)
+        except IOError as error:
+            print(error)
             sys.exit(3)
 
-    elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
-            args.client_e4_dir is not None:
+    elif args.server_dir is not None and args.client_dir is not None and \
+        args.genie_python3_dir is not None and args.client_e4_dir is not None:
         server_dir = args.server_dir
         client_dir = args.client_dir
         client_e4_dir = args.client_e4_dir
@@ -102,8 +102,13 @@ if __name__ == "__main__":
 
     try:
         prompt = UserPrompt(args.quiet, args.confirm_step)
-        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir, genie_python3_dir,
-                                               current_client_version)
+        upgrade_instrument = UpgradeInstrument(
+            prompt,
+            server_dir,
+            client_dir,
+            client_e4_dir,
+            genie_python3_dir,
+            current_client_version)
         upgrade_function = UPGRADE_TYPES[args.deployment_type][0]
         upgrade_function(upgrade_instrument)
 
