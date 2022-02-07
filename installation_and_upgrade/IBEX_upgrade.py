@@ -6,6 +6,7 @@ import argparse
 import os
 import re
 import sys
+from tkinter import Y
 from typing import Tuple
 import semantic_version
 
@@ -73,6 +74,58 @@ def instantiate_arguments_from_list(args_server_dir, args_client_dir, args_genie
 
     return server_dir, client_dir, genie_python3_dir, client_e4_dir
 
+def set_release_directory_to_latest(args) -> str:
+    """
+    Set the release directory to the latest release
+    Args:
+        release_dir: directory to search for releases
+    """
+    current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
+    current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
+    if args.release_suffix != "":
+        current_release_dir += f"-{args.release_suffix}"
+    server_dir = os.path.join(current_release_dir, "EPICS")
+    client_dir = os.path.join(current_release_dir, "Client")
+    client_e4_dir = client_dir
+    genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
+    return (current_release_dir, current_client_version, server_dir, client_dir, client_e4_dir, genie_python3_dir)
+
+def set_args_to_latest(current_release_dir):
+    """
+    """
+    server_dir = os.path.join(current_release_dir, "EPICS")
+    client_dir = os.path.join(current_release_dir, "Client")
+    client_e4_dir = client_dir
+    genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
+
+    return server_dir, client_dir, client_e4_dir, genie_python3_dir
+
+def set_epics_build_dir_using_kits_ICP(args) -> str:
+    """
+    Set the epics build directory to the kits ICP directory
+    Args:
+        kits_icp_dir: kits ICP directory
+    """
+    if args.deployment_type == 'install_latest_incr':
+        epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
+    else:
+        epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")
+    return epics_build_dir
+
+def set_director_using_kits_icp(args, directory_name, directory_type, ICP, build_directory=None) -> str:
+    """
+    """
+    if ICP:
+        build_directory =  os.path.join(args.kits_icp_dir, f"{directory_name}")
+        lastest_directory_path = get_latest_directory_path(build_directory, f"{directory_type}")
+        return build_directory, lastest_directory_path
+    else:
+        if build_directory:
+            lastest_directory_path = get_latest_directory_path(epics_build_dir, f"{directory_name}", f"{directory_type}")
+            return lastest_directory_path
+        else:
+            return None
+
 if __name__ == "__main__":
     # A parser to parse the command line arguments
     parser = argparse.ArgumentParser(**ARGUMENT_PARSER)
@@ -84,32 +137,20 @@ if __name__ == "__main__":
     current_client_version = None
     # If the release directory is not specified, use the latest release
     if args.release_dir is not None:
-        current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
-        current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
+        current_release_dir, current_client_version = set_release_directory_to_latest(args)
         if args.release_suffix != "":
             current_release_dir += f"-{args.release_suffix}"
-        server_dir = os.path.join(current_release_dir, "EPICS")
-        client_dir = os.path.join(current_release_dir, "Client")
-        client_e4_dir = client_dir
-        genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
+        server_dir, client_dir, client_e4_dir, genie_python3_dir = set_args_to_latest(current_release_dir)
 
     elif args.kits_icp_dir is not None:
-        if args.deployment_type == 'install_latest_incr':
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
-        else:
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")
-
+        # if kits_icp_dir is specified, epics_build_dir is set
+        epics_build_dir = set_epics_build_dir_using_kits_ICP(args)
+        # Try initialising the server and client directories to latest release using kits_icp_dir
         try:
-            server_dir = get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
-
-            client_build_dir = os.path.join(args.kits_icp_dir, "Client")
-            client_dir = get_latest_directory_path(client_build_dir, "BUILD")
-
-            client_e4_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
-            client_e4_dir = get_latest_directory_path(client_e4_build_dir, "BUILD")
-
-            genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
-            genie_python3_dir = get_latest_directory_path(genie_python3_build_dir, "BUILD-")
+            server_dir = set_director_using_kits_icp(args, "BUILD-", "EPICS", True, epics_build_dir)
+            client_build_dir, client_dir = set_director_using_kits_icp(args, "Client", "BUILD")
+            client_e4_build_dir, client_e4_dir = set_director_using_kits_icp(args, "Client_E4", "BUILD")
+            genie_python3_build_dir, genie_python3_dir = set_director_using_kits_icp(args, "genie_python_3", "BUILD-")
         except IOError as e:
             print(e)
             sys.exit(3)
@@ -120,7 +161,6 @@ if __name__ == "__main__":
         args.client_dir, 
         args.genie_python3_dir, 
         args.client_e4_dir)
-
     try:
         prompt = UserPrompt(args.quiet, args.confirm_step)
         upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir, genie_python3_dir,
