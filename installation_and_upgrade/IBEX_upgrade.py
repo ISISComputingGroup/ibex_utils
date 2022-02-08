@@ -6,7 +6,6 @@ import argparse
 import os
 import re
 import sys
-from tkinter import Y
 from typing import Tuple
 import semantic_version
 
