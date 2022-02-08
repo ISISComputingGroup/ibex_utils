@@ -17,6 +17,13 @@ from ibex_install_utils.file_utils import get_latest_directory_path
 
 
 def _get_latest_release_path(release_dir) -> str:
+    """
+    Get the latest release path
+    Args:
+        release_dir: directory to search for releases
+    Returns:
+        latest_release_path
+    """
     regex = re.compile(r'^\d+\.\d+\.\d+$')
 
     release_path = os.listdir(release_dir)
@@ -51,6 +58,8 @@ def add_arguments_to_parser_from_arguments(argument_parser: argparse.ArgumentPar
     Add arguments to the argument parser
     Args:
         argument_parser: argument parser to add arguments to
+    Returns:
+        argument_parser
     """
     for argument in ARGUMENTS:
         argument_parser.add_argument(**argument)
@@ -69,42 +78,12 @@ def instantiate_arguments_from_list(args_server_dir: str, args_client_dir: str, 
         args_client_dir,
         args_genie_python3_dir,
         args_client_e4_dir]
+
     if all(argument_checklist) is False:
         print("You must specify either the release directory or kits_icp_dir or "
               "ALL of the server, client, client e4 and genie python 3 directories.")
         sys.exit(2)
     return args_server_dir, args_client_dir, args_genie_python3_dir, args_client_e4_dir
-
-def set_release_directory_to_latest(arguments: argparse.Namespace) -> Tuple[str, str, str, str, str]:  # pylint: disable=line-too-long
-    """
-    Set the release directory to the latest release
-    Args:
-        release_dir: directory to search for releases
-    Returns:
-        (release_directory,
-        client_version,
-        server_directory,
-        client_directory,
-        client_e4_directory,
-        genie_python3_directory)
-    """
-    release_directory = os.path.join(arguments.release_dir,
-        _get_latest_release_path(args.release_dir))
-    client_version = _get_latest_release_path(arguments.release_dir).split("\\")[-1]
-    if arguments.release_suffix != "":
-        release_directory += f"-{arguments.release_suffix}"
-    server_directory = os.path.join(release_directory, "EPICS")
-    client_directory = os.path.join(release_directory, "Client")
-    client_e4_directory = client_directory
-    genie_python3_directory = os.path.join(release_directory, "genie_python_3")
-
-    release_directory_tuple = (client_version,
-        server_directory,
-        client_directory,
-        client_e4_directory,
-        genie_python3_directory)
-
-    return release_directory_tuple
 
 def set_args_to_latest(current_release_directory: str) -> Tuple[str, str, str, str, str, str]:
     """
@@ -116,10 +95,35 @@ def set_args_to_latest(current_release_directory: str) -> Tuple[str, str, str, s
     """
     server_directory = os.path.join(current_release_directory, "EPICS")
     client_directory = os.path.join(current_release_directory, "Client")
-    client_e4_directory = client_dir
+    client_e4_directory = client_directory
     genie_python3_directory = os.path.join(current_release_directory, "genie_python_3")
 
     return server_directory, client_directory, client_e4_directory, genie_python3_directory
+
+def set_release_directory_to_latest(arguments: argparse.Namespace) -> Tuple[str, str, str, str, str]:  # pylint: disable=line-too-long
+    """
+    Set the release directory to the latest release
+    Args:
+        release_dir: directory to search for releases
+    Returns:
+        (release_directory, client_version, server_directory, client_directory, 
+        client_e4_directory, genie_python3_directory)
+    """
+    release_directory = os.path.join(arguments.release_dir,
+        _get_latest_release_path(args.release_dir))
+    client_version = _get_latest_release_path(arguments.release_dir).split("\\")[-1]
+
+    if arguments.release_suffix != "":
+        release_directory += f"-{arguments.release_suffix}"
+
+    arg_dirs = set_args_to_latest(release_directory)
+    server_directory, client_directory, client_e4_directory, genie_python3_directory = arg_dirs
+
+    return (client_version, 
+        server_directory,
+        client_directory,
+        client_e4_directory,
+        genie_python3_directory)
 
 def set_epics_build_dir_using_kits_icp(arguments: argparse.Namespace) -> str:
     """
