@@ -30,11 +30,13 @@ def _get_latest_release_path(release_dir) -> str:
     current_release = releases[-1]
     return os.path.join(release_dir, f"{current_release}")
 
-def add_deployment_type_to_parser(argument_parser) -> argparse.ArgumentParser:
+def add_deployment_type_to_parser(argument_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
     Add deployment type to the argument parser
     Args:
         argument_parser: argument parser to add arguments to
+    Returns:
+        argument_parser
     """
     deployment_types = [f"{choice}: {deployment_types}"
                         for choice, (_, deployment_types) in UPGRADE_TYPES.items()]
@@ -44,7 +46,7 @@ def add_deployment_type_to_parser(argument_parser) -> argparse.ArgumentParser:
 
     return argument_parser
 
-def add_arguments_to_parser_from_ARGUMENTS(argument_parser) -> argparse.ArgumentParser:
+def add_arguments_to_parser_from_ARGUMENTS(argument_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     """
     Add arguments to the argument parser
     Args:
@@ -55,30 +57,29 @@ def add_arguments_to_parser_from_ARGUMENTS(argument_parser) -> argparse.Argument
 
     return argument_parser
 
-def instantiate_arguments_from_list(args_server_dir, args_client_dir, args_genie_python3_dir, args_client_e4_dir) -> Tuple[str, str, str, str]:
+def instantiate_arguments_from_list(args_server_dir: str, args_client_dir: str, args_genie_python3_dir: str, args_client_e4_dir: str) -> Tuple[str, str, str, str]:
     """
     Instantiate arguments from a list
     Args:
         args_list: list of arguments
+    Returns:
+        args_server_dir, args_client_dir, args_genie_python3_dir, args_client_e4_dir
     """
     argument_checklist = [args_server_dir, args_client_dir, args_genie_python3_dir, args_client_e4_dir]
     if all(argument_checklist):
-        server_dir = args_server_dir
-        client_dir = args_client_dir
-        genie_python3_dir = args_genie_python3_dir
-        client_e4_dir = args_client_e4_dir
+        return args_server_dir, args_client_dir, args_genie_python3_dir, args_client_e4_dir
     else:
         print("You must specify either the release directory or kits_icp_dir or "
               "ALL of the server, client, client e4 and genie python 3 directories.")
         sys.exit(2)
 
-    return server_dir, client_dir, genie_python3_dir, client_e4_dir
-
-def set_release_directory_to_latest(args) -> str:
+def set_release_directory_to_latest(args: argparse.Namespace) -> Tuple[str, str, str, str]:
     """
     Set the release directory to the latest release
     Args:
         release_dir: directory to search for releases
+    Returns:
+        (current_release_dir, current_client_version, server_dir, client_dir, client_e4_dir, genie_python3_dir)
     """
     current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
     current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
@@ -90,8 +91,13 @@ def set_release_directory_to_latest(args) -> str:
     genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
     return (current_release_dir, current_client_version, server_dir, client_dir, client_e4_dir, genie_python3_dir)
 
-def set_args_to_latest(current_release_dir):
+def set_args_to_latest(current_release_dir: str) -> Tuple[str, str, str, str, str, str]:
     """
+    Set the arguments to the latest release
+    Args:
+        current_release_dir: current release directory
+    Returns:
+        server_dir, client_dir, client_e4_dir, genie_python3_dir
     """
     server_dir = os.path.join(current_release_dir, "EPICS")
     client_dir = os.path.join(current_release_dir, "Client")
@@ -100,7 +106,7 @@ def set_args_to_latest(current_release_dir):
 
     return server_dir, client_dir, client_e4_dir, genie_python3_dir
 
-def set_epics_build_dir_using_kits_ICP(args) -> str:
+def set_epics_build_dir_using_kits_ICP(args: argparse.Namespace) -> str:
     """
     Set the epics build directory to the kits ICP directory
     Args:
@@ -112,8 +118,16 @@ def set_epics_build_dir_using_kits_ICP(args) -> str:
         epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")
     return epics_build_dir
 
-def set_director_using_kits_icp(args, directory_name, directory_type, ICP, build_directory=None) -> str:
+def set_directory_using_kits_icp(args: argparse.Namespace, directory_name: str, directory_type: str, ICP: bool, build_directory=None) -> str:
     """
+    Set the directory to the kits ICP directory to latest release
+    Args:
+        directory_name: directory name
+        directory_type: directory type
+        ICP: kits ICP directory
+        build_directory: build directory
+    Returns:
+        directory
     """
     if ICP:
         build_directory =  os.path.join(args.kits_icp_dir, f"{directory_name}")
@@ -143,14 +157,14 @@ if __name__ == "__main__":
         server_dir, client_dir, client_e4_dir, genie_python3_dir = set_args_to_latest(current_release_dir)
 
     elif args.kits_icp_dir is not None:
-        # if kits_icp_dir is specified, epics_build_dir is set
+        # If kits_icp_dir is specified, epics_build_dir is set
         epics_build_dir = set_epics_build_dir_using_kits_ICP(args)
         # Try initialising the server and client directories to latest release using kits_icp_dir
         try:
-            server_dir = set_director_using_kits_icp(args, "BUILD-", "EPICS", True, epics_build_dir)
-            client_build_dir, client_dir = set_director_using_kits_icp(args, "Client", "BUILD")
-            client_e4_build_dir, client_e4_dir = set_director_using_kits_icp(args, "Client_E4", "BUILD")
-            genie_python3_build_dir, genie_python3_dir = set_director_using_kits_icp(args, "genie_python_3", "BUILD-")
+            server_dir = set_directory_using_kits_icp(args, "BUILD-", "EPICS", True, epics_build_dir)
+            client_build_dir, client_dir = set_directory_using_kits_icp(args, "Client", "BUILD")
+            client_e4_build_dir, client_e4_dir = set_directory_using_kits_icp(args, "Client_E4", "BUILD")
+            genie_python3_build_dir, genie_python3_dir = set_directory_using_kits_icp(args, "genie_python_3", "BUILD-")
         except IOError as e:
             print(e)
             sys.exit(3)
