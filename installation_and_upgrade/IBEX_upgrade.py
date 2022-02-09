@@ -213,8 +213,10 @@ if __name__ == "__main__":
             sys.exit(3)
 
     # Instantiate All server, client and genie_python3 directory paths if present
-    elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
-            args.client_e4_dir is not None:
+
+    elif all([args.server_dir, args.client_dir, args.genie_python3_dir, args.client_e4_dir]) is True:
+    # args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
+    #         args.client_e4_dir is not None:
         server_dir = args.server_dir
         client_dir = args.client_dir
         client_e4_dir = args.client_e4_dir
