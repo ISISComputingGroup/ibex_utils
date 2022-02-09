@@ -30,7 +30,7 @@ ARGUMENTS = [
     {
         "name_or_flags": "--server_dir",
         "default": None,
-        "Help": "Directory from which IBEX server should be installed"
+        "help": "Directory from which IBEX server should be installed"
     },
     {
         "name_or_flags": "--client_dir",
