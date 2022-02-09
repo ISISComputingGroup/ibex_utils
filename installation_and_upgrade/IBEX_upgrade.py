@@ -3,6 +3,7 @@ Script to install IBEX to various machines
 """
 # pylint: disable=import-error
 import argparse
+from ast import arguments
 import os
 import re
 import sys
@@ -62,7 +63,8 @@ def add_arguments_to_parser_from_arguments(argument_parser: argparse.ArgumentPar
         argument_parser
     """
     for argument in ARGUMENTS:
-        argument_parser.add_argument(**argument)
+        flag_argument = argument.pop("name_or_flags")
+        argument_parser.add_argument(flag_argument, **argument)
 
     return argument_parser
 
