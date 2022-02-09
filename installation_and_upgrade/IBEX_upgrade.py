@@ -3,7 +3,6 @@ Script to install IBEX to various machines
 """
 # pylint: disable=import-error
 import argparse
-from ast import arguments
 import os
 import re
 import sys
@@ -68,7 +67,17 @@ def add_arguments_to_parser_from_arguments(argument_parser: argparse.ArgumentPar
 
     return argument_parser
 
-def check_directory_selected(args_server_dir: str, args_client_dir: str, args_genie_python3_dir: str, args_client_e4_dir: str) -> bool:
+def check_directory_selected(args_server_dir: str, args_client_dir: str, args_genie_python3_dir: str, args_client_e4_dir: str) -> bool:  # pylint: disable=line-too-long
+    """
+    Check if all directories are selected
+    Args:
+        args_server_dir: server directory
+        args_client_dir: client directory
+        args_genie_python3_dir: genie python 3 directory
+        args_client_e4_dir: client e4 directory
+    Returns:
+        True if all directories are selected
+    """
     argument_checklist = [args_server_dir,
         args_client_dir,
         args_genie_python3_dir,
@@ -92,53 +101,53 @@ def set_args_to_latest(current_release_directory: str) -> Tuple[str, str, str, s
 
     return server_directory, client_directory, client_e4_directory, genie_python3_directory
 
-def set_release_directory_to_latest(arguments: argparse.Namespace) -> Tuple[str, str, str, str, str]:  # pylint: disable=line-too-long
+def set_release_directory_to_latest(argument_dirs: argparse.Namespace) -> Tuple[str, str, str, str, str]:  # pylint: disable=line-too-long
     """
     Set the release directory to the latest release
     Args:
-        release_dir: directory to search for releases
+        argument_dirs: directory to search for releases
     Returns:
-        (release_directory, client_version, server_directory, client_directory, 
+        (release_directory, client_version, server_directory, client_directory,
         client_e4_directory, genie_python3_directory)
     """
-    release_directory = os.path.join(arguments.release_dir,
+    release_directory = os.path.join(argument_dirs.release_dir,
         _get_latest_release_path(args.release_dir))
-    client_version = _get_latest_release_path(arguments.release_dir).split("\\")[-1]
+    client_version = _get_latest_release_path(argument_dirs.release_dir).split("\\")[-1]
 
-    if arguments.release_suffix != "":
-        release_directory += f"-{arguments.release_suffix}"
+    if argument_dirs.release_suffix != "":
+        release_directory += f"-{argument_dirs.release_suffix}"
 
     arg_dirs = set_args_to_latest(release_directory)
     server_directory, client_directory, client_e4_directory, genie_python3_directory = arg_dirs
 
-    return (client_version, 
+    return (client_version,
         server_directory,
         client_directory,
         client_e4_directory,
         genie_python3_directory)
 
-def set_epics_build_dir_using_kits_icp(arguments: argparse.Namespace) -> str:
+def set_epics_build_dir_using_kits_icp(namespace_arguments: argparse.Namespace) -> str:
     """
     Set the epics build directory to the kits ICP directory
     Args:
-        arguments: arguments
+        namespace_arguments: arguments
     Returns:
         epics_build_directory
     """
-    if arguments.deployment_type == 'install_latest_incr':
-        epics_build_directory = os.path.join(arguments.kits_icp_dir,
-            "EPICS", arguments.server_build_prefix+"_win7_x64")
+    if namespace_arguments.deployment_type == 'install_latest_incr':
+        epics_build_directory = os.path.join(namespace_arguments.kits_icp_dir,
+            "EPICS", namespace_arguments.server_build_prefix+"_win7_x64")
     else:
-        epics_build_directory = os.path.join(arguments.kits_icp_dir,
+        epics_build_directory = os.path.join(namespace_arguments.kits_icp_dir,
             "EPICS",
-            arguments.server_build_prefix+"_CLEAN_win7_x64")
+            namespace_arguments.server_build_prefix+"_CLEAN_win7_x64")
     return epics_build_directory
 
-def set_directory_using_kits_icp(arguments: argparse.Namespace, directory_name: str, directory_type: str, icp: bool, build_directory=None) -> str:  # pylint: disable=line-too-long
+def set_directory_using_kits_icp(namespace_arguments: argparse.Namespace, directory_name: str, directory_type: str, icp: bool, build_directory=None) -> str:  # pylint: disable=line-too-long
     """
     Set the directory to the kits ICP directory to latest release
     Args:
-        arguments: arguments
+        namespace_arguments: arguments
         directory_name: directory name
         directory_type: directory type
         icp: kits ICP directory
@@ -147,7 +156,7 @@ def set_directory_using_kits_icp(arguments: argparse.Namespace, directory_name: 
         directory
     """
     if icp:
-        build_directory =  os.path.join(arguments.kits_icp_dir, f"{directory_name}")
+        build_directory =  os.path.join(namespace_arguments.kits_icp_dir, f"{directory_name}")
         lastest_directory_path = get_latest_directory_path(build_directory, f"{directory_type}")
         return build_directory, lastest_directory_path
 
@@ -211,7 +220,7 @@ if __name__ == "__main__":
         client_dir = args.client_dir
         client_e4_dir = args.client_e4_dir
         genie_python3_dir = args.genie_python3_dir
-       
+
     else:
         print("You must specify either the release directory or kits_icp_dir or "
               "ALL of the server, client, client e4 and genie python 3 directories.")
