@@ -213,11 +213,21 @@ if __name__ == "__main__":
             sys.exit(3)
 
     # Instantiate All server, client and genie_python3 directory paths if present
-    server_dir, client_dir, genie_python3_dir, client_e4_dir = instantiate_arguments_from_list(
-        args.server_dir,
-        args.client_dir,
-        args.genie_python3_dir,
-        args.client_e4_dir)
+    elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
+            args.client_e4_dir is not None:
+        server_dir = args.server_dir
+        client_dir = args.client_dir
+        client_e4_dir = args.client_e4_dir
+        genie_python3_dir = args.genie_python3_dir
+    else:
+        print("You must specify either the release directory or kits_icp_dir or "
+              "ALL of the server, client, client e4 and genie python 3 directories.")
+        sys.exit(2)
+
+        # server_dir, client_dir, genie_python3_dir, client_e4_dir = instantiate_arguments_from_list(args.server_dir,
+        # args.client_dir,
+        # args.genie_python3_dir,
+        # args.client_e4_dir)
     try:
         prompt = UserPrompt(args.quiet, args.confirm_step)
         upgrade_instrument = UpgradeInstrument(prompt,
