@@ -68,24 +68,14 @@ def add_arguments_to_parser_from_arguments(argument_parser: argparse.ArgumentPar
 
     return argument_parser
 
-def instantiate_arguments_from_list(args_server_dir: str, args_client_dir: str, args_genie_python3_dir: str, args_client_e4_dir: str) -> Tuple[str, str, str, str]:  # pylint: disable=line-too-long
-    """
-    Instantiate arguments from a list
-    Args:
-        args_list: list of arguments
-    Returns:
-        args_server_dir, args_client_dir, args_genie_python3_dir, args_client_e4_dir
-    """
+def check_directory_selected(args_server_dir: str, args_client_dir: str, args_genie_python3_dir: str, args_client_e4_dir: str) -> bool:
     argument_checklist = [args_server_dir,
         args_client_dir,
         args_genie_python3_dir,
         args_client_e4_dir]
 
-    if all(argument_checklist) is False:
-        print("You must specify either the release directory or kits_icp_dir or "
-              "ALL of the server, client, client e4 and genie python 3 directories.")
-        sys.exit(2)
-    return args_server_dir, args_client_dir, args_genie_python3_dir, args_client_e4_dir
+    all_directories_populated = all(argument_checklist)
+    return all_directories_populated
 
 def set_args_to_latest(current_release_directory: str) -> Tuple[str, str, str, str, str, str]:
     """
@@ -214,22 +204,18 @@ if __name__ == "__main__":
 
     # Instantiate All server, client and genie_python3 directory paths if present
 
-    elif all([args.server_dir, args.client_dir, args.genie_python3_dir, args.client_e4_dir]) is True:
-    # args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
-    #         args.client_e4_dir is not None:
+    elif check_directory_selected(args.server_dir, args.client_dir, args.genie_python3_dir,\
+        args.client_e4_dir) is True:
+
         server_dir = args.server_dir
         client_dir = args.client_dir
         client_e4_dir = args.client_e4_dir
         genie_python3_dir = args.genie_python3_dir
+       
     else:
         print("You must specify either the release directory or kits_icp_dir or "
               "ALL of the server, client, client e4 and genie python 3 directories.")
         sys.exit(2)
-
-        # server_dir, client_dir, genie_python3_dir, client_e4_dir = instantiate_arguments_from_list(args.server_dir,
-        # args.client_dir,
-        # args.genie_python3_dir,
-        # args.client_e4_dir)
     try:
         prompt = UserPrompt(args.quiet, args.confirm_step)
         upgrade_instrument = UpgradeInstrument(prompt,
