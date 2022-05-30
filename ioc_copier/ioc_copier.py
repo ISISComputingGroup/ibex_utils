@@ -1,104 +1,181 @@
+"""
+Script to handle duplicating IOCs
+"""
+
 from shutil import copytree
-from pathlib import Path
+import sys
 import os
 import re
-ioc = "DFKPS"  # The name of the ioc to run, folders to copy will be of the form, <ioc>-IOC-01App and ioc<ioc>-IOC-01
-start_copy = 11  # The folder to copy (avoid IOC1 as other IOCs usually reference this rather than copying it directly)
-initial_copy = 12  # The first copy
-max_copy = 35  # The final copy
 
-answer = ""
-while answer != "y":
-    answer = input("Have you copied ioc copier to EPICS/ioc/master/<ioc_to_copy>? y/n: ")
-    if answer == "n":
-        print("please make a copy of the file at that location, then run that file.")
-        exit()
+
+def rename_files(root_folder, rename, ioc, start_copy_padded, current_copy_padded):
+    """
+    Function to handle renaming of files.
+    Parameters:
+        root_folder - The root folder path for use in os.path.join.
+        rename - the path of the file or folder to rename.
+        start_copy_padded - the padded starting number, e.g. 01, 11 etc.
+        current_copy_padded - the padded version of the current ioc number.
+    """
+    if f"IOC_{start_copy_padded}" in rename:
+        os.rename(os.path.join(root_folder, rename),
+                  os.path.join(root_folder, rename.replace(f"IOC_{start_copy_padded}",
+                                                           f"IOC_{current_copy_padded}")))
+    if f"IOC-{start_copy_padded}" in rename:
+        os.rename(os.path.join(root_folder, rename),
+                  os.path.join(root_folder, rename.replace(f"IOC-{start_copy_padded}",
+                                                           f"IOC-{current_copy_padded}")))
+    if f"{ioc}_{start_copy_padded}" in rename:
+        os.rename(os.path.join(root_folder, rename),
+                  os.path.join(root_folder, rename.replace(f"{ioc}_{start_copy_padded}",
+                                                           f"{ioc}_{current_copy_padded}")))
+
+
+def replace_text(text_lines, start, current, ioc):
+    """
+    Function to handle replacing of text within files.
+    Parameters:
+        text_lines - the text from the file to process.
+        start - the value to look for to remove.
+        current - the value to replace start with.
+    """
+    for i in range(len(text_lines)):
+        padded_current_copy = f"0{current}" if len(f"{current}") < 2 else current
+        temp_text = re.sub(f"IOC_{start}", f"IOC_{current}", text_lines[i])
+        text_lines[i] = temp_text
+        temp_text = re.sub(f"IOC-{start}", f"IOC-{current}", text_lines[i])
+        text_lines[i] = temp_text
+        temp_text = re.sub(f"{ioc}_{start}", f"{ioc}_{current}", text_lines[i])
+        text_lines[i] = temp_text
+        temp_text = re.sub(f"RAMPFILELIST{start}", f"RAMPFILELIST{current}", text_lines[i])
+        text_lines[i] = temp_text
+
+        temp_text = re.sub(f"IOC_0{start}", f"IOC_{padded_current_copy}", text_lines[i])
+        text_lines[i] = temp_text
+        temp_text = re.sub(f"IOC-0{start}", f"IOC-{padded_current_copy}", text_lines[i])
+        text_lines[i] = temp_text
+        temp_text = re.sub(f"{ioc}_0{start}", f"{ioc}_{padded_current_copy}", text_lines[i])
+        text_lines[i] = temp_text
+        temp_text = re.sub(f"RAMPFILELIST0{start}", f"RAMPFILELIST{padded_current_copy}",
+                           text_lines[i])
+        text_lines[i] = temp_text
+
+
+def help_check():
+    """
+    Function to handle printing help.
+    """
+    if "-h" in sys.argv:
+        print("First Argument: <ioc-to-duplicate>")
+        print("This should be the name of the ioc folder, the folders to "
+              "actual duplicate will all contain this in their names.\n")
+        print("Second Argument: <number-ioc-to-copy")
+        print("This should be the last currently existing ioc number, "
+              "e.g. 2. IOC-01 should not be copied in this way, as later"
+              " iocs should reference some of its files rather than copy them.\n")
+        print("Third Argument: <first-copy>")
+        print("This should be the number of the first copy, i.e."
+              " the first IOC made will be IOC-<first-copy>.\n")
+        print("Fourth Argument: <max-number-ioc>")
+        print("This should be the maximum number copied to.\n")
+        sys.exit()
+
+
+def handle_arguments():
+    """
+    Function to handle arguments of ioc_copier.py.
+    Returns:
+        ioc - The name of the ioc to run, folders to copy will be of the form,
+              <ioc>-IOC-01App and ioc<ioc>-IOC-01.
+        start_copy - The folder to copy (avoid IOC1 as other IOCs usually reference
+                     this rather than copying it directly).
+        initial_copy - The first copy.
+        max_copy - The final copy.
+    """
+    if len(sys.argv) < 5:
+        print("Not enough arguments")
+        print("Arguments should be <ioc-to-duplicate> <number-ioc-to-copy> "
+              "<first-copy> <max-number-ioc>")
+        print("use argument \"-h\" for more details.")
+        sys.exit()
+    elif len(sys.argv) > 5:
+        print("Too many arguments")
+        print("Arguments should be <ioc-to-duplicate> <number-ioc-to-copy> "
+              "<first-copy> <max-number-ioc>")
+        print("use argument \"-h\" for more details.")
+        sys.exit()
     else:
-        if answer != "y":
-            print("please answer y or n")
-answer = ""
-while answer != "y":
-    answer = input("Have you set the ioc, start_copy, initial_copy, and max_copy variables in the file? y/n: ")
-    if answer == "n":
-        print("open the file and set those variable to match the ioc to copy")
-        exit()
-    else:
-        if answer != "y":
-            print("please answer y or n")
+        ioc = sys.argv[1]
+        start_copy = int(sys.argv[2])
+        initial_copy = int(sys.argv[3])
+        max_copy = int(sys.argv[4])
+    return initial_copy, ioc, max_copy, start_copy
 
-ioc_name = f"{ioc}-IOC"
-for current_copy in range(initial_copy,max_copy+1):
-    copytree(os.path.join(os.getcwd(), f"{ioc_name}-{start_copy}App"),
-             os.path.join(os.getcwd(), f"{ioc_name}-{current_copy}App"))
-    path = os.path.join(os.getcwd(), f"{ioc_name}-{current_copy}App")
-    for root, subFolder, files in os.walk(path):
-        for file in files:
-            if "exe" not in file and "obj" not in file and "pdb" not in file:
-                with open(os.path.join(root, file), "r") as fp:
-                    print(os.path.join(root, file))
-                    text = fp.readlines()
 
-                for i in range(len(text)):
-                    temp = re.sub(f"IOC_{start_copy}", f"IOC_{current_copy}",text[i])
-                    text[i] = temp
-                    temp = re.sub(f"IOC-{start_copy}", f"IOC-{current_copy}",text[i])
-                    text[i] = temp
-                with open(os.path.join(root, file), "w") as fp:
-                    fp.seek(0)
-                    fp.writelines(text)
-                    fp.truncate()
-            if f"IOC_{start_copy}" in file:
-                os.rename(os.path.join(root, file), os.path.join(root, file.replace(f"IOC_{start_copy}",
-                                                                                    f"IOC_{current_copy}")))
-            if f"IOC-{start_copy}" in file:
-                os.rename(os.path.join(root, file), os.path.join(root, file.replace(f"IOC-{start_copy}",
-                                                                                    f"IOC-{current_copy}")))
-        for folder in subFolder:
-            if f"IOC_{start_copy}" in folder:
-                os.rename(os.path.join(root, folder), os.path.join(root, folder.replace(f"IOC_{start_copy}",
-                                                                                        f"IOC_{current_copy}")))
-            if f"IOC-{start_copy}" in folder:
-                os.rename(os.path.join(root, folder), os.path.join(root, folder.replace(f"IOC-{start_copy}",
-                                                                                        f"IOC-{current_copy}")))
+def copy_folder(file_format, ioc_name, zero_padded_current_copy, zero_padded_start_copy):
+    """
+    Function to handle copying folder before replacing text and names.
+    Parameters:
+        file_format - The format to use for the folder name, either ending in app
+                      or starting with ioc. in the form of an fstring.
+        ioc_name - name of the ioc.
+        zero_padded_current_copy - the name of the current folder, 0 padded to two digits.
+        zero_padded_start_copy - The name of the folder to copy, 0 padded to two digits.
+    Returns:
+        The path of the new folder.
+    """
+    start_path = file_format.format(f"{ioc_name}-{zero_padded_start_copy}")
+    path = os.path.join(os.getcwd(), file_format.format(f"{ioc_name}-{zero_padded_current_copy}"))
+    copytree(os.path.join(os.getcwd(), start_path), os.path.join(path))
+    return path
 
-os.chdir(os.path.join(os.getcwd(), "iocBoot"))
-for current_copy in range(initial_copy, max_copy+1):
-    copytree(os.path.join(os.getcwd(), f"ioc{ioc_name}-{start_copy}"),
-             os.path.join(os.getcwd(), f"ioc{ioc_name}-{current_copy}"))
-    path = os.path.join(os.getcwd(), f"ioc{ioc_name}-{current_copy}")
-    for root, subFolder, files in os.walk(path):
-        for file in files:
-            if "exe" not in file and "obj" not in file and "pdb" not in file:
-                with open(os.path.join(root, file), "r") as fp:
-                    print(os.path.join(root, file))
-                    text = fp.readlines()
 
-                for i in range(len(text)):
-                    temp = re.sub(f"IOC_{start_copy}", f"IOC_{current_copy}",text[i])
-                    text[i] = temp
-                    temp = re.sub(f"IOC-{start_copy}", f"IOC-{current_copy}",text[i])
-                    text[i] = temp
-                    temp = re.sub(f"{ioc}_{start_copy}", f"{ioc}_{current_copy}", text[i])
-                    text[i] = temp
-                    temp = re.sub(f"RAMPFILELIST{start_copy}", f"RAMPFILELIST{current_copy}", text[i])
-                    text[i] = temp
-                with open(os.path.join(root, file), "w") as fp:
-                    fp.seek(0)
-                    fp.writelines(text)
-                    fp.truncate()
-            if f"IOC_{start_copy}" in file:
-                os.rename(os.path.join(root, file), os.path.join(root, file.replace(f"IOC_{start_copy}",
-                                                                                    f"IOC_{current_copy}")))
-            if f"IOC-{start_copy}" in file:
-                os.rename(os.path.join(root, file), os.path.join(root, file.replace(f"IOC-{start_copy}",
-                                                                                    f"IOC-{current_copy}")))
-        for folder in subFolder:
-            if f"IOC_{start_copy}" in folder:
-                os.rename(os.path.join(root, folder), os.path.join(root, folder.replace(f"IOC_{start_copy}",
-                                                                                        f"IOC_{current_copy}")))
-            if f"IOC-{start_copy}" in folder:
-                os.rename(os.path.join(root, folder), os.path.join(root, folder.replace(f"IOC-{start_copy}",
-                                                                                        f"IOC-{current_copy}")))
-                
-print(f"Please run a grep for {start_copy}. There may be some things missed by ths such as axes on a motor, "
-      f"as this file cannot just replace all iterations of {start_copy} as doing so could break functionality.")
+def copy_loop(start_copy, initial_copy, max_copy, file_format, ioc):
+    """
+    Main loop to handle copy and renaming of files
+    Parameters:
+        start_copy - The folder to copy (avoid IOC1 as other IOCs usually
+                     reference this rather than copying it directly).
+        initial_copy - The first copy.
+        max_copy - The final copy.
+        file_format - The format to use for the folder name, either ending
+                      in app or starting with ioc. in the form of an fstring.
+        ioc_name - The name of the ioc to run, folders to copy will be of the form,
+                   <ioc>-IOC-01App and ioc<ioc>-IOC-01.
+    """
+    ioc_name = f"{ioc}-IOC"
+    for current_copy in range(initial_copy, max_copy + 1):
+
+        padded_start_copy = f"0{start_copy}" if len(f"{start_copy}") < 2 else start_copy
+        padded_current_copy = f"0{current_copy}" if len(f"{current_copy}") < 2 else current_copy
+        path = copy_folder(file_format, ioc_name, padded_current_copy, padded_start_copy)
+        for root, sub_folder, files in os.walk(path):
+            for file in files:
+                if "exe" not in file and "obj" not in file and "pdb" not in file:
+                    with open(os.path.join(root, file), "r") as file_pointer:
+                        text = file_pointer.readlines()
+                    replace_text(text, start_copy, current_copy, ioc)
+                    with open(os.path.join(root, file), "w") as file_pointer:
+                        file_pointer.seek(0)
+                        file_pointer.writelines(text)
+                        file_pointer.truncate()
+                    rename_files(root, file, ioc, padded_start_copy, padded_current_copy)
+            for folder in sub_folder:
+                rename_files(root, folder, ioc, padded_start_copy, padded_current_copy)
+
+
+def main():
+    """Main function, sets ioc-name, calls functions in order, and prints when done."""
+    help_check()
+    initial_copy, ioc, max_copy, start_copy = handle_arguments()
+    copy_loop(start_copy, initial_copy, max_copy, "{}App", ioc)
+    os.chdir(os.path.join(os.getcwd(), "iocBoot"))
+    copy_loop(start_copy, initial_copy, max_copy, "ioc{}", ioc)
+    print(f"Please run a grep for {start_copy}. "
+          f"There may be some things missed by ths such as axes on a motor, "
+          f"as this file cannot just replace all iterations of {start_copy} "
+          f"as doing so could break functionality.")
+
+
+if __name__ == '__main__':
+    main()
