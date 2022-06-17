@@ -6,7 +6,10 @@ from shutil import copytree
 import sys
 import os
 import re
-
+global START_COPY
+global current_copy
+global padded_start_copy
+global padded_current_copy
 
 def rename_files(root_folder, rename, ioc):
     """
@@ -38,26 +41,38 @@ def replace_text(text_lines, ioc):
         text_lines - the text from the file to process.
         start - the value to look for to remove.
         current - the value to replace start with.
+    return:
+        The new text to be placed in the file.
     """
-    for i in range(len(text_lines)):
-        temp_text = re.sub(f"IOC_{start_copy}", f"IOC_{current_copy}", text_lines[i])
-        text_lines[i] = temp_text
-        temp_text = re.sub(f"IOC-{start_copy}", f"IOC-{current_copy}", text_lines[i])
-        text_lines[i] = temp_text
-        temp_text = re.sub(f"{ioc}_{start_copy}", f"{ioc}_{current_copy}", text_lines[i])
-        text_lines[i] = temp_text
-        temp_text = re.sub(f"RAMPFILELIST{start_copy}", f"RAMPFILELIST{current_copy}", text_lines[i])
-        text_lines[i] = temp_text
+    return [replace_line(ioc, line) for line in text_lines]
 
-        temp_text = re.sub(f"IOC_0{start_copy}", f"IOC_{padded_current_copy}", text_lines[i])
-        text_lines[i] = temp_text
-        temp_text = re.sub(f"IOC-0{start_copy}", f"IOC-{padded_current_copy}", text_lines[i])
-        text_lines[i] = temp_text
-        temp_text = re.sub(f"{ioc}_0{start_copy}", f"{ioc}_{padded_current_copy}", text_lines[i])
-        text_lines[i] = temp_text
-        temp_text = re.sub(f"RAMPFILELIST0{start_copy}", f"RAMPFILELIST{padded_current_copy}",
-                           text_lines[i])
-        text_lines[i] = temp_text
+
+def replace_line(ioc, line):
+    """
+    Function to replace a single line in a file.
+    param ioc: The name of the ioc.
+    param line: The line of text to replace.
+    return:
+        Tne new line of text.
+    """
+    temp_text = re.sub(f"IOC_{START_COPY}", f"IOC_{current_copy}", line)
+    line = temp_text
+    temp_text = re.sub(f"IOC-{START_COPY}", f"IOC-{current_copy}", line)
+    line = temp_text
+    temp_text = re.sub(f"{ioc}_{START_COPY}", f"{ioc}_{current_copy}", line)
+    line = temp_text
+    temp_text = re.sub(f"RAMPFILELIST{START_COPY}", f"RAMPFILELIST{current_copy}", line)
+    line = temp_text
+    temp_text = re.sub(f"IOC_0{START_COPY}", f"IOC_{padded_current_copy}", line)
+    line = temp_text
+    temp_text = re.sub(f"IOC-0{START_COPY}", f"IOC-{padded_current_copy}", line)
+    line = temp_text
+    temp_text = re.sub(f"{ioc}_0{START_COPY}", f"{ioc}_{padded_current_copy}", line)
+    line = temp_text
+    temp_text = re.sub(f"RAMPFILELIST0{START_COPY}", f"RAMPFILELIST{padded_current_copy}",
+                       line)
+    line = temp_text
+    return line
 
 
 def help_check():
@@ -105,8 +120,8 @@ def handle_arguments():
         sys.exit()
     else:
         ioc = sys.argv[1]
-        global start_copy
-        start_copy= int(sys.argv[2])
+        global START_COPY
+        START_COPY = int(sys.argv[2])
         initial_copy = int(sys.argv[3])
         max_copy = int(sys.argv[4])
     return initial_copy, ioc, max_copy
@@ -143,7 +158,7 @@ def get_file_text(file, ioc, root):
     """
     with open(os.path.join(root, file), "r") as file_pointer:
         text = file_pointer.readlines()
-    replace_text(text, ioc)
+    text = replace_text(text, ioc)
     return text
 
 
@@ -190,7 +205,7 @@ def folder_walk(ioc, root, sub_folder):
     :return:
     """
     for folder in sub_folder:
-        rename_files(root, folder, ioc, padded_start_copy, padded_current_copy)
+        rename_files(root, folder, ioc)
 
 
 def copy_loop(initial_copy, max_copy, file_format, ioc):
@@ -211,7 +226,7 @@ def copy_loop(initial_copy, max_copy, file_format, ioc):
     global padded_start_copy
     global padded_current_copy
     for current_copy in range(initial_copy, max_copy + 1):
-        padded_start_copy = add_zero_padding(start_copy)
+        padded_start_copy = add_zero_padding(START_COPY)
         padded_current_copy = add_zero_padding(current_copy)
         padded_current_copy = f"0{current_copy}" if len(f"{current_copy}") < 2 else current_copy
         path = copy_folder(file_format, ioc_name)
@@ -221,6 +236,12 @@ def copy_loop(initial_copy, max_copy, file_format, ioc):
 
 
 def add_zero_padding(copy):
+    """
+    Function to add zero padding to the copy number if nessecary.
+    :param copy: The copy number to add zero padding to.
+    :return:
+        The copy, with zero padding added if it has less than 2 digits.
+    """
     return f"0{copy}" if len(f"{copy}") < 2 else copy
 
 
@@ -228,12 +249,12 @@ def main():
     """Main function, sets ioc-name, calls functions in order, and prints when done."""
     help_check()
     initial_copy, ioc, max_copy = handle_arguments()
-    copy_loop(start_copy, initial_copy, max_copy, "{}App", ioc)
+    copy_loop(initial_copy, max_copy, "{}App", ioc)
     os.chdir(os.path.join(os.getcwd(), "iocBoot"))
-    copy_loop(start_copy, initial_copy, max_copy, "ioc{}", ioc)
-    print(f"Please run a grep for {start_copy}. "
+    copy_loop(initial_copy, max_copy, "ioc{}", ioc)
+    print(f"Please run a grep for {START_COPY}. "
           f"There may be some things missed by ths such as axes on a motor, "
-          f"as this file cannot just replace all iterations of {start_copy} "
+          f"as this file cannot just replace all iterations of {START_COPY} "
           f"as doing so could break functionality.")
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ class TestIocCopier(unittest.TestCase):
         initial_copy, ioc, max_copy = ioc_copier.handle_arguments()
         mock_print.assert_not_called()
         self.assertEqual(ioc, "test")
-        self.assertEqual(ioc_copier.start_copy, 1)
+        self.assertEqual(ioc_copier.START_COPY, 1)
         self.assertEqual(initial_copy, 2)
         self.assertEqual(max_copy, 3)
 
@@ -58,11 +58,11 @@ class TestIocCopier(unittest.TestCase):
         ("handle_math",["n = 2+5", "test_02", "02+5"], ["n = 2+5", "test_13", "02+5"], 13),
     ])
     def test_replace_text_called_THEN_replace_text_start_in_text_with_current(self, _, test_text, check_text, copy):
-        ioc_copier.start_copy = 2
+        ioc_copier.START_COPY = 2
         ioc_copier.current_copy = copy
-        ioc_copier.padded_start_copy = ioc_copier.add_zero_padding(ioc_copier.start_copy)
+        ioc_copier.padded_start_copy = ioc_copier.add_zero_padding(ioc_copier.START_COPY)
         ioc_copier.padded_current_copy = ioc_copier.add_zero_padding(ioc_copier.current_copy)
-        ioc_copier.replace_text(test_text, "test")
+        test_text = ioc_copier.replace_text(test_text, "test")
         self.assertEqual(check_text, test_text)
 
 
@@ -121,7 +121,7 @@ class TestIocCopier(unittest.TestCase):
     def test_copy_loop_THEN_writes_to_file(self, _,start_copy, initial_copy, max_copy, folder_count, open_count,
                                            file_type, mock_walk, mock_rename, mock_folder):
 
-        ioc_copier.start_copy = start_copy
+        ioc_copier.START_COPY = start_copy
         initial_copy = 3
         max_copy = 5
         padded_start_copy = ioc_copier.add_zero_padding(start_copy)
@@ -149,7 +149,7 @@ class TestIocCopier(unittest.TestCase):
     @mock.patch("ioc_copier.os.walk")
     @mock.patch("builtins.open", new_callable=mock.mock_open, read_data="test_02\nIOC-2")
     def test_copy_loop_AND_valid_parameters_AND_empty_THEN_copy_folder_AND_end(self, mock_open, mock_walk, mock_rename, mock_folder):
-        ioc_copier.start_copy = 2
+        ioc_copier.START_COPY = 2
         initial_copy = 3
         max_copy = 5
         file_format = "{}"
@@ -169,7 +169,7 @@ class TestIocCopier(unittest.TestCase):
     @mock.patch("builtins.open", new_callable=mock.mock_open, read_data="test_02\nIOC-2")
     def test_copy_loop_AND_max_is_start_AND_empty_THEN_copy_folder_AND_end(self, mock_open, mock_walk, mock_rename,
                                                                                mock_folder):
-        ioc_copier.start_copy = 2
+        ioc_copier.START_COPY = 2
         initial_copy = 3
         max_copy = 2
         file_format = "{}"
