@@ -2,9 +2,9 @@ import json
 import urllib.request
 from collections import Counter
 
-system_tests_url = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests_IOCs/{}/testReport/api/json"
+system_tests_url = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/{}/testReport/api/json"
 
-test_metadata = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests_IOCs/api/json"
+test_metadata = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/api/json"
 
 number_to_print = 15
 
