@@ -18,7 +18,7 @@ class UpgradeInstrument:
     """
     Class to upgrade the instrument installation to the given version of IBEX.
     """
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
+    def __init__(self, user_prompt, server_source_dir, client_source_dir, genie_python3_dir,
                  ibex_version, file_utils=FileUtils()):
         """
         Initializer.
@@ -26,31 +26,30 @@ class UpgradeInstrument:
             user_prompt: a object to allow prompting of the user
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
-            client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie_python 3 from
             ibex_version: version number of ibex that we are upgrading to
             file_utils : collection of file utilities
         """
         self._client_tasks = ClientTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
         self._mysql_tasks = MysqlTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
         self._python_tasks = PythonTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
         self._server_tasks = ServerTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
         self._system_tasks = SystemTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
         self._vhd_tasks = VHDTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
         self._backup_tasks = BackupTasks(
-            user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir, ibex_version, file_utils)
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
     @staticmethod
     def icp_in_labview_modules():
@@ -94,7 +93,7 @@ class UpgradeInstrument:
         self._server_tasks.install_ibex_server(use_old_galil)
         self._server_tasks.update_icp(self.icp_in_labview_modules(), register_icp=False)
         self._python_tasks.install_genie_python3()
-        self._client_tasks.install_e4_ibex_client()
+        self._client_tasks.install_ibex_client()
         self._server_tasks.upgrade_instrument_configuration()
         self._server_tasks.install_shared_scripts_repository()
 
@@ -242,7 +241,7 @@ class UpgradeInstrument:
             self._server_tasks.install_ibex_server()
             self._python_tasks.install_genie_python3()
             self._mysql_tasks.install_mysql_for_vhd()
-            self._client_tasks.install_e4_ibex_client()
+            self._client_tasks.install_ibex_client_with_()
             self._server_tasks.setup_config_repository()
             self._server_tasks.upgrade_instrument_configuration()
             self._server_tasks.setup_calibrations_repository()
@@ -278,6 +277,7 @@ class UpgradeInstrument:
         """
         #self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._mysql_tasks.configure_mysql_for_vhd_post_install()
+
 
 # All possible upgrade tasks
 UPGRADE_TYPES = {

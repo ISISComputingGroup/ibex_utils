@@ -5,9 +5,9 @@ import shutil
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
-    PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH, GUI_PATH_E4
+    PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH
 
-ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, GUI_PATH_E4, EPICS_UTILS_PATH)
+ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, EPICS_UTILS_PATH)
 
 
 class BackupTasks(BaseTasks):
