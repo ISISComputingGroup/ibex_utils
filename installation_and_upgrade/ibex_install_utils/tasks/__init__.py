@@ -8,7 +8,7 @@ from ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
 
 
 class BaseTasks:
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, client_e4_source_dir, genie_python3_dir,
+    def __init__(self, user_prompt, server_source_dir, client_source_dir, genie_python3_dir,
                  ibex_version, file_utils=FileUtils()):
         """
         Initializer.
@@ -16,7 +16,6 @@ class BaseTasks:
             user_prompt (ibex_install_utils.user_prompt.UserPrompt): a object to allow prompting of the user
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
-            client_e4_source_dir: directory to install ibex E4 client from
             genie_python3_dir: directory to install genie python from
             file_utils : collection of file utilities
             ibex_version : the version of ibex being installed
@@ -24,7 +23,6 @@ class BaseTasks:
         self.prompt = user_prompt  # This is needed to allow @tasks to work
         self._server_source_dir = server_source_dir
         self._client_source_dir = client_source_dir
-        self._client_e4_source_dir = client_e4_source_dir
         self._genie_python_3_source_dir = genie_python3_dir
         self._file_utils = file_utils
         self._ibex_version = ibex_version
@@ -51,7 +49,6 @@ class BaseTasks:
     @staticmethod
     def _today_date_for_filenames():
         return date.today().strftime("%Y_%m_%d")
-
 
     @staticmethod
     def _get_backup_dir():

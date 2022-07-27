@@ -40,7 +40,6 @@ if __name__ == "__main__":
     parser.add_argument("--server_build_prefix", default="EPICS", help="Prefix for build directory name")
     parser.add_argument("--server_dir", default=None, help="Directory from which IBEX server should be installed")
     parser.add_argument("--client_dir", default=None, help="Directory from which IBEX client should be installed")
-    parser.add_argument("--client_e4_dir", default=None, help="Directory from which IBEX E4 client should be installed")
     parser.add_argument("--genie_python3_dir", default=None,
                         help="Directory from which genie_python_3 should be installed")
     parser.add_argument("--confirm_step", default=False, action="store_true",
@@ -56,7 +55,6 @@ if __name__ == "__main__":
                         .format(", \n".join(deployment_types)))
 
     args = parser.parse_args()
-    client_e4_dir = args.client_e4_dir
     current_client_version = None
     if args.release_dir is not None:
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
@@ -65,7 +63,6 @@ if __name__ == "__main__":
             current_release_dir += f"-{args.release_suffix}"
         server_dir = os.path.join(current_release_dir, "EPICS")
         client_dir = os.path.join(current_release_dir, "Client")
-        client_e4_dir = client_dir
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
 
     elif args.kits_icp_dir is not None:
@@ -80,29 +77,24 @@ if __name__ == "__main__":
             client_build_dir = os.path.join(args.kits_icp_dir, "Client")
             client_dir = get_latest_directory_path(client_build_dir, "BUILD")
 
-            client_e4_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
-            client_e4_dir = get_latest_directory_path(client_e4_build_dir, "BUILD")
-
             genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
             genie_python3_dir = get_latest_directory_path(genie_python3_build_dir, "BUILD-")
         except IOError as e:
             print(e)
             sys.exit(3)
 
-    elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None and \
-            args.client_e4_dir is not None:
+    elif args.server_dir is not None and args.client_dir is not None and args.genie_python3_dir is not None:
         server_dir = args.server_dir
         client_dir = args.client_dir
-        client_e4_dir = args.client_e4_dir
         genie_python3_dir = args.genie_python3_dir
     else:
         print("You must specify either the release directory or kits_icp_dir or "
-              "ALL of the server, client, client e4 and genie python 3 directories.")
+              "ALL of the server, client and genie python 3 directories.")
         sys.exit(2)
 
     try:
         prompt = UserPrompt(args.quiet, args.confirm_step)
-        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, client_e4_dir, genie_python3_dir,
+        upgrade_instrument = UpgradeInstrument(prompt, server_dir, client_dir, genie_python3_dir,
                                                current_client_version)
         upgrade_function = UPGRADE_TYPES[args.deployment_type][0]
         upgrade_function(upgrade_instrument)

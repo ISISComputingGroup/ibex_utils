@@ -20,6 +20,4 @@ STAGE_DELETED = os.path.join(INST_SHARE_AREA, "backups$", "stage-deleted")
 PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
 PYTHON_3_PATH = os.path.join(APPS_BASE_DIR, "Python3")
 
-
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client")
-GUI_PATH_E4 = os.path.join(APPS_BASE_DIR, "Client_E4")
