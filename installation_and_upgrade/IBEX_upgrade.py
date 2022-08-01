@@ -62,7 +62,7 @@ if __name__ == "__main__":
         if args.release_suffix != "":
             current_release_dir += f"-{args.release_suffix}"
         server_dir = os.path.join(current_release_dir, "EPICS")
-        client_dir = os.path.join(current_release_dir, "Client_E4")
+        client_dir = os.path.join(current_release_dir, "Client")
         genie_python3_dir = os.path.join(current_release_dir, "genie_python_3")
 
     elif args.kits_icp_dir is not None:
