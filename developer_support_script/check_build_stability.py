@@ -1,45 +1,175 @@
+"""
+A utility script to retrieve system tests from a jenkins job.
+
+The class currently acts as a singleton.
+"""
+
+# Dependencies
+import http.client as http
 import json
 import urllib.request
 from collections import Counter
 
-system_tests_url = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests_IOCs/{}/testReport/api/json"
+class SystemTestData:
+    """
+    Singleton class to host system test data pulled down from jenkins
+    """
 
-test_metadata = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests_IOCs/api/json"
+    def __init__(self, system_tests_url, test_metadata, test_return_quantity):
+        self.system_tests_url = system_tests_url
+        self.raw_test_metadata = test_metadata
+        self.test_return_quantity = test_return_quantity
 
-number_to_print = 15
+        self._json_test_metadata = self.request_page_and_metadata()
+        self._raw_builds = self.get_all_builds()
+        self._current_build, self._complete_build = self.get_current_and_complete_builds()
+        self._proccessed_builds = self.remove_current_build_if_no_results()
+        self.failing_tests = self.retrieve_failed_tests_from_builds()
+        self.top_n_failing_tests = self.get_top_n_failed_tests()
 
-failing_tests = Counter()
+    def request_page_and_metadata(self):
+        """
+        Request a jenkins webpage and return
+        the metadata json containing system test build info
 
-try:
-    page = urllib.request.urlopen(test_metadata)
+        :param url: the url to the jenkins webpage
+        :return: the metadata json
+        """
+        try:
+            page = urllib.request.urlopen(self.raw_test_metadata)
+            metadata = json.loads(page.read())
+            self._json_test_metadata = metadata
+            return metadata
+        except http.IncompleteRead as err:
+            err_page = err.partial
+            print(f"Failed to get metadata: {err_page}")
+            return None
 
-    test_metadata_json = json.loads(page.read())
-except Exception as e:
-    print(f"Failed to get metadata: {e}")
+    def get_all_builds(self):
+        """
+        Return a list of all builds in the system tests job
 
-builds = [build["number"] for build in test_metadata_json["builds"]]
+        :param metadata: the metadata json from the system tests job
+        :return: a list of all builds in the system tests job
+        """
+        builds = [build["number"] for build in self._json_test_metadata["builds"]]
+        self._raw_builds = builds
+        return builds
 
-current_build = test_metadata_json["lastBuild"]["number"]
-complete_build = test_metadata_json["lastCompletedBuild"]["number"]
+    def get_current_and_complete_builds(self):
+        """
+        Return the current and complete builds from the metadata json
 
-# No results for current build
-if complete_build != current_build:
-    builds.remove(current_build)
+        :param metadata: the metadata json from the system tests job
+        :return: the current and complete builds from the metadata json
+        """
 
-for test_num in builds:
-    print(f"Getting data for {test_num}")
-    try:
-        page = urllib.request.urlopen(system_tests_url.format(test_num))
+        current_build =  self._json_test_metadata["lastBuild"]["number"]
+        complete_build =  self._json_test_metadata["lastCompletedBuild"]["number"]
 
-        test_json = json.loads(page.read())
-    except Exception as e:
-        print(f"Failed to get test data for {test_num}: {e}")
+        return current_build, complete_build
 
-    for test in test_json["suites"]:
-        for case in test["cases"]:
-            if case["status"] == "FAILED":
-                failing_tests.update([case["className"] + "." + case["name"]])
+    def remove_current_build_if_no_results(self):
+        """
+        Remove the current build from the list of builds if there
+        are no results for it
 
-failing_tests = failing_tests.most_common(number_to_print)
-for test in failing_tests:
-    print(test)
+        :param builds: the list of builds
+        :param current_build: the current build
+        :return: the list of builds without the current build if there
+        """
+        if self._complete_build != self._current_build:
+            self._raw_builds.remove( self._current_build)
+        return self._raw_builds
+
+    def retrieve_test_data(self, test_num: int):
+        """
+        Retrieve test data for a given build number
+
+        :param test_num: the build number to retrieve test data for
+        :return: the test data json
+        """
+        print(f"Getting data for {test_num}")
+        try:
+            page = urllib.request.urlopen(self.system_tests_url.format(test_num))
+            test_json = json.loads(page.read())
+            return test_json
+        except http.IncompleteRead as err:
+            err_page = err.partial
+            print(f"Failed to get test data for {test_num}: {err_page}")
+            return err_page
+
+    @staticmethod
+    def add_failed_tests_to_counter(test_json: dict, failing_tests: Counter):
+        """
+        Add failed tests to a Counter object containing all failed tests
+
+        :param test_json: the test data json
+        :param failing_tests: the Counter object to add failed tests to
+        :return: the Counter object containing all failed tests
+        """
+        try:
+            for test in test_json["suites"]:
+                for case in test["cases"]:
+                    if case["status"] == "FAILED":
+                        failing_tests.update([case["className"] + "." + case["name"]])
+        except KeyError as err:
+            print(f"Failed to add failed tests to counter: {err}")
+        return failing_tests
+
+
+    def retrieve_failed_tests_from_builds(self):
+        """
+        Retreive tests data and return failed tests from builds
+        within a Counter object.
+
+        :param builds: the list of builds to retrieve test data for
+        :return: a Counter object containing all failed tests
+        """
+        test_counter = Counter()
+        for test_num in self._proccessed_builds:
+            test_json = self.retrieve_test_data(test_num)
+            failing_tests = self.add_failed_tests_to_counter(test_json, test_counter)
+        self.failing_tests = failing_tests
+        return failing_tests
+
+    def get_top_n_failed_tests(self):
+        """
+        Get the top n failed tests from a Counter object of failed tests
+
+        :param failing_tests: the Counter object containing all failed tests
+        :param n: the number of failed tests to return
+        :return: the top n failed tests
+        """
+        return self.failing_tests.most_common(self.test_return_quantity)
+
+    @staticmethod
+    def print_failing_tests(failing_tests):
+        """
+        Print the top n failing tests
+
+        :param failing_tests: the top n failing tests
+        """
+        for test in failing_tests:
+            print(test)
+
+
+
+def main():
+    """
+    Main function
+    """
+
+    system_tests_url = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/{}/testReport/api/json"
+    test_metadata = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/api/json"
+    my_test_data = SystemTestData(
+        system_tests_url=system_tests_url,
+        test_metadata=test_metadata,
+        test_return_quantity=15)
+        
+    top_n_tests = my_test_data.top_n_failing_tests
+    my_test_data.print_failing_tests(top_n_tests)
+
+
+if __name__ == "__main__":
+    main()
