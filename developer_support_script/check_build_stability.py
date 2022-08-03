@@ -154,12 +154,8 @@ def main():
 
     system_tests_url = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/{}/testReport/api/json"
     test_metadata = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/api/json"
-    my_test_data = SystemTestData(
-        system_tests_url=system_tests_url,
-        test_metadata=test_metadata,
-        test_return_quantity=15)
-    top_n_tests = my_test_data.top_n_failing_tests
-    my_test_data.print_failing_tests(top_n_tests)
+    my_test_data = SystemTestData(system_tests_url, test_metadata, 15)
+    my_test_data.print_failing_tests(my_test_data.top_n_failing_tests)
 
 
 if __name__ == "__main__":
