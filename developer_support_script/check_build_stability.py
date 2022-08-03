@@ -32,7 +32,6 @@ class SystemTestData:
         Request a jenkins webpage and return
         the metadata json containing system test build info
 
-        :param url: the url to the jenkins webpage
         :return: the metadata json
         """
         try:
@@ -49,7 +48,6 @@ class SystemTestData:
         """
         Return a list of all builds in the system tests job
 
-        :param metadata: the metadata json from the system tests job
         :return: a list of all builds in the system tests job
         """
         builds = [build["number"] for build in self._json_test_metadata["builds"]]
@@ -60,7 +58,6 @@ class SystemTestData:
         """
         Return the current and complete builds from the metadata json
 
-        :param metadata: the metadata json from the system tests job
         :return: the current and complete builds from the metadata json
         """
 
@@ -74,8 +71,6 @@ class SystemTestData:
         Remove the current build from the list of builds if there
         are no results for it
 
-        :param builds: the list of builds
-        :param current_build: the current build
         :return: the list of builds without the current build if there
         """
         if self._complete_build != self._current_build:
@@ -123,7 +118,6 @@ class SystemTestData:
         Retreive tests data and return failed tests from builds
         within a Counter object.
 
-        :param builds: the list of builds to retrieve test data for
         :return: a Counter object containing all failed tests
         """
         test_counter = Counter()
@@ -137,8 +131,6 @@ class SystemTestData:
         """
         Get the top n failed tests from a Counter object of failed tests
 
-        :param failing_tests: the Counter object containing all failed tests
-        :param n: the number of failed tests to return
         :return: the top n failed tests
         """
         return self.failing_tests.most_common(self.test_return_quantity)
@@ -166,7 +158,6 @@ def main():
         system_tests_url=system_tests_url,
         test_metadata=test_metadata,
         test_return_quantity=15)
-        
     top_n_tests = my_test_data.top_n_failing_tests
     my_test_data.print_failing_tests(top_n_tests)
 
