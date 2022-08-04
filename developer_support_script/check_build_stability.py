@@ -10,6 +10,7 @@ import json
 import urllib.request
 from collections import Counter
 
+
 class SystemTestData:
     """
     Singleton class to host system test data pulled down from jenkins
@@ -144,7 +145,6 @@ class SystemTestData:
         """
         for test in failing_tests:
             print(test)
-
 
 
 def main():

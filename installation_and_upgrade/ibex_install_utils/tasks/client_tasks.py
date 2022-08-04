@@ -4,30 +4,18 @@ import subprocess
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, GUI_PATH_E4
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, GUI_PATH
 
 
 class ClientTasks(BaseTasks):
 
-    @task("Installing IBEX Client")
+    @task("Installing IBEX Client with builtin python")
     def install_ibex_client(self):
         """
-        Install the ibex client (which also installs genie python).
+        Install the ibex client with builtin python.
 
         """
         self._install_set_version_of_ibex_client(self._client_source_dir)
-
-    @task("Installing IBEX Client")
-    def install_e4_ibex_client(self):
-        """
-        Install the ibex client E4 version (which also installs genie python).
-
-        """
-        source_dir = self._client_e4_source_dir
-        if source_dir is None:
-            self.prompt.prompt_and_raise_if_not_yes("The E4 client path has not been set; continue with installation?")
-        else:
-            self._install_set_version_of_ibex_client(source_dir)
 
     def _install_set_version_of_ibex_client(self, source_dir):
         """
@@ -37,7 +25,7 @@ class ClientTasks(BaseTasks):
         """
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
 
-        RunProcess(source_dir, "install_client.bat", prog_args=["NOINT"]).run()
+        RunProcess(source_dir, "install_gui_with_builtin_python.bat", prog_args=["NOINT"]).run()
 
     @task("Starting IBEX gui")
     def start_ibex_gui(self):
@@ -45,7 +33,7 @@ class ClientTasks(BaseTasks):
         Start the IBEX GUI
         :return:
         """
-        subprocess.Popen([os.path.join(GUI_PATH_E4, "ibex-client.exe")], cwd=GUI_PATH_E4)
+        subprocess.Popen([os.path.join(GUI_PATH, "ibex-client.exe")], cwd=GUI_PATH)
 
     @task("Client release tests")
     def perform_client_tests(self):
