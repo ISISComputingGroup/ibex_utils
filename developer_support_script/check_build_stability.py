@@ -5,7 +5,6 @@ The class currently acts as a singleton.
 """
 
 # Dependencies
-import http.client as http
 import json
 import urllib.request
 from collections import Counter
@@ -23,8 +22,8 @@ class SystemTestData:
 
         self._json_test_metadata = self.request_page_and_metadata()
         self._raw_builds = self.get_all_builds()
-        self._current_build, self._complete_build = self.get_current_and_complete_builds()
-        self._proccessed_builds = self.remove_current_build_if_no_results()
+        self._current_build,self._recently_completed_builds = self.get_current_and_recently_completed_builds() #pylint: disable=line-too-long
+        self._processed_builds = self.remove_current_build_if_no_results()
         self.failing_tests = self.retrieve_failed_tests_from_builds()
         self.top_n_failing_tests = self.get_top_n_failed_tests()
 
@@ -35,15 +34,14 @@ class SystemTestData:
 
         :return: the metadata json
         """
-        try:
-            page = urllib.request.urlopen(self.raw_test_metadata)
-            metadata = json.loads(page.read())
-            self._json_test_metadata = metadata
-            return metadata
-        except http.IncompleteRead as err:
-            err_page = err.partial
-            print(f"Failed to get metadata: {err_page}")
-            return None
+
+        with urllib.request.urlopen(self.raw_test_metadata) as page:
+            if page.status == 200:
+                json_metadata = json.loads(page.read())
+                self._json_test_metadata = json_metadata
+            else:
+                raise Exception(f"Failed to get metadata: {page.status}")
+        return json_metadata
 
     def get_all_builds(self):
         """
@@ -52,20 +50,19 @@ class SystemTestData:
         :return: a list of all builds in the system tests job
         """
         builds = [build["number"] for build in self._json_test_metadata["builds"]]
-        self._raw_builds = builds
         return builds
 
-    def get_current_and_complete_builds(self):
+    def get_current_and_recently_completed_builds(self):
         """
-        Return the current and complete builds from the metadata json
+        Return the current and recently completed builds from the metadata json
 
-        :return: the current and complete builds from the metadata json
+        :return: the current and recently complete builds from the metadata json
         """
 
         current_build =  self._json_test_metadata["lastBuild"]["number"]
-        complete_build =  self._json_test_metadata["lastCompletedBuild"]["number"]
+        recently_completed_builds =  self._json_test_metadata["lastCompletedBuild"]["number"]
 
-        return current_build, complete_build
+        return current_build, recently_completed_builds
 
     def remove_current_build_if_no_results(self):
         """
@@ -74,7 +71,7 @@ class SystemTestData:
 
         :return: the list of builds without the current build if there
         """
-        if self._complete_build != self._current_build:
+        if self._recently_completed_builds != self._current_build:
             self._raw_builds.remove( self._current_build)
         return self._raw_builds
 
@@ -86,14 +83,13 @@ class SystemTestData:
         :return: the test data json
         """
         print(f"Getting data for {test_num}")
-        try:
-            page = urllib.request.urlopen(self.system_tests_url.format(test_num))
-            test_json = json.loads(page.read())
-            return test_json
-        except http.IncompleteRead as err:
-            err_page = err.partial
-            print(f"Failed to get test data for {test_num}: {err_page}")
-            return err_page
+        # replace below code to use context manager
+        with  urllib.request.urlopen(self.system_tests_url.format(test_num)) as page:
+            if page.status == 200:
+                test_json = json.loads(page.read())
+            else:
+                raise Exception(f"Failed to get test data: {page.status} for {test_num}")
+        return test_json
 
     @staticmethod
     def add_failed_tests_to_counter(test_json: dict, failing_tests: Counter):
@@ -113,7 +109,6 @@ class SystemTestData:
             print(f"Failed to add failed tests to counter: {err}")
         return failing_tests
 
-
     def retrieve_failed_tests_from_builds(self):
         """
         Retreive tests data and return failed tests from builds
@@ -122,10 +117,9 @@ class SystemTestData:
         :return: a Counter object containing all failed tests
         """
         test_counter = Counter()
-        for test_num in self._proccessed_builds:
+        for test_num in self._processed_builds:
             test_json = self.retrieve_test_data(test_num)
             failing_tests = self.add_failed_tests_to_counter(test_json, test_counter)
-        self.failing_tests = failing_tests
         return failing_tests
 
     def get_top_n_failed_tests(self):
