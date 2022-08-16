@@ -3,7 +3,6 @@ Script to install IBEX to various machines
 """
 
 import argparse
-from msilib.schema import Component
 import os
 import re
 import sys
@@ -103,7 +102,8 @@ if __name__ == "__main__":
                 server_version = DIRECTORIES["EPICS"].split('\\')[-2]
                 current_client_version = DIRECTORIES["Client"].split('\\')[-2]
                 genie_python_version = DIRECTORIES["genie_python_3"].split('\\')[-2]
-                missing_prompt.prompt_and_raise_if_not_yes(f"Would you like to use Server version: {server_version}, Client version: {current_client_version}, "
+                missing_prompt.prompt_and_raise_if_not_yes(f"Would you like to use Server version: {server_version}, "
+                                                           f"Client version: {current_client_version}, "
                                                            f"and Genie Python version: {genie_python_version}?")
             except UserStop:
                 print("To specify the directory you want use --server_dir, --client_dir, and --genie_python3_dir "
