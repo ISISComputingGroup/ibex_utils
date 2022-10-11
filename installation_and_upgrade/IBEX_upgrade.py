@@ -71,6 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--quiet", default=False, action="store_true",
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
+    parser.add_argument("--server_arch", default="x64", choices=["x64", "x86"], help="Server build architecture.")
 
     deployment_types = [f"{choice}: {deployment_types}"
                         for choice, (_, deployment_types) in UPGRADE_TYPES.items()]
@@ -85,7 +86,9 @@ if __name__ == "__main__":
         current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
         if args.release_suffix != "":
             current_release_dir += f"-{args.release_suffix}"
-        DIRECTORIES["EPICS"] = os.path.join(current_release_dir, "EPICS")
+
+        server_32bit_suffix = "32" if args.server_arch == "x86" else ""
+        DIRECTORIES["EPICS"] = os.path.join(current_release_dir, "EPICS" + server_32bit_suffix)
         DIRECTORIES["Client"] = os.path.join(current_release_dir, "Client")
         DIRECTORIES["genie_python_3"] = os.path.join(current_release_dir, "genie_python_3")
 
@@ -93,8 +96,12 @@ if __name__ == "__main__":
         for key in DIRECTORIES:
             if not os.path.isdir(DIRECTORIES[key]):
                 partial_release = True
-                print(f"Warning: {key} is missing from release.")
-                DIRECTORIES[key] = _get_latest_existing_dir_path(args.release_dir, key)
+                if key == "EPICS":
+                    print(f"Warning: {key + server_32bit_suffix} is missing from release.")
+                    DIRECTORIES[key] = _get_latest_existing_dir_path(args.release_dir, key + server_32bit_suffix)
+                else:
+                    print(f"Warning: {key} is missing from release.")
+                    DIRECTORIES[key] = _get_latest_existing_dir_path(args.release_dir, key)
 
         if partial_release:
             try:
