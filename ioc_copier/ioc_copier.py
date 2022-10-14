@@ -2,7 +2,7 @@
 Script to handle duplicating IOCs
 """
 
-from shutil import copytree
+from shutil import copytree, ignore_patterns
 import sys
 import os
 import re
@@ -10,6 +10,8 @@ global START_COPY
 global current_copy
 global padded_start_copy
 global padded_current_copy
+global asub_record
+
 
 def rename_files(root_folder, rename, ioc):
     """
@@ -55,6 +57,10 @@ def replace_line(ioc, line):
     return:
         Tne new line of text.
     """
+    global asub_record
+    if "aSubRecord" in line and not asub_record:
+        print("C++ contains aSubRecord, this has been duplicated, but the C++ should be checked.")
+        asub_record = True
     temp_text = re.sub(f"IOC_{START_COPY}", f"IOC_{current_copy}", line)
     line = temp_text
     temp_text = re.sub(f"IOC-{START_COPY}", f"IOC-{current_copy}", line)
@@ -85,13 +91,14 @@ def help_check():
               "actual duplicate will all contain this in their names.\n")
         print("Second Argument: <number-ioc-to-copy")
         print("This should be the last currently existing ioc number, "
-              "e.g. 2. IOC-01 should not be copied in this way, as later"
-              " iocs should reference some of its files rather than copy them.\n")
+              "e.g. 2. If copying IOC-01 please test extremely thoroughly as there may be edge cases the script"
+              "cannot account for.\n")
         print("Third Argument: <first-copy>")
         print("This should be the number of the first copy, i.e."
               " the first IOC made will be IOC-<first-copy>.\n")
         print("Fourth Argument: <max-number-ioc>")
         print("This should be the maximum number copied to.\n")
+        print("Make sure to run this file from an epics terminal so that make clean can run.\n")
         sys.exit()
 
 
@@ -140,11 +147,39 @@ def copy_folder(file_format, ioc_name):
     start_path = file_format.format(f"{ioc_name}-{padded_start_copy}")
     path = os.path.join(os.getcwd(), file_format.format(f"{ioc_name}-{padded_current_copy}"))
     try:
-        copytree(os.path.join(os.getcwd(), start_path), os.path.join(path))
+        copytree(os.path.join(os.getcwd(), start_path), os.path.join(path), ignore=ignore_patterns("st-*.cmd",
+                                                                                                   "build.mak",
+                                                                                                   "*.db",
+                                                                                                   "*.substitutions",
+                                                                                                   "*.req"))
     except FileExistsError:
         raise FileExistsError(f"Copy {padded_current_copy} already exists, please ensure that the initial copy "
                               f"argument is greater than the highest number IOC.") from None
     return path
+
+
+def generate_config(ioc):
+    """
+    Generate the config if copying ioc 01 as it should just reference ioc 01s config rather than duplicating it.
+    :param ioc: the ioc name
+    :return: the text lines of the config.
+    """
+    return ["<?xml version=\"1.0\" ?>\n",
+            "<ioc_config xmlns=\"http://epics.isis.rl.ac.uk/schema/ioc_config/1.0\" ",
+            "xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n",
+            f"<xi:include href=\"../ioc{ioc}-IOC-01/config.xml\"  />\n",
+            "\n",
+            "</ioc_config>"]
+
+
+def comment_makefile(text):
+    """
+    comment out DB += lines from a makefile
+    :param text: the line to check whether to comment
+    :return: the line commented out if it is a DB+= line
+    """
+    text = [re.sub(r"(DB \+= )(?=.*\.db)", r"#DB += ", line) for line in text]
+    return text
 
 
 def get_file_text(file, ioc, root):
@@ -156,9 +191,21 @@ def get_file_text(file, ioc, root):
     :return:
         The text from the file, with the IOC number updated to the current copy.
     """
-    with open(os.path.join(root, file), "r") as file_pointer:
+    path = os.path.join(root, file)
+    with open(path, "r") as file_pointer:
         text = file_pointer.readlines()
+    final_lines = []
+    if START_COPY == 1:
+        if file == "st.cmd":
+            final_lines = [text.pop(-1)]
+        elif file == "config.xml":
+            return generate_config(ioc)
+        elif path.endswith(r"App\src\Makefile"):
+            final_lines = [text.pop(-3), text.pop(-2), text.pop(-1)]
+        elif path.endswith(r"App\Db\Makefile"):
+            text = comment_makefile(text)
     text = replace_text(text, ioc)
+    text.extend(final_lines)
     return text
 
 
@@ -178,10 +225,6 @@ def write_file_text(file, root, text):
 def file_walk(files, ioc, root):
     """
     Function to walk through each file retrieved by os.walk and call necessary functions.
-    :param current_copy: The current ioc number.
-    :param start_copy: The ioc number to copy
-    :param padded_current_copy: The current ioc number with zero padding.
-    :param padded_start_copy: The ioc number to copy with zero padding.
     :param files: The list of files to walk through.
     :param ioc: The ioc name.
     :param root: The root folder.
@@ -198,8 +241,6 @@ def folder_walk(ioc, root, sub_folder):
     """
     Function to walk through folders and rename them.
     :param ioc: The ioc name.
-    :param padded_current_copy:  the current iteration of the ioc number, zero padded
-    :param padded_start_copy: the ioc number to copy, zero padded.
     :param root:
     :param sub_folder:
     :return:
@@ -245,10 +286,32 @@ def add_zero_padding(copy):
     return f"0{copy}" if len(f"{copy}") < 2 else copy
 
 
+def check_valid_ioc_to_copy(ioc):
+    """
+    Check that duplicating this IOC is valid
+    :param ioc: The ioc name.
+    """
+    if not os.path.exists(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")):
+        print("No valid st-common.cmd found, this IOC does not appear to be designed in a way that allows duplicates.")
+        sys.exit()
+    else:
+        with open(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")) as file_pointer:
+            text = file_pointer.read()
+            if "seq " in text:
+                print("IOC Appears to contain sequencer commands, duplication should be done manually.")
+                sys.exit()
+
+
 def main():
     """Main function, sets ioc-name, calls functions in order, and prints when done."""
     help_check()
+    global asub_record
+    asub_record = False
     initial_copy, ioc, max_copy = handle_arguments()
+    check_valid_ioc_to_copy(ioc)
+    print("Cleaning directory.")
+    os.system("git clean -fqdX")
+    print("Clean done, duplicating ioc.")
     copy_loop(initial_copy, max_copy, "{}App", ioc)
     os.chdir(os.path.join(os.getcwd(), "iocBoot"))
     copy_loop(initial_copy, max_copy, "ioc{}", ioc)
@@ -256,6 +319,8 @@ def main():
           f"There may be some things missed by ths such as axes on a motor, "
           f"as this file cannot just replace all iterations of {START_COPY} "
           f"as doing so could break functionality.")
+    print("Once you are satisfied with duplication remember to run make.")
+
 
 if __name__ == '__main__':
     main()
