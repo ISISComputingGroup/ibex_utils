@@ -8,6 +8,31 @@ from unittest import mock
 class TestIocCopier(unittest.TestCase):
 
     @mock.patch("builtins.print")
+    def test_check_valid_ioc_to_copy_AND_no_st_common_THEN_exit(self, mock_print):
+        with self.assertRaises(SystemExit):
+            ioc_copier.check_valid_ioc_to_copy("test")
+        self.assertEqual(mock_print.call_count, 1)
+
+    @mock.patch("builtins.print")
+    @mock.patch("ioc_copier.os.path.exists")
+    def test_check_valid_ioc_to_copy_AND_st_common_AND_no_seq_THEN_not_exit(self, mock_exists, mock_print):
+        mock_open = mock.mock_open(read_data="test")
+        mock_exists.return_value = True
+        with mock.patch("builtins.open", mock_open):
+            ioc_copier.check_valid_ioc_to_copy("test")
+        self.assertEqual(mock_print.call_count, 0)
+
+    @mock.patch("builtins.print")
+    @mock.patch("ioc_copier.os.path.exists")
+    def test_check_valid_ioc_to_copy_AND_st_common_AND_seq_THEN_exit(self, mock_exists, mock_print):
+        mock_open = mock.mock_open(read_data="seq ")
+        mock_exists.return_value = True
+        with mock.patch("builtins.open", mock_open):
+            with self.assertRaises(SystemExit):
+                ioc_copier.check_valid_ioc_to_copy("test")
+        self.assertEqual(mock_print.call_count, 1)
+
+    @mock.patch("builtins.print")
     @mock.patch.object(ioc_copier.sys, "argv", ["ioc_copier"])
     def test_handle_arguments_called_AND_no_arguments_THEN_exit(self, mock_print):
         with self.assertRaises(SystemExit):
@@ -43,7 +68,7 @@ class TestIocCopier(unittest.TestCase):
     def test_help_check_called_AND_h_THEN_exit(self, mock_print):
         with self.assertRaises(SystemExit):
             ioc_copier.help_check()
-        self.assertEqual(mock_print.call_count, 8)
+        self.assertEqual(mock_print.call_count, 9)
 
     @mock.patch("builtins.print")
     def test_help_check_called_AND_no_h_THEN_no_prints(self, mock_print):
@@ -52,22 +77,56 @@ class TestIocCopier(unittest.TestCase):
 
     @parameterized.expand([
         ("", ["test_02", "IOC_02", "IOC-02", "test_2", "IOC_2", "IOC-2", "RAMPFILELIST2", "RAMPFILELIST02"],
-         ["test_03", "IOC_03", "IOC-03", "test_3", "IOC_3", "IOC-3",  "RAMPFILELIST3", "RAMPFILELIST03"], 3),
+         ["test_03", "IOC_03", "IOC-03", "test_3", "IOC_3", "IOC-3",  "RAMPFILELIST3", "RAMPFILELIST03"], 3, 0),
         ("handle_length",["test_02", "IOC_02", "IOC-02", "test_2", "IOC_2", "IOC-2"],
-         ["test_13", "IOC_13", "IOC-13", "test_13", "IOC_13", "IOC-13"], 13),
-        ("handle_math",["n = 2+5", "test_02", "02+5"], ["n = 2+5", "test_13", "02+5"], 13),
+         ["test_13", "IOC_13", "IOC-13", "test_13", "IOC_13", "IOC-13"], 13, 0),
+        ("handle_math",["n = 2+5", "test_02", "02+5"], ["n = 2+5", "test_13", "02+5"], 13, 0),
+        ("handle_asub", ["aSubRecord"], ["aSubRecord"], 13, 1),
+        ("handle_asub2", ["aSubRecord", "aSubRecord"], ["aSubRecord", "aSubRecord"], 13, 1)
     ])
-    def test_replace_text_called_THEN_replace_text_start_in_text_with_current(self, _, test_text, check_text, copy):
+    @mock.patch("builtins.print")
+    def test_replace_text_called_THEN_replace_text_start_in_text_with_current(self, _, test_text, check_text, copy,
+                                                                              print_called, mock_print):
         ioc_copier.START_COPY = 2
         ioc_copier.current_copy = copy
         ioc_copier.padded_start_copy = ioc_copier.add_zero_padding(ioc_copier.START_COPY)
         ioc_copier.padded_current_copy = ioc_copier.add_zero_padding(ioc_copier.current_copy)
+        ioc_copier.asub_record = False
         test_text = ioc_copier.replace_text(test_text, "test")
         self.assertEqual(check_text, test_text)
+        self.assertEqual(mock_print.call_count, print_called)
+
+    @parameterized.expand([
+        ("_with_cmd", 1, "st.cmd", "test", ["test"], 0),
+        ("_with_cmd_not_1", 2, "st.cmd", "test", [], 0),
+        ("_with_src_make", 1, "App\src\Makefile", "test1\ntest2\ntest3", ["test1\n", "test2\n","test3"], 0),
+        ("_with_src_make_not_1", 2, "App\src\Makefile", "test1\ntest2\ntest3", [], 0),
+        ("_with_db_make", 1, "App\Db\Makefile", "", [], 1),
+        ("_with_db_make_not_1", 2, "App\Db\Makefile", "", [], 0),
+
+    ])
+    @mock.patch("ioc_copier.replace_text")
+    @mock.patch("ioc_copier.comment_makefile")
+    def test_get_file_text_called_THEN_handle_all_casses(self, _, start, file, read, result, comment, mock_comment,
+                                                         mock_replace):
+        mock_open = mock.mock_open(read_data=read)
+        ioc_copier.START_COPY = start
+        mock_replace.return_value = []
+        with mock.patch("builtins.open", mock_open):
+            self.assertEqual(ioc_copier.get_file_text(file, "test", "root"), result)
+        self.assertEqual(mock_comment.call_count, comment)
+
+    @parameterized.expand([
+        ("_do_not_comment", ["test"], ["test"]),
+        ("_missing_dot", ["DB += test"], ["DB += test"]),
+        ("_missing_DB", ["+= test.db"], ["+= test.db"]),
+    ])
+    def test_comment_makefile_THEN_comments_correct_lines(self, _, input, output):
+        self.assertEqual(ioc_copier.comment_makefile(input),output)
 
 
     @parameterized.expand([
-        ("_with_underscore","IOC_02", "IOC_13"),
+        ("_with_underscore", "IOC_02", "IOC_13"),
         ("_with_hyphen", "IOC-02", "IOC-13"),
         ("with_ioc_name", "test_02", "test_13"),
     ])
@@ -118,18 +177,16 @@ class TestIocCopier(unittest.TestCase):
     @mock.patch("ioc_copier.copy_folder")
     @mock.patch("ioc_copier.rename_files")
     @mock.patch("ioc_copier.os.walk")
-    def test_copy_loop_THEN_writes_to_file(self, _,start_copy, initial_copy, max_copy, folder_count, open_count,
+    def test_copy_loop_THEN_writes_to_file(self, _, start_copy, initial_copy, max_copy, folder_count, open_count,
                                            file_type, mock_walk, mock_rename, mock_folder):
 
         ioc_copier.START_COPY = start_copy
-        initial_copy = 3
-        max_copy = 5
         padded_start_copy = ioc_copier.add_zero_padding(start_copy)
         padded_max_copy = ioc_copier.add_zero_padding(max_copy)
         file_format = "{}"
         ioc = "test"
-        mock_open = mock.mock_open(read_data = f"test_{padded_start_copy}\nIOC-{start_copy}")
-        with mock.patch("builtins.open",mock_open):
+        mock_open = mock.mock_open(read_data=f"test_{padded_start_copy}\nIOC-{start_copy}")
+        with mock.patch("builtins.open", mock_open):
             mock_walk.return_value = [('/iocBoot', (f'subfolder_{padded_start_copy}',), (f'test_{padded_start_copy}.db',)),
                                       (f'/iocBoot/subfolder_{padded_start_copy}', (),
                                        (f'test_{padded_start_copy}.{file_type}',  f'test_{padded_start_copy}.proto'))]
@@ -142,7 +199,6 @@ class TestIocCopier(unittest.TestCase):
             file_handle.writelines.assert_called_with([f"test_{padded_max_copy}\n", f"IOC-{max_copy}"])
             mock_rename.assert_called_with(f"/iocBoot/subfolder_{padded_start_copy}",
                                            f"test_{padded_start_copy}.proto", "test")
-
 
     @mock.patch("ioc_copier.copy_folder")
     @mock.patch("ioc_copier.rename_files")
@@ -168,7 +224,7 @@ class TestIocCopier(unittest.TestCase):
     @mock.patch("ioc_copier.os.walk")
     @mock.patch("builtins.open", new_callable=mock.mock_open, read_data="test_02\nIOC-2")
     def test_copy_loop_AND_max_is_start_AND_empty_THEN_copy_folder_AND_end(self, mock_open, mock_walk, mock_rename,
-                                                                               mock_folder):
+                                                                           mock_folder):
         ioc_copier.START_COPY = 2
         initial_copy = 3
         max_copy = 2
@@ -190,5 +246,6 @@ class TestIocCopier(unittest.TestCase):
     def test_add_zero_padding(self, _, initial, check):
         self.assertEqual(ioc_copier.add_zero_padding(initial), check)
 
+
 if __name__ == '__main__':
-      unittest.main()
+    unittest.main()
