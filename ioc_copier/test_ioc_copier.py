@@ -81,8 +81,8 @@ class TestIocCopier(unittest.TestCase):
         ("handle_length",["test_02", "IOC_02", "IOC-02", "test_2", "IOC_2", "IOC-2"],
          ["test_13", "IOC_13", "IOC-13", "test_13", "IOC_13", "IOC-13"], 13, 0),
         ("handle_math",["n = 2+5", "test_02", "02+5"], ["n = 2+5", "test_13", "02+5"], 13, 0),
-        ("handle_asub", ["aSubRecord"], ["aSubRecord"], 13, 1),
-        ("handle_asub2", ["aSubRecord", "aSubRecord"], ["aSubRecord", "aSubRecord"], 13, 1)
+        ("handle_asub", ["record(aSub"], ["record(aSub"], 13, 1),
+        ("handle_asub2", ["record(aSub", "record(aSub"], ["record(aSub", "record(aSub"], 13, 1)
     ])
     @mock.patch("builtins.print")
     def test_replace_text_called_THEN_replace_text_start_in_text_with_current(self, _, test_text, check_text, copy,
@@ -97,32 +97,40 @@ class TestIocCopier(unittest.TestCase):
         self.assertEqual(mock_print.call_count, print_called)
 
     @parameterized.expand([
-        ("_with_cmd", 1, "st.cmd", "test", ["test"], 0),
-        ("_with_cmd_not_1", 2, "st.cmd", "test", [], 0),
-        ("_with_src_make", 1, "App\src\Makefile", "test1\ntest2\ntest3", ["test1\n", "test2\n","test3"], 0),
-        ("_with_src_make_not_1", 2, "App\src\Makefile", "test1\ntest2\ntest3", [], 0),
+        ("_with_cmd", 1, "st.cmd",
+         "test_01\n< iocBoot/ioctest-IOC-01/st-common.cmd", ["test_03\n", "< iocBoot/ioctest-IOC-01/st-common.cmd"], 0),
+        ("_with_cmd_not_1", 2, "st.cmd",
+         "test_02\n< iocBoot/ioctest-IOC-02/st-common.cmd", ["test_03\n", "< iocBoot/ioctest-IOC-03/st-common.cmd"], 0),
+        ("_with_src_make", 1, "App\src\Makefile",
+         "test_01\ntest-IOC-01App/src/build.mak\n###-IOC-01 and delete build.mak from",
+         ["test_03\n", "test-IOC-01App/src/build.mak\n", "###-IOC-01 and delete build.mak from"], 0),
+        ("_with_src_make_not_1", 2, "App\src\Makefile",
+         "test_02\ntest-IOC-02App/src/build.mak\n###-IOC-02 and delete build.mak from",
+         ["test_03\n", "test-IOC-02App/src/build.mak\n", "###-IOC-02 and delete build.mak from"], 0),
         ("_with_db_make", 1, "App\Db\Makefile", "", [], 1),
         ("_with_db_make_not_1", 2, "App\Db\Makefile", "", [], 0),
-
     ])
-    @mock.patch("ioc_copier.replace_text")
-    @mock.patch("ioc_copier.comment_makefile")
-    def test_get_file_text_called_THEN_handle_all_casses(self, _, start, file, read, result, comment, mock_comment,
-                                                         mock_replace):
+    @mock.patch("ioc_copier.remove_db_plus")
+    def test_get_file_text_called_THEN_handle_all_casses(self, _, start, file, read, result, comment, mock_comment):
         mock_open = mock.mock_open(read_data=read)
         ioc_copier.START_COPY = start
-        mock_replace.return_value = []
+        ioc_copier.current_copy = 3
+        ioc_copier.padded_start_copy = ioc_copier.add_zero_padding(ioc_copier.START_COPY)
+        ioc_copier.padded_current_copy = ioc_copier.add_zero_padding(ioc_copier.current_copy)
         with mock.patch("builtins.open", mock_open):
-            self.assertEqual(ioc_copier.get_file_text(file, "test", "root"), result)
+            got = ioc_copier.get_file_text(file, "test", "root")
+
+            self.assertEqual(got, result)
         self.assertEqual(mock_comment.call_count, comment)
 
     @parameterized.expand([
-        ("_do_not_comment", ["test"], ["test"]),
+        ("_remove", ["DB += test.db"], []),
+        ("_do_not_remove", ["test"], ["test"]),
         ("_missing_dot", ["DB += test"], ["DB += test"]),
         ("_missing_DB", ["+= test.db"], ["+= test.db"]),
     ])
-    def test_comment_makefile_THEN_comments_correct_lines(self, _, input, output):
-        self.assertEqual(ioc_copier.comment_makefile(input),output)
+    def test_remove_db_plus_makefile_THEN_comments_correct_lines(self, _, input, output):
+        self.assertEqual(ioc_copier.remove_db_plus(input), output)
 
 
     @parameterized.expand([

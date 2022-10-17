@@ -36,7 +36,7 @@ def rename_files(root_folder, rename, ioc):
                                                            f"{ioc}_{padded_current_copy}")))
 
 
-def replace_text(text_lines, ioc):
+def replace_text(text_lines, ioc, skip=[]):
     """
     Function to handle replacing of text within files.
     Parameters:
@@ -46,7 +46,7 @@ def replace_text(text_lines, ioc):
     return:
         The new text to be placed in the file.
     """
-    return [replace_line(ioc, line) for line in text_lines]
+    return [replace_line(ioc, line) if index not in skip else line for index, line in enumerate(text_lines)]
 
 
 def replace_line(ioc, line):
@@ -58,8 +58,8 @@ def replace_line(ioc, line):
         Tne new line of text.
     """
     global asub_record
-    if "aSubRecord" in line and not asub_record:
-        print("C++ contains aSubRecord, this has been duplicated, but the C++ should be checked.")
+    if "record(aSub" in line and not asub_record:
+        print("DB contains aSubRecord, this has been duplicated, but may need a more thorough check.")
         asub_record = True
     temp_text = re.sub(f"IOC_{START_COPY}", f"IOC_{current_copy}", line)
     line = temp_text
@@ -172,13 +172,13 @@ def generate_config(ioc):
             "</ioc_config>"]
 
 
-def comment_makefile(text):
+def remove_db_plus(text):
     """
-    comment out DB += lines from a makefile
+    delete DB += lines from a makefile
     :param text: the line to check whether to comment
-    :return: the line commented out if it is a DB+= line
+    :return: the line to delete if it is a DB+= line
     """
-    text = [re.sub(r"(DB \+= )(?=.*\.db)", r"#DB += ", line) for line in text]
+    text = [line for line in text if not re.match(r"(DB \+= )(?=.*\.db)", line)]
     return text
 
 
@@ -194,18 +194,19 @@ def get_file_text(file, ioc, root):
     path = os.path.join(root, file)
     with open(path, "r") as file_pointer:
         text = file_pointer.readlines()
-    final_lines = []
+    skip = []
     if START_COPY == 1:
         if file == "st.cmd":
-            final_lines = [text.pop(-1)]
+            skip = [x for x, val in enumerate(text) if f"< iocBoot/ioc{ioc}-IOC-01/st-common.cmd" in val]
         elif file == "config.xml":
             return generate_config(ioc)
-        elif path.endswith(r"App\src\Makefile"):
-            final_lines = [text.pop(-3), text.pop(-2), text.pop(-1)]
         elif path.endswith(r"App\Db\Makefile"):
-            text = comment_makefile(text)
-    text = replace_text(text, ioc)
-    text.extend(final_lines)
+            text = remove_db_plus(text)
+
+    # Last one handled on starts other than 1 to avoid breaking commenting.
+    if path.endswith(r"App\src\Makefile"):
+        skip = [x for x, val in enumerate(text) if "build.mak " in val or "/src/build.mak" in val]
+    text = replace_text(text, ioc, skip)
     return text
 
 
