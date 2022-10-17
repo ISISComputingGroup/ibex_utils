@@ -36,7 +36,7 @@ def rename_files(root_folder, rename, ioc):
                                                            f"{ioc}_{padded_current_copy}")))
 
 
-def replace_text(text_lines, ioc, skip=[]):
+def replace_text(text_lines, ioc, skip=None):
     """
     Function to handle replacing of text within files.
     Parameters:
@@ -46,6 +46,8 @@ def replace_text(text_lines, ioc, skip=[]):
     return:
         The new text to be placed in the file.
     """
+    if skip is None:
+        skip = []
     return [replace_line(ioc, line) if index not in skip else line for index, line in enumerate(text_lines)]
 
 
