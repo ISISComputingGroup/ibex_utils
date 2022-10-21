@@ -74,6 +74,8 @@ class AdminCommandBuilder:
                 raise
             sleep(1)  # Wait for commands to fully die etc
 
+        return log_file.name
+
 
 @contextlib.contextmanager
 def temp_bat_file(contents):
