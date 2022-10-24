@@ -87,8 +87,8 @@ if __name__ == "__main__":
         if args.release_suffix != "":
             current_release_dir += f"-{args.release_suffix}"
 
-        server_32bit_suffix = "32" if args.server_arch == "x86" else ""
-        DIRECTORIES["EPICS"] = os.path.join(current_release_dir, "EPICS" + server_32bit_suffix)
+        server_suffix = "32" if args.server_arch == "x86" else ""
+        DIRECTORIES["EPICS"] = os.path.join(current_release_dir, "EPICS" + server_suffix)
         DIRECTORIES["Client"] = os.path.join(current_release_dir, "Client")
         DIRECTORIES["genie_python_3"] = os.path.join(current_release_dir, "genie_python_3")
 
@@ -97,8 +97,8 @@ if __name__ == "__main__":
             if not os.path.isdir(DIRECTORIES[key]):
                 partial_release = True
                 if key == "EPICS":
-                    print(f"Warning: {key + server_32bit_suffix} is missing from release.")
-                    DIRECTORIES[key] = _get_latest_existing_dir_path(args.release_dir, key + server_32bit_suffix)
+                    print(f"Warning: {key + server_suffix} is missing from release.")
+                    DIRECTORIES[key] = _get_latest_existing_dir_path(args.release_dir, key + server_suffix)
                 else:
                     print(f"Warning: {key} is missing from release.")
                     DIRECTORIES[key] = _get_latest_existing_dir_path(args.release_dir, key)
