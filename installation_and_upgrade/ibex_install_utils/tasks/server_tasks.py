@@ -441,7 +441,8 @@ class ServerTasks(BaseTasks):
             if answer == "Y":
                 return True
             else:
-                return False
+                print("Old Galil driver is default - only change to new driver if you explicitly know this is needed!")
+                return not self.prompt.confirm_step("Use new Galil driver")
 
     def _swap_galil_driver(self, use_old):
         """
