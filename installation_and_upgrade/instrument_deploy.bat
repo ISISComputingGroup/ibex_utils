@@ -25,7 +25,7 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
   set "PYTHONDIR=!LATEST_PYTHON_DIR!"
   set "PYTHONHOME=!LATEST_PYTHON_DIR!"
   set "PYTHONPATH=!LATEST_PYTHON_DIR!"
-  call "!LATEST_PYTHON!" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_pre_stop --check_config
+  call "!LATEST_PYTHON!" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_pre_stop
   IF !errorlevel! neq 0 goto ERROR
   start /wait cmd /c "%STOP_IBEX%"
   ENDLOCAL
@@ -53,6 +53,6 @@ set "PYTHONDIR=%LATEST_PYTHON_DIR%"
 set "PYTHONHOME=%LATEST_PYTHON_DIR%"
 set "PYTHONPATH=%LATEST_PYTHON_DIR%"
 
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_post_start
+call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_post_start --check_config
 :ERROR
 EXIT /b %errorlevel%
