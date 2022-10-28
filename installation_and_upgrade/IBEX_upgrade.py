@@ -14,6 +14,7 @@ from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.file_utils import get_latest_directory_path
 from ibex_install_utils.check_config import check_config
 
+
 def _get_latest_release_path(release_dir):
     regex = re.compile(r'^\d+\.\d+\.\d+$')
 
