@@ -427,21 +427,22 @@ class ServerTasks(BaseTasks):
     @task("Run config checker")
     def run_config_checker(self):
         with tempfile.TemporaryDirectory() as tmpdir:
+            print(f"Cloning InstrumentChecker to {tmpdir}")
             git.Repo.clone_from("https://github.com/ISISComputingGroup/InstrumentChecker.git", tmpdir)
+            print(f"Cloning configs repo to {os.path.join(tmpdir, 'configs')}")
             git.Repo.clone_from("http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git", os.path.join(tmpdir, "configs"))
+            print(f"Cloning GUI repo to {os.path.join(tmpdir, 'gui')}")
             git.Repo.clone_from("https://github.com/ISISComputingGroup/ibex_gui.git", os.path.join(tmpdir, "gui"))
 
+            print("Running InstrumentChecker")
             python = os.path.join("C:\\", "Instrument", "Apps", "Python3", "genie_python.bat")
-            args = [python, "-u", "run_tests.py",
+            args = ["-u", "run_tests.py",
                     "--configs_repo_path", "configs",
                     "--gui_repo_path", "gui",
                     "--reports_path", "test-reports",
                     "--instruments", self._get_instrument_name()]
 
-            result = subprocess.run(args, cwd=tmpdir)
-
-            if result.returncode != 0:
-                raise ErrorInRun("Config checker failed.")
+            RunProcess(tmpdir, python, prog_args=args).run()
 
     def select_galil_driver(self):
         """
