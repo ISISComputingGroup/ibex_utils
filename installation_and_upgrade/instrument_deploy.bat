@@ -53,6 +53,6 @@ set "PYTHONDIR=%LATEST_PYTHON_DIR%"
 set "PYTHONHOME=%LATEST_PYTHON_DIR%"
 set "PYTHONPATH=%LATEST_PYTHON_DIR%"
 
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_post_start --check_config
+call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_post_start
 :ERROR
 EXIT /b %errorlevel%

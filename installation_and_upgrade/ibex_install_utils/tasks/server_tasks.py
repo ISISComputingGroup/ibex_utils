@@ -4,6 +4,7 @@ import shutil
 import lxml.etree
 import os
 import subprocess
+import tempfile
 
 from ibex_install_utils.user_prompt import UserPrompt
 
@@ -422,6 +423,25 @@ class ServerTasks(BaseTasks):
             self._ca.set_pv("CS:AC:ALERTS:PW:SP", password, is_local=True)
         else:
             print("No username/password provided - skipping step")
+
+    @task("Run config checker")
+    def run_config_checker(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            git.Repo.clone_from("https://github.com/ISISComputingGroup/InstrumentChecker.git", tmpdir)
+            git.Repo.clone_from("http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git", os.path.join(tmpdir, "configs"))
+            git.Repo.clone_from("https://github.com/ISISComputingGroup/ibex_gui.git", os.path.join(tmpdir, "gui"))
+
+            python = os.path.join("C:\\", "Instrument", "Apps", "Python3", "genie_python.bat")
+            args = [python, "-u", "run_tests.py",
+                    "--configs_repo_path", "configs",
+                    "--gui_repo_path", "gui",
+                    "--reports_path", "test-reports",
+                    "--instruments", self._get_instrument_name()]
+
+            result = subprocess.run(args, cwd=tmpdir)
+
+            if result.returncode != 0:
+                raise ErrorInRun("Config checker failed.")
 
     def select_galil_driver(self):
         """

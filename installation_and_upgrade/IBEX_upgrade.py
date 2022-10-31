@@ -12,7 +12,6 @@ from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
 from ibex_install_utils.exceptions import UserStop, ErrorInTask
 from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.file_utils import get_latest_directory_path
-from ibex_install_utils.check_config import check_config
 
 
 def _get_latest_release_path(release_dir):
@@ -78,8 +77,6 @@ if __name__ == "__main__":
     parser.add_argument('deployment_type', choices=UPGRADE_TYPES.keys(),
                         help="What upgrade should be performed. ( {})"
                         .format(", \n".join(deployment_types)))
-    parser.add_argument("--check_config", default=False, action="store_true",
-                        help="Run the configuration check tests after deployment.")
 
     args = parser.parse_args()
     current_client_version = None
@@ -153,9 +150,6 @@ if __name__ == "__main__":
     except ErrorInTask as error_in_run_ex:
         print(f"Error in upgrade: {error_in_run_ex}")
         sys.exit(1)
-
-    if args.check_config:
-        check_config()
 
     print("Finished upgrade")
     sys.exit(0)
