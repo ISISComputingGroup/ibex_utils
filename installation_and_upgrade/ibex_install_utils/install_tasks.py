@@ -162,6 +162,7 @@ class UpgradeInstrument:
         self._system_tasks.restart_vis()
         self._client_tasks.perform_client_tests()
         self._server_tasks.perform_server_tests()
+        self._server_tasks.run_config_checker()
         self._server_tasks.save_motor_parameters_to_file()
         self._server_tasks.save_blocks_to_file()
         self._server_tasks.save_blockserver_pv_to_file()
