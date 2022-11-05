@@ -9,5 +9,5 @@ set "AGESTORE=c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\agestore.exe"
 set "KITROOT=\\isis\inst$\Kits$\CompGroup\ICP"
 if exist "%AGESTORE%" (
     "%AGESTORE%" %KITROOT%\EPICS\Symbols -days=90 -q -y -s
-    "%AGESTORE%" %KITROOT%\ISISICP\Symbols -days=90 -q -y -s
+    REM "%AGESTORE%" %KITROOT%\ISISICP\Symbols -days=90 -q -y -s
 )
