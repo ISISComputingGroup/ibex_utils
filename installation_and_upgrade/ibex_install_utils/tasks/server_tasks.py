@@ -24,6 +24,7 @@ from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE
     SETTINGS_CONFIG_PATH, SETTINGS_CONFIG_FOLDER, INST_SHARE_AREA, EPICS_IOC_PATH
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, get_latest_directory_path
 from ibex_install_utils.admin_runner import AdminCommandBuilder
+from ibex_install_utils.call_process import call_process
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -113,24 +114,24 @@ class ServerTasks(BaseTasks):
         """
         inst_name = BaseTasks._get_machine_name()
 
-        subprocess.call("git config --global core.autocrlf true")
-        subprocess.call("git config --global credential.helper wincred")
-        subprocess.call("git config --global user.name spudulike")
+        call_process("git config --global core.autocrlf true")
+        call_process("git config --global credential.helper wincred")
+        call_process("git config --global user.name spudulike")
         set_user_email = f"git config --global user.email spudulike@{inst_name.lower()}.isis.cclrc.ac.uk"
-        subprocess.call(set_user_email)
+        call_process(set_user_email)
 
         if not os.path.exists(SETTINGS_CONFIG_PATH):
             os.makedirs(SETTINGS_CONFIG_PATH)
 
-        subprocess.call(
+        call_process(
             f"git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {inst_name}", cwd=SETTINGS_CONFIG_PATH)
 
         inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
-        subprocess.call("git pull", cwd=inst_config_path)
+        call_process("git pull", cwd=inst_config_path)
 
-        branch_exists = subprocess.call(f"git checkout {inst_name}", cwd=inst_config_path) == 0
+        branch_exists = call_process(f"git checkout {inst_name}", cwd=inst_config_path) == 0
         if not branch_exists:
-            subprocess.call(f"git checkout -b {inst_name}", cwd=inst_config_path)
+            call_process(f"git checkout -b {inst_name}", cwd=inst_config_path)
 
         inst_scripts_path = os.path.join(inst_config_path, "Python")
 
@@ -145,10 +146,10 @@ class ServerTasks(BaseTasks):
                     if not os.path.exists(generic_inst_file):
                         raise IOError("Generic inst file at {} did not exist - cannot proceed".format(generic_inst_file))
                     os.rename(generic_inst_file, specific_inst_file)
-                subprocess.call(f"git add init_{inst_name.lower()}.py", cwd=inst_scripts_path)
-                subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
-                subprocess.call('git commit -m"create initial python"', cwd=inst_config_path)
-                subprocess.call(f"git push --set-upstream origin {inst_name}", cwd=inst_config_path)
+                call_process(f"git add init_{inst_name.lower()}.py", cwd=inst_scripts_path)
+                call_process("git rm init_inst_name.py", cwd=inst_scripts_path)
+                call_process('git commit -m"create initial python"', cwd=inst_config_path)
+                call_process(f"git push --set-upstream origin {inst_name}", cwd=inst_config_path)
             except Exception as e:
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"Something went wrong setting up the configurations repository. Please resolve manually, "
@@ -198,7 +199,7 @@ class ServerTasks(BaseTasks):
                                   ["Y", "N"], "Y") == "Y":
                 self.update_shared_scripts_repository()
         else:
-            exit_code = subprocess.call("git clone https://github.com/ISISNeutronMuon/InstrumentScripts.git "
+            exit_code = call_process("git clone https://github.com/ISISNeutronMuon/InstrumentScripts.git "
                                         "{}".format(INST_SCRIPTS_PATH))
             if exit_code != 0:
                 raise ErrorInRun("Failed to install shared scripts repository.")
@@ -225,7 +226,7 @@ class ServerTasks(BaseTasks):
                                   ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
-            exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
+            exit_code = call_process("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
                                         "C:\Instrument\Settings\config\common")
             if exit_code != 0:
                 raise ErrorInRun("Failed to set up common calibration directory.")
