@@ -1,9 +1,4 @@
-import os
 import subprocess
-
-
-FNULL = open(os.devnull, 'w')
-
 
 def call_process(command: str, cwd : str=None) -> int:
     """
