@@ -62,7 +62,10 @@ def purge(dry_run=False):
     project_areas = [os.path.join(build_area, proj) for proj in ("Client_E4", "script_generator", "genie_python", "genie_python_3", "VHDS")] + \
         [os.path.join(build_area, "EPICS", proj) for proj in os.listdir(os.path.join(build_area, "EPICS"))
          if proj.startswith("EPICS")]
-
+    project_areas.extend([os.path.join(build_area, "developer", "EPICS", proj) for proj in os.listdir(os.path.join(build_area, "developer", "EPICS"))
+                          if proj.startswith("windows")])
+    project_areas.extend([os.path.join(build_area, "developer", "EPICS32", proj) for proj in os.listdir(os.path.join(build_area, "developer", "EPICS32"))
+                          if proj.startswith("win32")])
     for d in deletion_directories(project_areas):
         if dry_run:
             print(f"{d}")
