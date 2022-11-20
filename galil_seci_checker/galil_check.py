@@ -13,6 +13,10 @@ PVPREFIX = ""
 
 CONFIGFILE = ""
 
+SETFILE = None
+
+SHOW_VALUE_OK = False
+
 MOTOR_TYPES = { 0 : "Servo", 1 :  "Rev Servo", 2 : "HA Stepper", 3 : "LA Stepper", 4 : "Rev HA Stepper", 5 :  "Rev LA Stepper" }
 
 # seci defines an encoder type for analogue feedback, but epics does not. galil manual is unclear - it suggests you should use
@@ -21,18 +25,19 @@ ENCODER_TYPES = { 0 : "Normal Quadrature", 1 : "Pulse and Dir", 2 : "Reverse Qua
 
 HOME_METHODS = { 0 : "none", 1 : "signal", 2 : "reverse limit", 3 : "forward limit" }
 
-SHOW_VALUE_OK = False
-
 def main():
-    global INST, PVPREFIX, CONFIGFILE, SHOW_VALUE_OK
+    global INST, PVPREFIX, CONFIGFILE, SHOW_VALUE_OK, SETFILE
     try:
         parser = argparse.ArgumentParser()
-        parser.add_argument('--inst', help='instrument', required=True)
+        parser.add_argument('--inst', help='instrument to check', required=True)
         parser.add_argument('--verbose', help='verbose', action='count', default=0)
+        parser.add_argument('--setfile', help='generate command file to correct values', default=None)
         args = parser.parse_args()
         INST = args.inst.upper()
         PVPREFIX = f"IN:{INST}:MOT:"
         CONFIGFILE = r"\\NDX{}\c$\LABVIEW MODULES\Drivers\Galil DMC2280\Galil.ini".format(INST)
+        if args.setfile:
+            SETFILE = open(args.setfile, 'w')
         if args.verbose > 0:
             SHOW_VALUE_OK = True
         config = configparser.ConfigParser()
@@ -45,6 +50,8 @@ def main():
             doController(config[g], g)
     except Exception as ex:
         print(ex)
+    if SETFILE is not None:
+        SETFILE.close()
 
 # note key names are lowercased by the parser e.g. use "motor steps per unit", "kp"
 # however section names and values preserve case
@@ -141,7 +148,7 @@ def doAxis(config, galil, axis):
     
     de_energise = config.getboolean(axisItem(axis, "de-energise"))
     doValue(f"{mn}_AUTOONOFF_CMD", "On" if de_energise else "Off", f"{mn}_AUTOONOFF_STATUS")
-    doValue(f"{mn}_ON_CMD", "Off" if de_energise else "On")
+    doValue(f"{mn}_ON_CMD", "Off" if de_energise else "On", f"{mn}_ON_STATUS")
     
     af = config.getboolean(axisItem(axis, "analog feedback"))
     doValue(f"{mn}_AF_SP", af, f"{mn}_AF_MONITOR") 
@@ -226,6 +233,9 @@ def doValue(set_pv, value, read_pv=None):
     if not compareValues(current_sp, value):
         print("{} SP differs: current \"{}\" != expected \"{}\"".format(prefixed_set_pv, current_sp, value))
         sp_ok = False
+        if SETFILE is not None:
+            SETFILE.write(f"caput {prefixed_set_pv} {value}\n")
+            SETFILE.flush()
     elif SHOW_VALUE_OK:
         print("{} SP OK \"{}\"".format(prefixed_set_pv, current_sp))
     if read_pv is not None:
