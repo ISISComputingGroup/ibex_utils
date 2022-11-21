@@ -49,7 +49,7 @@ class FileUtils:
                         prompt.prompt_and_raise_if_not_yes(f'Error creating empty dir for robocopy "{empty_dir}". '
                                                            f'Please do this manually')
                     if os.path.isdir(path):
-                        args = [f"\"{empty_dir}\"", f"\"{path}\"", "/PURGE", "/NJH", "/NJS", "/NP", "/NFL", "/NDL", "/NS", "/NC", "/R:1", "/LOG:NUL"]
+                        args = [f"{empty_dir}", f"{path}", "/PURGE", "/NJH", "/NJS", "/NP", "/NFL", "/NDL", "/NS", "/NC", "/R:1", "/LOG:NUL"]
                         RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
                     os.rmdir(empty_dir)
                     os.rmdir(path)
