@@ -36,6 +36,19 @@ def main():
         INST = args.inst.upper()
         PVPREFIX = f"IN:{INST}:MOT:"
         CONFIGFILE = r"\\NDX{}\c$\LABVIEW MODULES\Drivers\Galil DMC2280\Galil.ini".format(INST)
+        skips = {}
+        skips["velocity"] = True
+        skips["direction"] = False
+        skips["offset"] = True
+        skips["backlash"] = True
+        skips["limits"] = True
+        skips["acceleration"] = True
+        skips["onoff"] = False
+        skips["enable"] = False
+        skips["ueip"] = False
+        skips["edel"] = True
+        skips["eguaftlimit"] = True
+        skips["spdb"] = True
         if args.setfile:
             SETFILE = open(args.setfile, 'w')
         if args.verbose > 0:
@@ -47,7 +60,7 @@ def main():
                 if len(config[g]) > 0:
                     raise Exception("error - non empty DEFAULT")
                 continue
-            doController(config[g], g)
+            doController(config[g], g, skips)
     except Exception as ex:
         print(ex)
     if SETFILE is not None:
@@ -55,7 +68,7 @@ def main():
 
 # note key names are lowercased by the parser e.g. use "motor steps per unit", "kp"
 # however section names and values preserve case
-def doAxis(config, galil, axis):
+def doAxis(config, galil, axis, skips):
     mn = motorNumber(galil, axis)    
     msteps_per_unit = config.getfloat(axisItem(axis, 'motor steps per unit'))
     esteps_per_unit = config.getfloat(axisItem(axis, 'encoder steps per unit'))
@@ -110,7 +123,8 @@ def doAxis(config, galil, axis):
     doValue(f"{mn}.EGU", config.get(axisItem(axis, 'unit label')))
     doValue(f"{mn}.DESC", config.get(axisItem(axis, 'motor name')))
     ueip = config.getboolean(axisItem(axis, 'encoder present'))
-    doValue(f"{mn}.UEIP", 'Yes' if ueip else 'No')
+    if not skips['ueip']:
+        doValue(f"{mn}.UEIP", 'Yes' if ueip else 'No')
     for item in ['k1', 'k2', 'k3', 'zp', 'zn', 'tl', 'ct']:
         uitem = item.upper()
         doValue(f"{mn}_{uitem}_SP", config.getfloat(axisItem(axis, item)), f"{mn}_{uitem}_MONITOR")
@@ -119,43 +133,49 @@ def doAxis(config, galil, axis):
     doValue(f"{mn}.DCOF", config.getfloat(axisItem(axis, "kd")) / 4095.875)
     doValue(f"{mn}.MRES", mres)
     doValue(f"{mn}.ERES", eres)
-    doValue(f"{mn}_EDEL_SP", edel_multiplier * eres, f"{mn}_EDEL_MON") # old galil
-    doValue(f"{mn}_ENC_TOLERANCE_SP", edel_multiplier, f"{mn}_ENC_TOLERANCE_MON") # new galil
-    doValue(f"{mn}.VELO", velo)
-    doValue(f"{mn}.VMAX", velo)
-    doValue(f"{mn}.JVEL", velo)
+    if not skips["edel"]:
+        doValue(f"{mn}_EDEL_SP", edel_multiplier * eres, f"{mn}_EDEL_MON") # old galil
+        doValue(f"{mn}_ENC_TOLERANCE_SP", edel_multiplier, f"{mn}_ENC_TOLERANCE_MON") # new galil
     hspeed = config.getfloat(axisItem(axis, "home speed"))
-    doValue(f"{mn}.HVEL", hspeed * mres)
+    if not skips['velocity']:
+        doValue(f"{mn}.VELO", velo)
+        doValue(f"{mn}.VMAX", velo)
+        doValue(f"{mn}.JVEL", velo)
+        doValue(f"{mn}.HVEL", hspeed * mres)
     doValue(f"{mn}.RDBD", config.getfloat(axisItem(axis, "positional accuracy")))
-    doValue(f"{mn}.SPDB", config.getfloat(axisItem(axis, "set-point deadband")))
+    if not skips["spdb"]:
+        doValue(f"{mn}.SPDB", config.getfloat(axisItem(axis, "set-point deadband")))
 
-    doValue(f"{mn}.DIR", "Neg" if config.getboolean(axisItem(axis, "negate motor direction")) else "Pos")
+    if not skips['direction']:
+        doValue(f"{mn}.DIR", "Neg" if config.getboolean(axisItem(axis, "negate motor direction")) else "Pos")
 
-    doValue(f"{mn}.ACCL", epics_accl)
-    doValue(f"{mn}.JAR", epics_accl)
-    doValue(f"{mn}.BVEL", velo / 10.0)
-    doValue(f"{mn}.BACC", epics_accl / 10.0)
+    if not skips['acceleration']:
+        doValue(f"{mn}.ACCL", epics_accl)
+        doValue(f"{mn}.JAR", epics_accl)
 
     doValue(f"{mn}.RMOD", "Default")
     #doValue(f"{mn}_HOMEVAL_SP", 0)
     doValue(f"{mn}_WLP_CMD", "Off")
-    doValue(f"{mn}_OFFDELAY_SP", 2)
-    doValue(f"{mn}_ONDELAY_SP", 0)
+    if not skips['onoff']:
+        doValue(f"{mn}_OFFDELAY_SP", 2)
+        doValue(f"{mn}_ONDELAY_SP", 0)
     doValue(f"{mn}_JAH_CMD", "No")
     
     doValue(f"{mn}_MTRTYPE_CMD", MOTOR_TYPES[config.getint(axisItem(axis, "motor type"))], f"{mn}_MTRTYPE_STATUS")
     doValue(f"{mn}_MENCTYPE_CMD", ENCODER_TYPES[config.getint(axisItem(axis, "encoder type"))], f"{mn}_MENCTYPE_STATUS")
     
     de_energise = config.getboolean(axisItem(axis, "de-energise"))
-    doValue(f"{mn}_AUTOONOFF_CMD", "On" if de_energise else "Off", f"{mn}_AUTOONOFF_STATUS")
-    doValue(f"{mn}_ON_CMD", "Off" if de_energise else "On", f"{mn}_ON_STATUS")
+    if not skips['onoff']:
+        doValue(f"{mn}_AUTOONOFF_CMD", "On" if de_energise else "Off", f"{mn}_AUTOONOFF_STATUS")
+        doValue(f"{mn}_ON_CMD", "Off" if de_energise else "On", f"{mn}_ON_STATUS")
     
     af = config.getboolean(axisItem(axis, "analog feedback"))
     doValue(f"{mn}_AF_SP", af, f"{mn}_AF_MONITOR") 
 
     doValue(f"{mn}.RTRY", 10 if ueip and config.getboolean(axisItem(axis, "correct motion")) else 0)
     
-    doValue(f"{mn}_able", "Enable" if motor_used else "Disable")
+    if not skips['enable']:
+        doValue(f"{mn}_able", "Enable" if motor_used else "Disable")
 
     print(f"INFO: {mn} seci home method: ", HOME_METHODS[config.getint(axisItem(axis, "home method"))])
 
@@ -163,13 +183,15 @@ def doAxis(config, galil, axis):
     seci_home_pos = config.getfloat(axisItem(axis, "home position"), 0.0)
     seci_offset = config.getfloat(axisItem(axis, "offset"), 0.0)
     seci_user_offset = config.getfloat(axisItem(axis, "user offset"), 0.0)
-    if apply_home:
-        doValue(f"{mn}.OFF", seci_home_pos - seci_offset - seci_user_offset)
-    else:
-        doValue(f"{mn}.OFF", - seci_offset - seci_user_offset)
+    if not skips['offset']:
+        if apply_home:
+            doValue(f"{mn}.OFF", seci_home_pos - seci_offset - seci_user_offset)
+        else:
+            doValue(f"{mn}.OFF", - seci_offset - seci_user_offset)
         
     eguaft = hspeed * hspeed / dccl / 2.0 / msteps_per_unit
-    doValue(f"{mn}_EGUAFTLIMIT_SP", eguaft, f"{mn}_EGUAFTLIMIT_MON")
+    if not skips["eguaftlimit"]:
+        doValue(f"{mn}_EGUAFTLIMIT_SP", eguaft, f"{mn}_EGUAFTLIMIT_MON")
     
     cp = config.getint(axisItem(axis, "CP"))
     if de_energise:
@@ -202,7 +224,10 @@ def doAxis(config, galil, axis):
         else:
             print(f"ERROR: {mn} seci backlash problem")
 
-    doValue(f"{mn}.BDST", -backlash)
+    if not skips["backlash"]:
+        doValue(f"{mn}.BVEL", velo / 10.0)
+        doValue(f"{mn}.BACC", epics_accl / 10.0)
+        doValue(f"{mn}.BDST", -backlash)
     
     smax = config.getfloat(axisItem(axis, "soft max"))
     smax = smax if smax != float('inf') else 0
@@ -214,8 +239,9 @@ def doAxis(config, galil, axis):
         print(f"umax defined {umax}")
     if umin is not None and umin != float('-inf'):
         print(f"umin defined {umin}")
-    doValue(f"{mn}.HLM", smax)
-    doValue(f"{mn}.LLM", smin)
+    if not skips["limits"]:
+        doValue(f"{mn}.HLM", smax)
+        doValue(f"{mn}.LLM", smin)
     
 # soft min   soft max        home offset     position ref    position      
       #   User Offset      user max    user min   
@@ -249,7 +275,7 @@ def doValue(set_pv, value, read_pv=None):
                 print("{} RBV OK: \"{}\"".format(prefixed_read_pv, current_rbv))
             
 
-def doController(config, galil):
+def doController(config, galil, skips):
     cn = controllerNumber(galil)
     enable = config.getboolean("enable")
     if enable:
@@ -266,7 +292,7 @@ def doController(config, galil):
         for axis_no in range(8):
             axis = chr(ord('a') + axis_no)
             if config.get(f"axis {axis} motor name") is not None:
-                doAxis(config, galil, axis)   
+                doAxis(config, galil, axis, skips)   
     else:
         print(f"INFO: Skipping Controller {galil} (DMC{cn} MTR{cn}xx) as not enabled in seci")
 
