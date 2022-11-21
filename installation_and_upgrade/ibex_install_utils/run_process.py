@@ -4,6 +4,8 @@ Running processes infrastructure.
 
 import os
 import subprocess
+from types import NoneType
+from typing import Union
 
 from ibex_install_utils.exceptions import ErrorInRun
 
@@ -13,7 +15,8 @@ class RunProcess:
     Create a process runner to run a process.
     """
     def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None,
-                 capture_pipes=True, std_in=None, log_command_args=True):
+                 capture_pipes=True, std_in=None, log_command_args=True,
+                 expected_return_code: Union[int, None] = 0):
         """
         Create a process that needs running
 
@@ -26,6 +29,8 @@ class RunProcess:
             capture_pipes: whether to capture pipes and manage in python or let the process access the console
             std_in: std_in sets the stdin pipe to be this
             log_command_args (bool): Whether to show the full command line that is being executed.
+            expected_return_code (int): The expected return code for this command. Set to None to
+                disable return-code checking.
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
@@ -33,6 +38,7 @@ class RunProcess:
         self._prog_args = prog_args
         self._capture_pipes = capture_pipes
         self._stdin = std_in
+        self._expected_return_code = expected_return_code
         self.log_command_args = log_command_args
         if std_in is not None and self._capture_pipes:
             raise NotImplementedError("Capturing pipes and set standard in is not implemented.")
@@ -63,7 +69,7 @@ class RunProcess:
                     error_code = subprocess.call(command_line, cwd=self._working_dir, stdin=self._stdin)
                 else:
                     error_code = subprocess.call(command_line, cwd=self._working_dir)
-                if error_code != 0:
+                if error_code != self._expected_return_code and self._expected_return_code is not None:
                     raise ErrorInRun(f"Command failed with error code: {error_code}")
             elif self._press_any_key:
                 output = subprocess.Popen(command_line, cwd=self._working_dir,
@@ -72,7 +78,7 @@ class RunProcess:
                 output_lines, err = output.communicate(b" ")
                 for line in output_lines.splitlines():
                     print(f"    > {line}")
-                if output.returncode != 0:
+                if output.returncode != self._expected_return_code and self._expected_return_code is not None:
                     raise subprocess.CalledProcessError(output.returncode, command_line)
             else:
                 process = subprocess.Popen(command_line, cwd=self._working_dir,
@@ -82,20 +88,22 @@ class RunProcess:
                     print(f"    > {stdout_line}")
                 process.stdout.close()
                 return_code = process.wait()
-                if return_code:
+                if return_code != self._expected_return_code and self._expected_return_code is not None:
                     raise subprocess.CalledProcessError(return_code, command_line)
 
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
             if ex.output:
-                print(f"Process failed with return code {ex.returncode}. Output was: ")
+                print(f"Process failed with return code {ex.returncode} (expected {self._expected_return_code}). "
+                      f"Output was: ")
                 for line in ex.output.splitlines():
                     print(f"    > {line}")
                 print(" --- ")
             else:
-                print(f"Process failed with return code {ex.returncode} and no output.")
+                print(f"Process failed with return code {ex.returncode} (expected {self._expected_return_code}) "
+                      f"and no output.")
 
-            raise ErrorInRun(f"Command failed with return code {ex.returncode}")
+            raise ErrorInRun(f"Command failed with return code {ex.returncode} (expected {self._expected_return_code})")
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun(f"Command '{self._bat_file}' not found in '{self._working_dir}'")
