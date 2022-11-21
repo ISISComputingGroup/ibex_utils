@@ -47,9 +47,9 @@ if "%1" == "RELEASE" (
     REM set INSTALL_TYPE=instrument_install
     REM set INSTALL_TYPE=training_update
     set INSTALL_TYPE=install_latest
-    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --release_dir "%RELEASE_SOURCE%" --server-arch %SERVER_ARCH% --quiet !INSTALL_TYPE!
+    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --release_dir "%RELEASE_SOURCE%" --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE!
 ) else (
-    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --server-arch %SERVER_ARCH% --quiet !INSTALL_TYPE!
+    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE!
 )
 IF %errorlevel% neq 0 (
     echo Error %errorlevel% returned from IBEX_upgrade script
