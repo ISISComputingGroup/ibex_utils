@@ -116,7 +116,7 @@ class ServerTasks(BaseTasks):
         RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "core.autocrlf", "true"]).run()
         RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "credential.helper", "wincred"]).run()
         RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "user.name", "spudulike"]).run()
-        email = "spudulike@{inst_name.lower()}.isis.cclrc.ac.uk"
+        email = f"spudulike@{inst_name.lower()}.isis.cclrc.ac.uk"
         RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "user.email", email]).run()
 
         if not os.path.exists(SETTINGS_CONFIG_PATH):
