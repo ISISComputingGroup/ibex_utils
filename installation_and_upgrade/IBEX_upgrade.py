@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--quiet", default=False, action="store_true",
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
-    parser.add_argument("--server_arch", default="x64", choices=["x64", "x86"], help="Server build architecture.", default="x64")
+    parser.add_argument("--server_arch", default="x64", choices=["x64", "x86"], help="Server build architecture.")
 
     deployment_types = [f"{choice}: {deployment_types}"
                         for choice, (_, deployment_types) in UPGRADE_TYPES.items()]
