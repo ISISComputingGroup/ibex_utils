@@ -123,7 +123,7 @@ if __name__ == "__main__":
         if args.deployment_type == 'install_latest_incr':
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_" + args.server_arch)
         else:
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_" + args.server_arch")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_" + args.server_arch)
 
         try:
             DIRECTORIES["EPICS"] = get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS" + server_suffix)
