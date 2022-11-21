@@ -73,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--quiet", default=False, action="store_true",
                         help="Do not ask any questions just to the default.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
-    parser.add_argument("--server_arch", default="x64", choices=["x64", "x86"], help="Server build architecture.")
+    parser.add_argument("--server_arch", default="x64", choices=["x64", "x86"], help="Server build architecture.", default="x64")
 
     deployment_types = [f"{choice}: {deployment_types}"
                         for choice, (_, deployment_types) in UPGRADE_TYPES.items()]
@@ -83,13 +83,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     current_client_version = None
+    server_suffix = "32" if args.server_arch == "x86" else ""
     if args.release_dir is not None:
         current_release_dir = os.path.join(args.release_dir, _get_latest_release_path(args.release_dir))
         current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
         if args.release_suffix != "":
             current_release_dir += f"-{args.release_suffix}"
 
-        server_suffix = "32" if args.server_arch == "x86" else ""
         DIRECTORIES["EPICS"] = os.path.join(current_release_dir, "EPICS" + server_suffix)
         DIRECTORIES["Client"] = os.path.join(current_release_dir, "Client")
         DIRECTORIES["genie_python_3"] = os.path.join(current_release_dir, "genie_python_3")
@@ -121,12 +121,12 @@ if __name__ == "__main__":
 
     elif args.kits_icp_dir is not None:
         if args.deployment_type == 'install_latest_incr':
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_x64")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_win7_" + args.server_arch)
         else:
-            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_x64")
+            epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_" + args.server_arch")
 
         try:
-            DIRECTORIES["EPICS"] = get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS")
+            DIRECTORIES["EPICS"] = get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS" + server_suffix)
 
             client_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
             DIRECTORIES["Client"] = get_latest_directory_path(client_build_dir, "BUILD")
