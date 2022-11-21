@@ -50,7 +50,10 @@ class FileUtils:
                                                            f'Please do this manually')
                     if os.path.isdir(path):
                         args = [f"{empty_dir}", f"{path}", "/PURGE", "/NJH", "/NJS", "/NP", "/NFL", "/NDL", "/NS", "/NC", "/R:1", "/LOG:NUL"]
-                        RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
+                        try:
+                            RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
+                        except:
+                            pass
                     os.rmdir(empty_dir)
                     os.rmdir(path)
                 else:
