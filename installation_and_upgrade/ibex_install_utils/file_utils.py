@@ -6,6 +6,7 @@ import os
 import shutil
 import time
 from ibex_install_utils.exceptions import UserStop
+from ibex_install_utils.run_process import RunProcess
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
@@ -48,8 +49,8 @@ class FileUtils:
                         prompt.prompt_and_raise_if_not_yes(f'Error creating empty dir for robocopy "{empty_dir}". '
                                                            f'Please do this manually')
                     if os.path.isdir(path):
-                        os.system(f"robocopy \"{empty_dir}\" \"{path}\" /PURGE /NJH /NJS /NP /NFL /NDL /NS /NC /R:1 "
-                                  f"/LOG:NUL")
+                        args = ["\"{empty_dir}\"", "\"{path}\"", "/PURGE", "/NJH", "/NJS", "/NP", "/NFL", "/NDL", "/NS", "/NC", "/R:1", "/LOG:NUL"]
+                        RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
                     os.rmdir(empty_dir)
                     os.rmdir(path)
                 else:
