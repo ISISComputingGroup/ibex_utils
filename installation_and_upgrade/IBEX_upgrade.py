@@ -12,7 +12,7 @@ from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
 from ibex_install_utils.exceptions import UserStop, ErrorInTask
 from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.file_utils import get_latest_directory_path
-
+from ibex_install_utils.logger import Logger
 
 def _get_latest_release_path(release_dir):
     regex = re.compile(r'^\d+\.\d+\.\d+$')
@@ -53,6 +53,8 @@ DIRECTORIES = {
 }
 
 if __name__ == "__main__":
+    Logger.set_up()
+
     parser = argparse.ArgumentParser(description='Upgrade the instrument.',
                                      formatter_class=argparse.RawTextHelpFormatter)
 

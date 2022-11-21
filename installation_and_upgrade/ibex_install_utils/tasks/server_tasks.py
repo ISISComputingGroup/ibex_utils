@@ -113,24 +113,25 @@ class ServerTasks(BaseTasks):
         """
         inst_name = BaseTasks._get_machine_name()
 
-        subprocess.call("git config --global core.autocrlf true")
-        subprocess.call("git config --global credential.helper wincred")
-        subprocess.call("git config --global user.name spudulike")
-        set_user_email = f"git config --global user.email spudulike@{inst_name.lower()}.isis.cclrc.ac.uk"
-        subprocess.call(set_user_email)
+        RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "core.autocrlf", "true"]).run()
+        RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "credential.helper", "wincred"]).run()
+        RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "user.name", "spudulike"]).run()
+        email = "spudulike@{inst_name.lower()}.isis.cclrc.ac.uk"
+        RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["config", "--global", "user.email", email]).run()
 
         if not os.path.exists(SETTINGS_CONFIG_PATH):
             os.makedirs(SETTINGS_CONFIG_PATH)
 
-        subprocess.call(
-            f"git clone http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git {inst_name}", cwd=SETTINGS_CONFIG_PATH)
+        configs_url = "http://spudulike@control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/inst.git"
+        RunProcess(working_dir=SETTINGS_CONFIG_PATH, executable_file="git", executable_directory="", prog_args=["clone", configs_url, inst_name]).run()
 
         inst_config_path = os.path.join(SETTINGS_CONFIG_PATH, inst_name)
-        subprocess.call("git pull", cwd=inst_config_path)
+        RunProcess(working_dir=inst_config_path, executable_file="git", executable_directory="", prog_args=["pull"]).run()
 
-        branch_exists = subprocess.call(f"git checkout {inst_name}", cwd=inst_config_path) == 0
-        if not branch_exists:
-            subprocess.call(f"git checkout -b {inst_name}", cwd=inst_config_path)
+        try:
+            RunProcess(working_dir=inst_config_path, executable_file="git", executable_directory="", prog_args=["checkout", inst_name]).run()
+        except ErrorInRun:
+            RunProcess(working_dir=inst_config_path, executable_file="git", executable_directory="", prog_args=["checkout", "-b", inst_name]).run()
 
         inst_scripts_path = os.path.join(inst_config_path, "Python")
 
@@ -145,10 +146,10 @@ class ServerTasks(BaseTasks):
                     if not os.path.exists(generic_inst_file):
                         raise IOError("Generic inst file at {} did not exist - cannot proceed".format(generic_inst_file))
                     os.rename(generic_inst_file, specific_inst_file)
-                subprocess.call(f"git add init_{inst_name.lower()}.py", cwd=inst_scripts_path)
-                subprocess.call("git rm init_inst_name.py", cwd=inst_scripts_path)
-                subprocess.call('git commit -m"create initial python"', cwd=inst_config_path)
-                subprocess.call(f"git push --set-upstream origin {inst_name}", cwd=inst_config_path)
+                RunProcess(working_dir=inst_scripts_path, executable_file="git", executable_directory="", prog_args=["add", f"init_{inst_name.lower()}.py"]).run()
+                RunProcess(working_dir=inst_scripts_path, executable_file="git", executable_directory="", prog_args=["rm", "init_inst_name.py"]).run()
+                RunProcess(working_dir=inst_config_path, executable_file="git", executable_directory="", prog_args=["commit", "-m", "create initial python"]).run()
+                RunProcess(working_dir=inst_config_path, executable_file="git", executable_directory="", prog_args=["push", "--set-upstream", "origin", inst_name]).run()
             except Exception as e:
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"Something went wrong setting up the configurations repository. Please resolve manually, "
@@ -198,10 +199,8 @@ class ServerTasks(BaseTasks):
                                   ["Y", "N"], "Y") == "Y":
                 self.update_shared_scripts_repository()
         else:
-            exit_code = subprocess.call("git clone https://github.com/ISISNeutronMuon/InstrumentScripts.git "
-                                        "{}".format(INST_SCRIPTS_PATH))
-            if exit_code != 0:
-                raise ErrorInRun("Failed to install shared scripts repository.")
+            repo_url = "https://github.com/ISISNeutronMuon/InstrumentScripts.git"
+            RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["clone", repo_url, INST_SCRIPTS_PATH]).run()
 
     @task("Set up shared instrument scripts library")
     def update_shared_scripts_repository(self):
@@ -225,10 +224,9 @@ class ServerTasks(BaseTasks):
                                   ["Y", "N"], "N") == "Y":
                 self.update_calibrations_repository()
         else:
-            exit_code = subprocess.call("git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git "
-                                        "C:\Instrument\Settings\config\common")
-            if exit_code != 0:
-                raise ErrorInRun("Failed to set up common calibration directory.")
+            repo_url = "http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git"
+            location = "C:\Instrument\Settings\config\common"
+            RunProcess(working_dir=os.curdir, executable_file="git", executable_directory="", prog_args=["clone", repo_url, location]).run()
 
     @task("Updating calibrations repository")
     def update_calibrations_repository(self):

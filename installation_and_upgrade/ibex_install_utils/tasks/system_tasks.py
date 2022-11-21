@@ -297,7 +297,11 @@ class SystemTasks(BaseTasks):
                         print("git update output: {}".format(line.rstrip()))
             else:
                 print(f"git installed as normal user detected in '{git_path}', attempting upgrade as normal user.")
-                os.system(f"\"{git_path}\" update-git-for-windows --yes")
+                RunProcess(working_dir=os.curdir,
+                           executable_file=git_path,
+                           executable_directory="",
+                           prog_args=["update-git-for-windows", "--yes"],
+                           expected_return_code=None).run()
             self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly", default="Y")
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
