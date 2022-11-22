@@ -37,18 +37,18 @@ def main():
         PVPREFIX = f"IN:{INST}:MOT:"
         CONFIGFILE = r"\\NDX{}\c$\LABVIEW MODULES\Drivers\Galil DMC2280\Galil.ini".format(INST)
         skips = {}
-        skips["velocity"] = True
+        skips["velocity"] = False
         skips["direction"] = False
-        skips["offset"] = True
-        skips["backlash"] = True
-        skips["limits"] = True
-        skips["acceleration"] = True
+        skips["offset"] = False
+        skips["backlash"] = False
+        skips["limits"] = False
+        skips["acceleration"] = False
         skips["onoff"] = False
         skips["enable"] = False
         skips["ueip"] = False
-        skips["edel"] = True
-        skips["eguaftlimit"] = True
-        skips["spdb"] = True
+        skips["edel"] = False
+        skips["eguaftlimit"] = False
+        skips["spdb"] = False
         if args.setfile:
             SETFILE = open(args.setfile, 'w')
         if args.verbose > 0:
@@ -236,10 +236,14 @@ def doAxis(config, galil, axis, skips):
     umax = config.getfloat(axisItem(axis, "user max"))
     umin = config.getfloat(axisItem(axis, "user min"))
     if umax is not None and umax != float('inf'):
-        print(f"umax defined {umax}")
+        print(f"user max defined as {umax} with soft max as {smax}, will use lower value, check that is correct")
+        smax = min(smax, umax)
     if umin is not None and umin != float('-inf'):
-        print(f"umin defined {umin}")
-    if not skips["limits"]:
+        print(f"user min defined as {umin} with soft min as {smin}, will use higher value, check that is correct")
+        smin = max(smin, umin)
+    if (smin > smax):
+        print(f"ERROR: SECI min limit {smin} > SECI max limit {smax}, will not adjust limits") 
+    elif not skips["limits"]:
         doValue(f"{mn}.HLM", smax)
         doValue(f"{mn}.LLM", smin)
     
