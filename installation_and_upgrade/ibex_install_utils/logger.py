@@ -11,8 +11,7 @@ class Logger:
         CURRENT_DATE = time.strftime("%Y%m%d")
         LOG_FILE = f"DEPLOY-{CURRENT_DATE}.log"
         LOG_DIRECTORY = os.path.join("C:\\", "Instrument", "var", "logs", "deploy")
-        if not os.path.exists(LOG_DIRECTORY):
-            os.mkdir(LOG_DIRECTORY)
+        os.makedirs(LOG_DIRECTORY, exist_ok=True)
         LOG_PATH = os.path.join(LOG_DIRECTORY, LOG_FILE)
 
         self.console = sys.stdout
