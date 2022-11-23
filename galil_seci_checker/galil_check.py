@@ -181,8 +181,10 @@ def doAxis(config, galil, axis, skips):
 
     apply_home = config.getboolean(axisItem(axis, "apply home position"))
     seci_home_pos = config.getfloat(axisItem(axis, "home position"), 0.0)
+    seci_home_offset = config.getfloat(axisItem(axis, "home offset"), 0.0)
     seci_offset = config.getfloat(axisItem(axis, "offset"), 0.0)
     seci_user_offset = config.getfloat(axisItem(axis, "user offset"), 0.0)
+    print(f"INFO: {mn} seci home position {seci_home_pos} (apply: {apply_home}) home offset {seci_home_offset} offset {seci_offset} user offset {seci_user_offset}")
     if not skips['offset']:
         if apply_home:
             doValue(f"{mn}.OFF", seci_home_pos - seci_offset - seci_user_offset)
