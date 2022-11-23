@@ -81,6 +81,7 @@ def doAxis(config, galil, axis, skips):
     edel_multiplier = 2 # encoder steps for edel
     epics_accl = speed / accl if accl != 0.0 else 0.0 # epics acceleration is time to reach velocity
     motor_used = config.getboolean(axisItem(axis, "used"))
+    negate_direction = config.getboolean(axisItem(axis, "negate motor direction"))
     
     if not motor_used:
         print(f"INFO: Skipping {mn} as not used in seci")
@@ -145,9 +146,10 @@ def doAxis(config, galil, axis, skips):
     doValue(f"{mn}.RDBD", config.getfloat(axisItem(axis, "positional accuracy")))
     if not skips["spdb"]:
         doValue(f"{mn}.SPDB", config.getfloat(axisItem(axis, "set-point deadband")))
-
+    if negate_direction:
+        print(f"INFO: {mn} has seci negated direction")
     if not skips['direction']:
-        doValue(f"{mn}.DIR", "Neg" if config.getboolean(axisItem(axis, "negate motor direction")) else "Pos")
+        doValue(f"{mn}.DIR", "Neg" if negate_direction else "Pos")
 
     if not skips['acceleration']:
         doValue(f"{mn}.ACCL", epics_accl)
