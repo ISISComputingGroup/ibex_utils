@@ -53,7 +53,6 @@ DIRECTORIES = {
 }
 
 if __name__ == "__main__":
-    Logger.set_up()
 
     parser = argparse.ArgumentParser(description='Upgrade the instrument.',
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -72,6 +71,8 @@ if __name__ == "__main__":
                         help="Confirm each major action before performing it")
     parser.add_argument("--quiet", default=False, action="store_true",
                         help="Do not ask any questions just to the default.")
+    parser.add_argument("--no_log_to_var", default=False, action="store_true",
+                        help="Do not log the output of this script to the var area.")
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
     parser.add_argument("--server_arch", default="x64", choices=["x64", "x86"], help="Server build architecture.")
 
@@ -82,6 +83,10 @@ if __name__ == "__main__":
                         .format(", \n".join(deployment_types)))
 
     args = parser.parse_args()
+    
+    if not args.no_log_to_var:
+        Logger.set_up()
+    
     current_client_version = None
     server_suffix = "32" if args.server_arch == "x86" else ""
     if args.release_dir is not None:
