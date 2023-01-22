@@ -56,7 +56,8 @@ class BackupTasks(BaseTasks):
                 self._backup_dir(app_path, copy=False)
 
             # Backup settings and autosave
-            self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"), ignore=shutil.ignore_patterns("labview modules"))
+            self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"), ignore=shutil.ignore_patterns("labview modules",
+                                                                                     "$RECYCLE.BIN", "System Volume Information"))
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "var", "Autosave"))
         else:
             self.prompt.prompt_and_raise_if_not_yes(
