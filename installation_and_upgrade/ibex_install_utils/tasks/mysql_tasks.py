@@ -58,6 +58,12 @@ class MysqlTasks(BaseTasks):
             mysql_bin_dir = os.path.join(MYSQL57_INSTALL_DIR, "bin")
 
         return mysql_bin_dir
+    
+    def _get_mysql_backup_dir(self):
+        mysql_backup_dir = os.path.join(STAGE_DELETED, self._get_machine_name(), self._generate_backup_dir_name())
+        if not os.path.exists(mysql_backup_dir):
+            os.mkdir(mysql_backup_dir)
+        return mysql_backup_dir
 
     @task("Truncate database")
     def truncate_database(self):
@@ -335,7 +341,7 @@ class MysqlTasks(BaseTasks):
         """
         Backup the database
         """
-        result_file = os.path.join(self._get_backup_dir(),
+        result_file = os.path.join(self._get_mysql_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()))
 
         mysql_bin_dir = self._get_mysql_dir()
@@ -357,7 +363,7 @@ class MysqlTasks(BaseTasks):
         """
         Backup the data for transfer. This dumps just the data not the schema.
         """
-        result_file = os.path.join(self._get_backup_dir(),
+        result_file = os.path.join(self._get_mysql_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()))
 
         mysql_bin_dir = self._get_mysql_dir()
@@ -376,7 +382,7 @@ class MysqlTasks(BaseTasks):
         """
         Reload backup the data
         """
-        result_file = os.path.join(self._get_backup_dir(),
+        result_file = os.path.join(self._get_mysql_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()))
 
         mysql_bin_dir = self._get_mysql_dir()
