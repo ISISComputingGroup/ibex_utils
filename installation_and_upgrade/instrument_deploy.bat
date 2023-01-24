@@ -5,7 +5,8 @@ call "%~dp0check_for_admin_console.bat"
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
-rem set "RELEASE-SUFFIX="
+set SERVER_ARCH=x64
+if not "%1" == "" set SERVER_ARCH=%1
 
 git --version
 
@@ -25,7 +26,7 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
   set "PYTHONDIR=!LATEST_PYTHON_DIR!"
   set "PYTHONHOME=!LATEST_PYTHON_DIR!"
   set "PYTHONPATH=!LATEST_PYTHON_DIR!"
-  call "!LATEST_PYTHON!" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_pre_stop
+  call "!LATEST_PYTHON!" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_pre_stop
   IF !errorlevel! neq 0 goto ERROR
   start /wait cmd /c "%STOP_IBEX%"
   ENDLOCAL
@@ -40,7 +41,7 @@ set "PYTHONDIR=%LATEST_PYTHON_DIR%"
 set "PYTHONHOME=%LATEST_PYTHON_DIR%"
 set "PYTHONPATH=%LATEST_PYTHON_DIR%"
 
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_main
+call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_main 
 IF %errorlevel% neq 0 goto ERROR
 ENDLOCAL
 
@@ -53,6 +54,6 @@ set "PYTHONDIR=%LATEST_PYTHON_DIR%"
 set "PYTHONHOME=%LATEST_PYTHON_DIR%"
 set "PYTHONPATH=%LATEST_PYTHON_DIR%"
 
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_post_start
+call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_post_start
 :ERROR
 EXIT /b %errorlevel%
