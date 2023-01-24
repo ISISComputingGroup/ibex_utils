@@ -356,9 +356,6 @@ class MysqlTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Dump file '{result_file}' seems to be small is it correct? ")
 
-        self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
-                                   self.prompt)
-
     def _backup_data(self):
         """
         Backup the data for transfer. This dumps just the data not the schema.
