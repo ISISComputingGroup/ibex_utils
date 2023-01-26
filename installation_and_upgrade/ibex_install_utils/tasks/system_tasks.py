@@ -33,12 +33,12 @@ class SystemTasks(BaseTasks):
     """
     Tasks relating to the system e.g. installed software other than core IBEX components, windows, firewalls, etc.
     """
-    @task("Record running vis or any relevant looking programs")
+    @task("Record running LabVIEW VIs or any relevant looking other programs")
     def record_running_vis(self):
         """
         Get user to record running vis
         """
-        self.prompt.prompt_and_raise_if_not_yes("Write down any VIs/relevant looking programs which are running for use later?")
+        self.prompt.prompt_and_raise_if_not_yes("Write down any LabVIEW VIs/relevant looking programs which are running for use later?")
 
     @task("Upgrading Notepad++. Please follow system dialogs")
     def upgrade_notepad_pp(self):
