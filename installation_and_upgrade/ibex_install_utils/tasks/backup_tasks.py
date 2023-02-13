@@ -72,4 +72,4 @@ class BackupTasks(BaseTasks):
 
         """
         for path in ALL_INSTALL_DIRECTORIES:
-            self._file_utils.remove_tree(path, self.prompt)
+            self._file_utils.remove_tree(path, self.prompt, leave_top_if_link=True)
