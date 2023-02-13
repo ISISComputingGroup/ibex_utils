@@ -83,12 +83,13 @@ class SystemTestData:
         :return: the test data json
         """
         print(f"Getting data for {test_num}")
-        # replace below code to use context manager
-        with  urllib.request.urlopen(self.system_tests_url.format(test_num)) as page:
-            if page.status == 200:
-                test_json = json.loads(page.read())
-            else:
-                raise Exception(f"Failed to get test data: {page.status} for {test_num}")
+        test_json = dict()
+        try:
+            with  urllib.request.urlopen(self.system_tests_url.format(test_num)) as page:
+                if page.status == 200:
+                    test_json = json.loads(page.read())
+        except urllib.error.HTTPError:
+            print(f"Failed to get test data for {test_num}")
         return test_json
 
     @staticmethod
@@ -145,11 +146,14 @@ def main():
     """
     Main function
     """
+    for job in ["System_Tests", "System_Tests_Squish"]:
+        print(F"JOB: {job}")
+        system_tests_url = f"https://epics-jenkins.isis.rl.ac.uk/job/{job}/{{}}/testReport/api/json"
+        test_metadata = f"https://epics-jenkins.isis.rl.ac.uk/job/{job}/api/json"
+        my_test_data = SystemTestData(system_tests_url, test_metadata, 15)
+        my_test_data.print_failing_tests(my_test_data.top_n_failing_tests)
+        print("\n")
 
-    system_tests_url = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/{}/testReport/api/json"
-    test_metadata = "https://epics-jenkins.isis.rl.ac.uk/job/System_Tests/api/json"
-    my_test_data = SystemTestData(system_tests_url, test_metadata, 15)
-    my_test_data.print_failing_tests(my_test_data.top_n_failing_tests)
 
 
 if __name__ == "__main__":
