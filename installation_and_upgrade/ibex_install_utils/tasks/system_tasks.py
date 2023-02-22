@@ -19,7 +19,8 @@ RAM_NORMAL_INSTRUMENT = 13 * GIGABYTE  # Should be 14GB ideally, but allow anyth
 FREE_DISK_MIN = 30 * GIGABYTE
 
 SPUDULIKE = "spudulike"
-USER_START_MENU = os.path.join("C:\\users", SPUDULIKE, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
+USER_HOME = os.path.join("C:\\users\\", SPUDULIKE)
+USER_START_MENU = os.path.join(USER_HOME, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
 ALLUSERS_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
 SECI = "SECI User interface.lnk"
 SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility")
@@ -245,7 +246,7 @@ class SystemTasks(BaseTasks):
                 "The machine requires at least {:.1f}GB of free disk space to run IBEX."
                     .format(FREE_DISK_MIN / GIGABYTE))
 
-    #@task("Put IBEX autostart into pc start menu")
+    @task("Put IBEX autostart into pc start menu")
     def put_autostart_script_in_startup_area(self):
         """
         Copies the ibex server autostart script into the PC startup folder so that the IBEX server starts
@@ -265,9 +266,15 @@ class SystemTasks(BaseTasks):
             admin_commands = AdminCommandBuilder()
             admin_commands.add_command("del", f'"{allusers_path}"')
             admin_commands.run_all()
-
+            
+        if os.path.exists(USER_HOME) and not os.path.exists(user_folder):
+            # The user was created but we (Administrators) don't have access to the folder.
+            admin_commands = AdminCommandBuilder()
+            admin_commands.add_command("icacls", USER_HOME + " /inheritance:e /grant:r Administrators:R")
+            admin_commands.run_all()
 
         if not os.path.exists(user_folder):
+            # The user has not been created yet.
             admin_commands = AdminCommandBuilder()
             my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
             admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
@@ -279,8 +286,15 @@ class SystemTasks(BaseTasks):
             print("Autostart script already installed correctly - nothing to do")
             return
             
-        # We can run these without admin as the destination dir is spudulike.
-        shutil.copyfile(from_path, user_path)
+        try:
+            # We can copy this without admin if we are the spudulike user.
+            shutil.copyfile(from_path, user_path)
+        except PermissionError:
+            # If we aren't, we need admin access to do it.
+            admin_commands = AdminCommandBuilder()
+            admin_commands.add_command("xcopy", "/I " + f'"{from_path}"' + " " + f'"{user_folder}"')
+            admin_commands.run_all()
+       
 
     @task("Restrict Internet Explorer")
     def restrict_ie(self):
@@ -342,8 +356,4 @@ class SystemTasks(BaseTasks):
         answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()
-
-
-if __name__ == "__main__":
-    SystemTasks.put_autostart_script_in_startup_area(None)
     
