@@ -1,5 +1,5 @@
 import filecmp
-import os
+import sys, os
 import shutil
 
 import psutil
@@ -18,13 +18,13 @@ RAM_MIN = 7.5 * GIGABYTE  # 8 GB minus a small tolerance.
 RAM_NORMAL_INSTRUMENT = 13 * GIGABYTE  # Should be 14GB ideally, but allow anything over 13GB.
 FREE_DISK_MIN = 30 * GIGABYTE
 
-
-USER_START_MENU = os.path.join("C:\\", "users", "spudulike", "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
-PC_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
+SPUDULIKE = "spudulike"
+USER_START_MENU = os.path.join("C:\\users", SPUDULIKE, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
+ALLUSERS_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
 SECI = "SECI User interface.lnk"
 SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility")
 AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
-                       os.path.join(PC_START_MENU, "Programs", "Startup", SECI)]
+                       os.path.join(ALLUSERS_START_MENU, "Programs", "Startup", SECI)]
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 
@@ -245,7 +245,7 @@ class SystemTasks(BaseTasks):
                 "The machine requires at least {:.1f}GB of free disk space to run IBEX."
                     .format(FREE_DISK_MIN / GIGABYTE))
 
-    @task("Put IBEX autostart into pc start menu")
+    #@task("Put IBEX autostart into pc start menu")
     def put_autostart_script_in_startup_area(self):
         """
         Copies the ibex server autostart script into the PC startup folder so that the IBEX server starts
@@ -255,17 +255,32 @@ class SystemTasks(BaseTasks):
         autostart_script_name = "ibex_system_boot.bat"
 
         from_path = os.path.join(EPICS_PATH, autostart_script_name)
-        to_path = os.path.join(PC_START_MENU, "Programs", "Startup", autostart_script_name)
+        allusers_path = os.path.join(ALLUSERS_START_MENU, "Programs", "Startup", autostart_script_name)
+        user_folder = os.path.join(USER_START_MENU, "Programs", "Startup")
+        user_path = os.path.join(user_folder, autostart_script_name)
+        user_folder += "\\"
 
-        if os.path.exists(to_path) and filecmp.cmp(from_path, to_path):
-            print("Autostart script already installed correctly - nothing to do")
+        if os.path.exists(allusers_path):
+            # We need to run these as admin as the destination dir is not writable by standard users.
+            admin_commands = AdminCommandBuilder()
+            admin_commands.add_command("del", f'"{allusers_path}"')
+            admin_commands.run_all()
+
+
+        if not os.path.exists(user_folder):
+            admin_commands = AdminCommandBuilder()
+            my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+            admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
+            admin_commands.run_all()
+            print("spudulike user start-up added")
             return
 
-        # We need to run these as admin as the destination dir is not writable by standard users.
-        admin_commands = AdminCommandBuilder()
-        admin_commands.add_command("del", f'"{to_path}"')
-        admin_commands.add_command("copy", f'"{from_path}" "{to_path}"')
-        admin_commands.run_all()
+        if os.path.exists(user_path) and filecmp.cmp(from_path, user_path):
+            print("Autostart script already installed correctly - nothing to do")
+            return
+            
+        # We can run these without admin as the destination dir is spudulike.
+        shutil.copyfile(from_path, user_path)
 
     @task("Restrict Internet Explorer")
     def restrict_ie(self):
@@ -327,3 +342,8 @@ class SystemTasks(BaseTasks):
         answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()
+
+
+if __name__ == "__main__":
+    SystemTasks.put_autostart_script_in_startup_area(None)
+    
