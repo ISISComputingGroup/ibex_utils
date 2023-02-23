@@ -273,7 +273,7 @@ class SystemTasks(BaseTasks):
             admin_commands.add_command("icacls", USER_HOME + " /inheritance:e /grant:r Administrators:R")
             admin_commands.run_all()
 
-        if not os.path.exists(user_folder):
+        if not os.path.exists(USER_HOME):
             # The user has not been created yet.
             admin_commands = AdminCommandBuilder()
             my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
