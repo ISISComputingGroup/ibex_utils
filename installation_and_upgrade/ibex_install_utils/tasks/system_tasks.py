@@ -274,12 +274,16 @@ class SystemTasks(BaseTasks):
             admin_commands.run_all()
 
         if not os.path.exists(USER_HOME):
-            # The user has not been created yet.
-            admin_commands = AdminCommandBuilder()
-            my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
-            admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
-            admin_commands.run_all()
-            print("spudulike user start-up added")
+            myname = os.getlogin()
+            if (myname == "Administrator"):
+               # The user has not been created yet.
+               admin_commands = AdminCommandBuilder()
+               my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+               admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
+               admin_commands.run_all()
+               print("spudulike user start-up added")
+            else:
+               print("Not adding spudulike user start-up")
             return
 
         if os.path.exists(user_path) and filecmp.cmp(from_path, user_path):
