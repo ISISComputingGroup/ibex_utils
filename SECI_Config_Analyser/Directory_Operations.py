@@ -87,18 +87,17 @@ class ReadConfigFiles:
         # maintain list of "encountered" items in dummy list
         # if item not in this list, add item to it and to output list
 
-        output_list = []
+        output_list = list()
         encountered = set()
 
         for item in input_list:
-            item = str.lower(item)
 
+            item = str(item, 'UTF-8')
             if item not in encountered:
                 output_list.append(item)
                 encountered.add(item)
 
         # sort alphabetically
-
         output_list.sort()
 
         return output_list
