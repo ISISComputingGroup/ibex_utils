@@ -2,7 +2,7 @@
 Script to analyse SECI configurations and components and output results to file
 """
 
-from SECI_Config_Analyser.Directory_Operations import ReadConfigFiles
+from Directory_Operations import ReadConfigFiles
 import argparse
 from os import system
 
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--adminaccount', '-a',
                         type=str,
                         default=None,
-                        help='admin account name')
+                        help=r'admin account name (without host i.e. NOT \\NDXxxx\xxx, just xxx')
 
     parser.add_argument('--adminpassword', '-p',
                         type=str,
@@ -41,25 +41,30 @@ if __name__ == '__main__':
 
     # open reference to appropriate network drive with supplied credentials
 
-    system(f"net use \\\\ndx{args.instrument}\\c$ {args.adminpassword} /user:ndx{args.instrument}\\{args.adminaccount}")
+    print('Connecting to remote directory...')
+    system(f"net use \\\\ndx{args.instrument}\\c$ /user:ndx{args.instrument}\\{args.adminaccount} {args.adminpassword}")
 
     # create instance of 'ReadConfigFiles' as 'filelist' and supply directory to be read
 
-    filelist = ReadConfigFiles("//ndx{args.instrument}/c$/Program Files (x86)/STFC ISIS Facility/SECI/Configurations/")
+    print('Reading configuration files...')
+    filelist = ReadConfigFiles(f"//ndx{args.instrument}/c$/Program Files (x86)/STFC ISIS Facility/SECI/Configurations/")
+
+    print('Analysing files...')
+    xml_data = filelist.analyse_config_files()
 
     # delete reference to network drive
 
-    system(f"net use \\\\ndx{args.instrument}\\$ /delete")
-
-    xml_data = filelist.analyse_config_files()
+    print('Removing network connection...')
+    system(f"net use \\\\ndx{args.instrument}\\c$ /delete")
 
     # concatenate each element in list with newline character, then print whole string
 
+    print('Writing output file...')
     with open(args.output_file, 'w') as outputfile:
 
-        outputfile.write(f"SECI configuration analysis for {args.instrument.upper()}:\n")
+        outputfile.write(f"SECI configuration analysis for {args.instrument.upper()}:\n\n")
 
         for item in xml_data:
 
             outputfile.write('\n'.join(x for x in item))
-            outputfile.write(f"\nNumber of VIs in configuration/component: {str(len(item))}\n")
+            outputfile.write(f"\nNumber of VIs in configuration/component: {str(len(item))}\n\n")
