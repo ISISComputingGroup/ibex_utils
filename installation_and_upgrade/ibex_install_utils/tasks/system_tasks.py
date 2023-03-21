@@ -360,4 +360,3 @@ class SystemTasks(BaseTasks):
         answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()
-    
