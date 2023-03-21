@@ -275,7 +275,7 @@ class SystemTasks(BaseTasks):
 
         if not os.path.exists(USER_HOME):
             myname = os.getlogin()
-            if (myname == "Administrator"):
+            if myname == "Administrator":
                # The user has not been created yet.
                admin_commands = AdminCommandBuilder()
                my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
