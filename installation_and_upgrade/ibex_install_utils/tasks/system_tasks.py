@@ -245,11 +245,26 @@ class SystemTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 "The machine requires at least {:.1f}GB of free disk space to run IBEX."
                     .format(FREE_DISK_MIN / GIGABYTE))
+                    
+    @task("Create spudulike user")
+    def create_spudulike_user(self):
+        """
+        Only ever run using the Administrator account for first install of a new instrument.
+        """
+        if not os.path.exists(USER_HOME):
+            # The user has not been created yet.
+            admin_commands = AdminCommandBuilder()
+            my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+            admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
+            admin_commands.run_all()
+            print("spudulike user start-up added")
+        else:
+            print("No need to add spudulike user start-up")
 
-    @task("Put IBEX autostart into pc start menu")
+    @task("Put IBEX autostart into spudulike start menu")
     def put_autostart_script_in_startup_area(self):
         """
-        Copies the ibex server autostart script into the PC startup folder so that the IBEX server starts
+        Copies the ibex server autostart script into the user startup folder so that the IBEX server starts
         automatically on startup.
         """
 
@@ -273,23 +288,15 @@ class SystemTasks(BaseTasks):
             admin_commands.add_command("icacls", USER_HOME + " /inheritance:e /grant:r Administrators:R")
             admin_commands.run_all()
 
-        if not os.path.exists(USER_HOME):
-            myname = os.getlogin()
-            if myname == "Administrator":
-               # The user has not been created yet.
-               admin_commands = AdminCommandBuilder()
-               my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
-               admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
-               admin_commands.run_all()
-               print("spudulike user start-up added")
-            else:
-               print("Not adding spudulike user start-up")
+        link_path = user_path + '.lnk'
+        if os.path.exists(link_path):
+            print("Autostart script already installed as link - nothing to do")
             return
 
         if os.path.exists(user_path) and filecmp.cmp(from_path, user_path):
             print("Autostart script already installed correctly - nothing to do")
             return
-            
+
         try:
             # We can copy this without admin if we are the spudulike user.
             shutil.copyfile(from_path, user_path)

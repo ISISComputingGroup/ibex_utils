@@ -139,6 +139,9 @@ class UpgradeInstrument:
         self._system_tasks.add_nagios_checks()
         self._system_tasks.update_instlist()
         self._system_tasks.update_kafka_topics()
+        myname = os.getlogin()
+        if myname == "Administrator":
+            self._system_tasks.create_spudulike_user()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._python_tasks.update_script_definitions()
 
