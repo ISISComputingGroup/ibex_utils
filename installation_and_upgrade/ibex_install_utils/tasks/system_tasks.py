@@ -1,5 +1,6 @@
 import filecmp
 import sys, os
+import getpass
 import shutil
 
 import psutil
@@ -253,9 +254,29 @@ class SystemTasks(BaseTasks):
         """
         if not os.path.exists(USER_HOME):
             # The user has not been created yet.
+            username = "spudulike"
+            password = getpass.getpass("Enter " + username + " password: ")
+
             admin_commands = AdminCommandBuilder()
+            autostart_script_name = "ibex_system_boot.bat"
+            # Create the user
+            admin_commands.add_command("net",  "user " + username + " " + password + " /add")
+            # Copy the startup file.
+            from_path = os.path.join(EPICS_PATH, autostart_script_name)
+            user_folder = os.path.join(USER_START_MENU, "Programs", "Startup")
+            # The 'runas' command requires the user to enter the password in response to a prompt.
+            # This isn't possible within the AdminCommandBuilder class becuase stdout and stderr are redirected to a file.
+            # So the user never sees the prompt.
             my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
             admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
+            # So doesn't ask is file name or directory
+            admin_commands.add_command("mkdir", " \"" + user_folder + " \"")
+            # Copy the startup file
+            admin_commands.add_command("xcopy", "/I " + from_path + " \"" + user_folder + "\"")
+            # Grant read access to administrators so that when the upgrade utility is run again,
+            # the files and folders will be accessible. This prevents duplicate creation and copying.
+            admin_commands.add_command("icacls", "C:/Users/" + username +
+                                       " /inheritance:e /grant:r \"Administrators\":R")
             admin_commands.run_all()
             print("spudulike user start-up added")
         else:
