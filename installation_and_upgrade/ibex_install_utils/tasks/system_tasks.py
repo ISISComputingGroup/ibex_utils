@@ -1,5 +1,6 @@
 import filecmp
-import sys, os
+import pathlib
+import os
 import getpass
 import shutil
 
@@ -267,12 +268,10 @@ class SystemTasks(BaseTasks):
             # The 'runas' command requires the user to enter the password in response to a prompt.
             # This isn't possible within the AdminCommandBuilder class becuase stdout and stderr are redirected to a file.
             # So the user never sees the prompt.
-            my_path = os.path.abspath(os.path.dirname(sys.argv[0]))
-            admin_commands.add_command("start /wait", my_path + "\\create_spudulike.bat " + from_path)
+            my_path = str(pathlib.Path(__file__).parent.resolve())
+            admin_commands.add_command("start /wait", my_path + "\\activate_spudulike.bat " + from_path)
             # So doesn't ask is file name or directory
             admin_commands.add_command("mkdir", " \"" + user_folder + " \"")
-            # Copy the startup file
-            admin_commands.add_command("xcopy", "/I " + from_path + " \"" + user_folder + "\"")
             # Grant read access to administrators so that when the upgrade utility is run again,
             # the files and folders will be accessible. This prevents duplicate creation and copying.
             admin_commands.add_command("icacls", "C:/Users/" + username +
