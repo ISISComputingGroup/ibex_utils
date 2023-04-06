@@ -139,9 +139,6 @@ class UpgradeInstrument:
         self._system_tasks.add_nagios_checks()
         self._system_tasks.update_instlist()
         self._system_tasks.update_kafka_topics()
-        myname = os.getlogin()
-        if myname == "Administrator":
-            self._system_tasks.create_spudulike_user()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._python_tasks.update_script_definitions()
 
@@ -170,8 +167,7 @@ class UpgradeInstrument:
         self._server_tasks.save_blocks_to_file()
         self._server_tasks.save_blockserver_pv_to_file()
         self._server_tasks.set_alert_url_and_password()
-        ## disabled as currently incorrect and leads to duplicates 
-        #self._system_tasks.put_autostart_script_in_startup_area()
+        self._system_tasks.put_autostart_script_in_startup_area()
         self._system_tasks.inform_instrument_scientists()
 
     def run_instrument_deploy_main(self):

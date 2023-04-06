@@ -1,10 +1,8 @@
-import filecmp
-import pathlib
 import os
-import getpass
 import shutil
-
 import psutil
+import glob
+from win32com.client import Dispatch
 
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import UserStop
@@ -20,14 +18,13 @@ RAM_MIN = 7.5 * GIGABYTE  # 8 GB minus a small tolerance.
 RAM_NORMAL_INSTRUMENT = 13 * GIGABYTE  # Should be 14GB ideally, but allow anything over 13GB.
 FREE_DISK_MIN = 30 * GIGABYTE
 
-SPUDULIKE = "spudulike"
-USER_HOME = os.path.join("C:\\users\\", SPUDULIKE)
-USER_START_MENU = os.path.join(USER_HOME, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu")
-ALLUSERS_START_MENU = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu")
+CURRENT_USER = os.getlogin()
+USER_STARTUP = os.path.join("C:\\", "Users", CURRENT_USER, "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+ALLUSERS_STARTUP = os.path.join("C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+
 SECI = "SECI User interface.lnk"
 SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility")
-AUTOSTART_LOCATIONS = [os.path.join(USER_START_MENU, "Programs", "Startup", SECI),
-                       os.path.join(ALLUSERS_START_MENU, "Programs", "Startup", SECI)]
+SECI_AUTOSTART_LOCATIONS = [os.path.join(USER_STARTUP, SECI), os.path.join(ALLUSERS_STARTUP, SECI)]
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 
@@ -69,7 +66,7 @@ class SystemTasks(BaseTasks):
         """
         Remove (or at least ask the user to remove) all Seci shortcuts
         """
-        for path in AUTOSTART_LOCATIONS:
+        for path in SECI_AUTOSTART_LOCATIONS:
             if os.path.exists(path):
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"SECI autostart found in {path}, delete this.")
@@ -247,85 +244,45 @@ class SystemTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 "The machine requires at least {:.1f}GB of free disk space to run IBEX."
                     .format(FREE_DISK_MIN / GIGABYTE))
-                    
-    @task("Create spudulike user")
-    def create_spudulike_user(self):
-        """
-        Only ever run using the Administrator account for first install of a new instrument.
-        """
-        if not os.path.exists(USER_HOME):
-            # The user has not been created yet.
-            username = "spudulike"
-            password = getpass.getpass("Enter " + username + " password: ")
 
-            admin_commands = AdminCommandBuilder()
-            autostart_script_name = "ibex_system_boot.bat"
-            # Create the user
-            admin_commands.add_command("net",  "user " + username + " " + password + " /add")
-            # Copy the startup file.
-            from_path = os.path.join(EPICS_PATH, autostart_script_name)
-            user_folder = os.path.join(USER_START_MENU, "Programs", "Startup")
-            # The 'runas' command requires the user to enter the password in response to a prompt.
-            # This isn't possible within the AdminCommandBuilder class becuase stdout and stderr are redirected to a file.
-            # So the user never sees the prompt.
-            my_path = str(pathlib.Path(__file__).parent.resolve())
-            admin_commands.add_command("start /wait", my_path + "\\activate_spudulike.bat " + from_path)
-            # So doesn't ask is file name or directory
-            admin_commands.add_command("mkdir", " \"" + user_folder + " \"")
-            # Grant read access to administrators so that when the upgrade utility is run again,
-            # the files and folders will be accessible. This prevents duplicate creation and copying.
-            admin_commands.add_command("icacls", "C:/Users/" + username +
-                                       " /inheritance:e /grant:r \"Administrators\":R")
-            admin_commands.run_all()
-            print("spudulike user start-up added")
-        else:
-            print("No need to add spudulike user start-up")
-
-    @task("Put IBEX autostart into spudulike start menu")
+    @task("Put IBEX autostart script into startup for current user")
     def put_autostart_script_in_startup_area(self):
         """
-        Copies the ibex server autostart script into the user startup folder so that the IBEX server starts
-        automatically on startup.
+        Checks the startup location for all users for the autostart script and removes any instances.
+
+        Checks the startup location of the current user and removes the autostart script if it was copied.
+
+        Creates a shortcut of the ibex server autostart script into the current user startup folder
+        so that the IBEX server starts automatically on startup.
         """
 
-        autostart_script_name = "ibex_system_boot.bat"
+        AUTOSTART_SCRIPT_NAME = "ibex_system_boot"
 
-        from_path = os.path.join(EPICS_PATH, autostart_script_name)
-        allusers_path = os.path.join(ALLUSERS_START_MENU, "Programs", "Startup", autostart_script_name)
-        user_folder = os.path.join(USER_START_MENU, "Programs", "Startup")
-        user_path = os.path.join(user_folder, autostart_script_name)
-        user_folder += "\\"
-
-        if os.path.exists(allusers_path):
-            # We need to run these as admin as the destination dir is not writable by standard users.
+        # Check all users startup folder.
+        paths = glob.glob(os.path.join(ALLUSERS_STARTUP, f"{AUTOSTART_SCRIPT_NAME}*"))
+        if len(paths):
             admin_commands = AdminCommandBuilder()
-            admin_commands.add_command("del", f'"{allusers_path}"')
+            for path in paths:
+                print(f"Removing: '{path}'.")
+                admin_commands.add_command("del", f"\"{path}\"")
             admin_commands.run_all()
-            
-        if os.path.exists(USER_HOME) and not os.path.exists(user_folder):
-            # The user was created but we (Administrators) don't have access to the folder.
-            admin_commands = AdminCommandBuilder()
-            admin_commands.add_command("icacls", USER_HOME + " /inheritance:e /grant:r Administrators:R")
-            admin_commands.run_all()
+        
+        # Check current user startup folder for copied batch file.
+        autostart_batch_path = os.path.join(USER_STARTUP, f"{AUTOSTART_SCRIPT_NAME}.bat")
+        if os.path.exists(autostart_batch_path):
+            print(f"Removing: '{autostart_batch_path}'.")
+            os.remove(autostart_batch_path)
 
-        link_path = user_path + '.lnk'
-        if os.path.exists(link_path):
-            print("Autostart script already installed as link - nothing to do")
-            return
-
-        if os.path.exists(user_path) and filecmp.cmp(from_path, user_path):
-            print("Autostart script already installed correctly - nothing to do")
-            return
-
-        try:
-            # We can copy this without admin if we are the spudulike user.
-            shutil.copyfile(from_path, user_path)
-        except PermissionError:
-            # If we aren't, we need admin access to do it.
-            admin_commands = AdminCommandBuilder()
-            admin_commands.add_command("xcopy", "/I " + f'"{from_path}"' + " " + f'"{user_folder}"')
-            admin_commands.run_all()
-       
+        # Create shortcut to autostart batch file.
+        autostart_shortcut_path = os.path.join(USER_STARTUP, f"{AUTOSTART_SCRIPT_NAME}.lnk")
+        if not os.path.exists(autostart_shortcut_path):
+            print(f"Adding shortcut: '{autostart_shortcut_path}'.")
+            shell = Dispatch('WScript.Shell')
+            shortcut = shell.CreateShortCut(autostart_shortcut_path)
+            shortcut.Targetpath = os.path.join(EPICS_PATH, f"{AUTOSTART_SCRIPT_NAME}.bat")
+            shortcut.save()
+        else:
+            print("Shortcut already exists.")
 
     @task("Restrict Internet Explorer")
     def restrict_ie(self):
