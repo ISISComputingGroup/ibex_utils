@@ -26,7 +26,7 @@ except ImportError:
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.30"
+MYSQL_LATEST_VERSION = "8.0.32"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          f"mysql-{MYSQL_LATEST_VERSION}-winx64.zip")
 
@@ -58,6 +58,12 @@ class MysqlTasks(BaseTasks):
             mysql_bin_dir = os.path.join(MYSQL57_INSTALL_DIR, "bin")
 
         return mysql_bin_dir
+    
+    def _get_mysql_backup_dir(self):
+        mysql_backup_dir = os.path.join(STAGE_DELETED, self._get_machine_name(), self._generate_backup_dir_name())
+        if not os.path.exists(mysql_backup_dir):
+            os.mkdir(mysql_backup_dir)
+        return mysql_backup_dir
 
     @task("Truncate database")
     def truncate_database(self):
@@ -335,7 +341,7 @@ class MysqlTasks(BaseTasks):
         """
         Backup the database
         """
-        result_file = os.path.join(self._get_backup_dir(),
+        result_file = os.path.join(self._get_mysql_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()))
 
         mysql_bin_dir = self._get_mysql_dir()
@@ -350,14 +356,11 @@ class MysqlTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Dump file '{result_file}' seems to be small is it correct? ")
 
-        self._file_utils.move_file(result_file, os.path.join(STAGE_DELETED, self._get_machine_name()),
-                                   self.prompt)
-
     def _backup_data(self):
         """
         Backup the data for transfer. This dumps just the data not the schema.
         """
-        result_file = os.path.join(self._get_backup_dir(),
+        result_file = os.path.join(self._get_mysql_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()))
 
         mysql_bin_dir = self._get_mysql_dir()
@@ -376,7 +379,7 @@ class MysqlTasks(BaseTasks):
         """
         Reload backup the data
         """
-        result_file = os.path.join(self._get_backup_dir(),
+        result_file = os.path.join(self._get_mysql_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()))
 
         mysql_bin_dir = self._get_mysql_dir()

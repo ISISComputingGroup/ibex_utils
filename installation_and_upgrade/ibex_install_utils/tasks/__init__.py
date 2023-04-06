@@ -50,13 +50,17 @@ class BaseTasks:
     def _today_date_for_filenames():
         return date.today().strftime("%Y_%m_%d")
 
+    @staticmethod 
+    def _generate_backup_dir_name():
+        return f"ibex_backup_{BaseTasks._today_date_for_filenames()}"
+
     @staticmethod
     def _get_backup_dir():
         """
         Returns: The backup dir, will create it if needed (both old and dir).
         Raises: IOError if the base dir doesn't exist
         """
-        new_backup_dir = os.path.join(BACKUP_DIR, f"ibex_backup_{BaseTasks._today_date_for_filenames()}")
+        new_backup_dir = os.path.join(BACKUP_DIR, BaseTasks._generate_backup_dir_name())
 
         if not os.path.exists(BACKUP_DATA_DIR):
             raise IOError(f"Base directory does not exist {BACKUP_DATA_DIR} should be a provided linked dir")

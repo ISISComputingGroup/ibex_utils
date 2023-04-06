@@ -12,7 +12,7 @@ ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, EPI
 
 class BackupTasks(BaseTasks):
 
-    def _backup_dir(self, src, copy=True):
+    def _backup_dir(self, src, copy=True, ignore=None):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
         if src in os.getcwd():
             self.prompt.prompt_and_raise_if_not_yes(
@@ -24,7 +24,7 @@ class BackupTasks(BaseTasks):
         elif os.path.exists(src):
             if copy:
                 print(f"Copying {src} to {backup_dir}")
-                shutil.copytree(src, backup_dir)
+                shutil.copytree(src, backup_dir, ignore=ignore)
             else:
                 print(f"Moving {src} to {backup_dir}")
                 self._file_utils.move_dir(src, backup_dir, self.prompt)
@@ -56,7 +56,8 @@ class BackupTasks(BaseTasks):
                 self._backup_dir(app_path, copy=False)
 
             # Backup settings and autosave
-            self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"))
+            self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"), ignore=shutil.ignore_patterns("labview modules",
+                                                                                     "$RECYCLE.BIN", "System Volume Information"))
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "var", "Autosave"))
         else:
             self.prompt.prompt_and_raise_if_not_yes(
@@ -71,4 +72,4 @@ class BackupTasks(BaseTasks):
 
         """
         for path in ALL_INSTALL_DIRECTORIES:
-            self._file_utils.remove_tree(path, self.prompt)
+            self._file_utils.remove_tree(path, self.prompt, leave_top_if_link=True)

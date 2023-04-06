@@ -29,7 +29,19 @@ class FileUtils:
     """
 
     @staticmethod
-    def remove_tree(path, prompt, use_robocopy=True, retries=10):
+    def is_junction(path: str) -> bool:
+        """
+        is path a junction
+            Args:
+                path: path to check
+        """
+        try:
+            return bool(os.readlink(path))
+        except OSError:
+            return False
+
+    @staticmethod
+    def remove_tree(path, prompt, use_robocopy=True, retries=10, leave_top_if_link=False):
         """
         Delete a file path if it exists
         Args:
@@ -37,6 +49,7 @@ class FileUtils:
             prompt (ibex_install_utils.user_prompt.UserPrompt): prompt object to communicate with user
             use_robocopy: use robocopy to delete the directory this allows us to remove particularly long paths
             retries: maximum number of attempts to delete file path
+            leave_top_if_link: if top level directory is a link, remove directory contents but do not remove link
         """
         for _ in range(retries):
             try:
@@ -55,16 +68,22 @@ class FileUtils:
                         except:
                             pass
                     os.rmdir(empty_dir)
-                    os.rmdir(path)
+                    if leave_top_if_link and FileUtils.is_junction(path):
+                        pass
+                    else:
+                        os.rmdir(path)
                 else:
                     shutil.rmtree(path)
             except (IOError, OSError, WindowsError):
                 pass
 
             if os.path.exists(path):
-                print(f"Deletion of {path} failed, will retry in 5 seconds")
-                # Sleep for a few seconds in case e.g. antivirus has a lock on a file we're trying to delete
-                time.sleep(5)
+                if leave_top_if_link and FileUtils.is_junction(path) and len(os.listdir(path)) == 0:
+                    break
+                else:
+                    print(f"Deletion of {path} failed, will retry in 5 seconds")
+                    # Sleep for a few seconds in case e.g. antivirus has a lock on a file we're trying to delete
+                    time.sleep(5)
             else:
                 break
         else:
