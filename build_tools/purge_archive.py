@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 max_build_age_in_days = 30
 minimum_number_of_builds_to_keep = 10
-build_area = r"\\isis\inst$\kits$\CompGroup\ICP"
+build_area = r"\\isis.cclrc.ac.uk\inst$\kits$\CompGroup\ICP"
 
 
 def winapi_path(dos_path):
@@ -48,12 +48,12 @@ def is_build_dir(d):
 def deletion_directories(project_areas):
     dirs = []
     for project_area in project_areas:
-        print(f"Identifying old builds for deletion in: {project_area}")
         project_dirs = [os.path.join(project_area, sub_dir) for sub_dir in os.listdir(project_area)]
         build_dirs_by_age = sorted(filter(is_build_dir, project_dirs), key=os.path.getmtime, reverse=True)
         build_dirs_we_could_delete = build_dirs_by_age[minimum_number_of_builds_to_keep:]
         build_dirs_we_will_delete = filter(old_enough_to_delete, build_dirs_we_could_delete)
         dirs += build_dirs_we_will_delete
+        print(f"Identifying {len(build_dirs_we_will_delete)} old builds for deletion in: {project_area}")
     return dirs
 
 
