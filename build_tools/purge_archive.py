@@ -53,7 +53,7 @@ def deletion_directories(project_areas):
         build_dirs_we_could_delete = build_dirs_by_age[minimum_number_of_builds_to_keep:]
         build_dirs_we_will_delete = filter(old_enough_to_delete, build_dirs_we_could_delete)
         dirs += build_dirs_we_will_delete
-        print(f"Identifying {len(build_dirs_we_will_delete)} old builds for deletion in: {project_area}")
+        print(f"Identifying {len(list(build_dirs_we_will_delete))} old builds for deletion in: {project_area}")
     return dirs
 
 
