@@ -18,6 +18,15 @@ class PythonTasks(BaseTasks):
         self._file_utils.mkdir_recursive(APPS_BASE_DIR)
         RunProcess(self._genie_python_3_source_dir, "genie_python_install.bat").run()
 
+    @task("Change genie_python shortcuts to python 3")
+    def change_shortcuts_to_python_3(self):
+        """
+        Prompt user to find shortcuts to genie_python and replace them with Python 3 shortcuts
+        """
+
+        self.prompt.prompt_and_raise_if_not_yes(
+            "Relace any shortcuts to genie_python with those to python 3 in C:\\Instrument\\Apps\\Python3")
+
     @task("Update script generator script definitions")
     def update_script_definitions(self):
         """
