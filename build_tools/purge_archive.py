@@ -52,8 +52,9 @@ def deletion_directories(project_areas):
         build_dirs_by_age = sorted(filter(is_build_dir, project_dirs), key=os.path.getmtime, reverse=True)
         build_dirs_we_could_delete = build_dirs_by_age[minimum_number_of_builds_to_keep:]
         build_dirs_we_will_delete = filter(old_enough_to_delete, build_dirs_we_could_delete)
-        dirs += build_dirs_we_will_delete
-        print(f"Identifying {len(list(build_dirs_we_will_delete))} old builds for deletion in: {project_area}")
+        dirs_to_add = list(build_dirs_we_will_delete)
+        dirs += dirs_to_add
+        print(f"Identifying {len(dirs_to_add)} old builds for deletion in: {project_area}")
     return dirs
 
 
