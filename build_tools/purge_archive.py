@@ -68,11 +68,16 @@ def purge(dry_run=False):
     project_areas.extend([os.path.join(build_area, "developer", "EPICS32", proj) for proj in os.listdir(os.path.join(build_area, "developer", "EPICS32"))
                           if proj.startswith("win32")])
     for d in deletion_directories(project_areas):
-        if dry_run:
-            print(f"{d}")
-        else:
-            delete_dir(d)
+        try:
+            if dry_run:
+                print(f"{d}")
+            else:
+                delete_dir(d)
+        except Exception as e:
+            print(f"Unable to delete directory {d}: {e}")
+        except BaseException as be:
+            print(f"BaseException - unable to delete directory {d}: {be}")
+            break
     print("Archive purge complete.")
-
 
 purge()
