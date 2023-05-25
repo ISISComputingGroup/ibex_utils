@@ -1,6 +1,7 @@
 import os
 import shutil
 import stat
+import glob
 from datetime import datetime, timedelta
 
 max_build_age_in_days = 30
@@ -36,6 +37,13 @@ def delete_dir(directory):
     except Exception as e:
         print(f"Unable to delete directory {directory}: {e}")
 
+def delete_file(file):
+    print(f"Deleting file: {file}")
+    try:
+        os.remove(winapi_path(file))
+    except Exception as e:
+        print(f"Unable to delete file {file}: {e}")
+
 
 def old_enough_to_delete(f):
     return datetime.now() - datetime.fromtimestamp(os.path.getmtime(f)) > timedelta(days=max_build_age_in_days)
@@ -57,6 +65,17 @@ def deletion_directories(project_areas):
         print(f"Identifying {len(dirs_to_add)} old builds for deletion in: {project_area}")
     return dirs
 
+def deletion_files(project_areas, pattern):
+    files = []
+    for project_area in project_areas:
+        files_by_age = sorted(glob.glob(os.path.join(project_area, pattern)), key=os.path.getmtime, reverse=True)
+        files_we_could_delete = files_by_age[minimum_number_of_builds_to_keep:]
+        files_we_will_delete = filter(old_enough_to_delete, files_we_could_delete)
+        files_to_add = list(files_we_will_delete)
+        files += files_to_add
+        print(f"Identifying {len(files_to_add)} old {pattern} files for deletion in: {project_area}")
+    return files
+
 
 def purge(dry_run=False):
     print("Beginning archive purge...")
@@ -77,6 +96,17 @@ def purge(dry_run=False):
             print(f"Unable to delete directory {d}: {e}")
         except BaseException as be:
             print(f"BaseException - unable to delete directory {d}: {be}")
+            break
+    for f in deletion_files(project_areas, 'ZBUILD-*.7z'):
+        try:
+            if dry_run:
+                print(f"{f}")
+            else:
+                delete_file(f)
+        except Exception as e:
+            print(f"Unable to delete file {f}: {e}")
+        except BaseException as be:
+            print(f"BaseException - unable to delete file {f}: {be}")
             break
     print("Archive purge complete.")
 
