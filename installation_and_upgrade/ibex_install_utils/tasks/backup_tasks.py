@@ -1,5 +1,6 @@
 import os
 import shutil
+import glob
 
 
 from ibex_install_utils.task import task
@@ -64,6 +65,27 @@ class BackupTasks(BaseTasks):
                 f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
                 f"manually")
 
+    #This function checks if the backup has been sucessful by checking for a VERSION.txt file within the backup folders
+    @task("Verify backup") 
+    def backup_checker(self):
+        """
+        Verify backup
+
+        """
+        EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS')
+        PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3')
+        GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4')  
+
+        backup_paths = (EPICS_PATH_BACKUP, PYTHON3_PATH_BACKUP, GUI_PATH_BACKUP)
+
+        for d in backup_paths:
+            version_list = glob.glob(os.path.join(d, "VERSION.txt"))
+            if len(version_list) < 1:
+                print("Backup failed at", d)
+                raise Exception("Error found with backup")
+
+
+        
     @task("Removing old version of IBEX")
     def remove_old_ibex(self):
         """
