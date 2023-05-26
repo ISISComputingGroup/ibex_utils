@@ -17,8 +17,11 @@ REM Remove old debug symbols from the archive
 set "AGESTORE=c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\agestore.exe"
 set "KITROOT=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"
 if exist "%AGESTORE%" (
-    "%AGESTORE%" %KITROOT%\EPICS\Symbols -days=90 -q -y -s
-    @echo agestore exited with code !errorlevel!
+    pushd "%KITROOT%\EPICS\Symbols"
+    "%AGESTORE%" . -days=90 -q -y -s
+    set errcode=!errorlevel!
+    popd
+    @echo agestore exited with code !errcode!
     REM we do not yet know when an isisicp version stops being used, we need to tie it to a release better
     REM "%AGESTORE%" %KITROOT%\ISISICP\Symbols -days=90 -q -y -s
 ) else (
