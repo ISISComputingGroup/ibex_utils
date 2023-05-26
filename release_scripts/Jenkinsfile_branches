@@ -1,0 +1,101 @@
+#!groovy
+
+pipeline {
+
+    agent {
+        label {
+            label("sl7cloud")
+        }
+    }
+
+    stages {  
+
+        stage("Checkout") {
+            steps {
+                echo "Branch: ${env.BRANCH_NAME}"
+                checkout scm
+            }
+        }
+
+        stage('Set params') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                            string(
+                                name: "VERSION",
+                                description: "The release version.",
+                                trim: true
+                            ),
+                            booleanParam(
+                                name: "REMOTE",
+                                description: "Update submodules from remote.",
+                                defaultValue: true
+                            ),
+                            string(
+                                name: "TAG", 
+                                description: "Defaults to 'HEAD' for a normal release. Set to specific tag for patch release.", 
+                                defaultValue: "HEAD",
+                                trim: true
+                            ),
+                            booleanParam(
+                                name: "EPICS",
+                                description: "Create release branches for EPICS and submodules.",
+                                defaultValue: true
+                            ),
+                            booleanParam(
+                                name: "IBEX_GUI",
+                                description: "Create release branch for IBEX GUI.",
+                                defaultValue: true,
+                            ),
+                            booleanParam(
+                                name: "SCRIPT_GENERATOR",
+                                description: "Create release branch for the Script Generator.",
+                                defaultValue: true
+                            ),
+                            booleanParam(
+                                name: "GENIE_PYTHON",
+                                description: "Create release branch for Genie Python.",
+                                defaultValue: true
+                            ),
+                            booleanParam(
+                                name: "JSON_BOURNE",
+                                description: "Create release branch for JSON_bourne.",
+                                defaultValue: true
+                            )
+                        ])
+                    ])
+                }
+            }
+        }
+
+        stage("Create release branches") {
+            steps {
+                sh """
+                    python3 -m pip install -r release_scripts/requirements.txt --user
+                    python3 -u release_scripts/branches.py --version ${params.VERSION}
+                """
+            }
+        }
+
+        stage("Start release builds") {
+            steps {
+                script {
+                    if (params.EPICS) {
+                        build job: "EPICS_release", propagate: false, wait: false
+                        build job: "EPICS_release32", propagate: false, wait: false
+                    }
+                    if (params.GENIE_PYTHON) {
+                        build job: "genie_python_release_pipeline", propagate: false, wait: false
+                    }
+                    if (params.IBEX_GUI) {
+                        build job: "ibex_gui_releases_pipeline", propagate: false, wait: false
+                    }
+                    if (params.SCRIPT_GENERATOR) {
+                        build job: "scriptgenerator_release", propagate: false, wait: false
+                    }
+                }
+            }
+        }
+    }
+}
