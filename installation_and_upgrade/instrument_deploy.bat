@@ -4,9 +4,9 @@ REM check if console has Administrative privileges
 
 net session >nul 2>&1
 if !errorLevel! equ 0 (
-    echo You are in Administrative mode. This may cause file permissioning problems during IBEX setup. Exiting insatllation.
+    echo ERROR: You are in Administrative mode. This may cause file permissioning problems during IBEX setup. Exiting insatllation.
     pause
-    exit /b 0
+    exit /b 1
 )
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
