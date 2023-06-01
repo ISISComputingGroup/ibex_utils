@@ -1,8 +1,13 @@
 setlocal EnableDelayedExpansion
 
 REM check if console has Administrative privileges
-call "%~dp0check_for_admin_console.bat"
-IF %errorlevel% neq 0 EXIT /b %errorlevel%
+
+net session >nul 2>&1
+if !errorLevel! equ 0 (
+    echo ERROR: You are in Administrative mode. This may cause file permissioning problems during IBEX setup. Exiting insatllation.
+    pause
+    exit /b 1
+)
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 set SERVER_ARCH=x64
