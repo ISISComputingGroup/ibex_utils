@@ -9,7 +9,7 @@ pipeline {
     }
 
     options {
-        buildDiscarder(logRotator(numToKeepStr:'5', daysToKeepStr: '7'))
+        buildDiscarder(logRotator(numToKeepStr:'5'))
         disableConcurrentBuilds()
         timestamps()
         // as we "checkout scm" as a stage, we do not need to do it here too
@@ -45,12 +45,12 @@ pipeline {
                         parameters([
                             string(
                                 name: "VERSION",
-                                description: "The release version.",
+                                description: "The release version in X.x.m format e.g. 12.3.2",
                                 trim: true
                             ),
                             booleanParam(
                                 name: "REMOTE",
-                                description: "Update submodules from remote.",
+                                description: "Update submodules to latest version from remote.",
                                 defaultValue: true
                             ),
                             string(
