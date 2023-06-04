@@ -117,6 +117,14 @@ class ReleaseBranch:
             sys.exit(1)
         
         source = os.getenv("TAG")
+        # if we specify a top level tag other then HEAD then this is
+        # inconsistent with asking that all submodules be
+        # on their latest version as we would only give a TAG if we
+        # specifically didn't want them to be the latest
+        if source != "HEAD" and os.getenv("REMOTE") == "true":
+            logging.error(f"Specifying a branch source '{source}' is not consistent with REMOTE == true.")
+            sys.exit(1)
+
         logging.info(f"Creating branch '{branch_name}' for '{self.repo.remote().url}' from '{source}'.")
         self.repo.create_head(branch_name, commit=source).checkout()
 
@@ -136,6 +144,13 @@ class ReleaseBranch:
             else:
                 logging.info(f"Updating submodules for '{self.repo.remote().url}'.")
                 self.repo.git.submodule("update", "--init", "--recursive")
+
+            # check for branch name in all submodules before we create any, so
+            # if we have made a mistake there is less to remove afterwards
+            for submodule in self.repo.submodules:
+                if branch_name in submodule.module().references:
+                    logging.error(f"Branch name '{branch_name}' already exists for repo '{submodule.module().remote().url}'.")
+                    sys.exit(1)
 
             for submodule in self.repo.submodules:
                 logging.info(f"Creating branch '{branch_name}' for: '{submodule.module().remote().url}'.")
