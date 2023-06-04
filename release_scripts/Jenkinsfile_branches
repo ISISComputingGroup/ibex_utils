@@ -50,12 +50,12 @@ pipeline {
                             ),
                             booleanParam(
                                 name: "REMOTE",
-                                description: "Update submodules to latest version from remote.",
+                                description: "Update submodules to latest version from remote. Defaults to true, appropriate for a normal release",
                                 defaultValue: true
                             ),
                             string(
                                 name: "TAG", 
-                                description: "Defaults to 'HEAD' for a normal release. Set to specific tag for patch release.", 
+                                description: "Commit to branch release from. Defaults to 'HEAD', appropriate for a normal release. May need to set specific TAG here for patch release.", 
                                 defaultValue: "HEAD",
                                 trim: true
                             ),
@@ -82,7 +82,7 @@ pipeline {
                             booleanParam(
                                 name: "JSON_BOURNE",
                                 description: "Create release branch for JSON_bourne.",
-                                defaultValue: true
+                                defaultValue: false
                             )
                         ])
                     ])
@@ -115,6 +115,7 @@ pipeline {
                     if (params.SCRIPT_GENERATOR) {
                         build job: "scriptgenerator_release", propagate: false, wait: false
                     }
+                    // currently no release job for JSON_Bourne but it is not deployed to instruments directly
                 }
             }
         }
