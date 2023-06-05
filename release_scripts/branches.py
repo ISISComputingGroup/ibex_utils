@@ -43,7 +43,7 @@ def write_instetc_version(version: str):
     logging.info(f"Writing version '{version}' to '{INSTETC_TEMPLATE_ABSOLUTE_PATH}'.")
 
     with open(INSTETC_TEMPLATE_ABSOLUTE_PATH, "r") as file:
-        data = re.sub(r"(field\(VAL, \").*(\.\$WCREV\$\"\))", f"\\1{version}\\2", file.read(), count=1)
+        data = re.sub(r"0\.0\.0(\.\$WCREV\$)", rf"{version}\1", file.read(), count=1)
 
     with open(INSTETC_TEMPLATE_ABSOLUTE_PATH, "w") as file:
         file.write(data)
@@ -52,8 +52,10 @@ def write_gui_version(manifest_path: str, pom_path: str, version: str):
     # In Manifest file.
     logging.info(f"Writing version '{version}' to '{manifest_path}'.")
 
+    # "\1{version}" doesn't work as version can be e.g. 1.2.3 which gives \11.2.3 being interpreted as \11
+    # so break out the space match and add it back afterwards
     with open(manifest_path, "r") as file:
-        data = re.sub(r"(Bundle-Version: ).*(\n)", f"\\1{version}\\2", file.read(), count=1)
+        data = re.sub(r"(Bundle-Version:)[ ].*", rf"\1 {version}", file.read(), count=1)
 
     with open(manifest_path, "w") as file:
         file.write(data)
