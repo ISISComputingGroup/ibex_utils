@@ -43,7 +43,10 @@ def write_instetc_version(version: str):
     logging.info(f"Writing version '{version}' to '{INSTETC_TEMPLATE_ABSOLUTE_PATH}'.")
 
     with open(INSTETC_TEMPLATE_ABSOLUTE_PATH, "r") as file:
-        data = re.sub(r"(field\(VAL, \").*(\.\$WCREV\$\"\))", rf"\g<1>{version}\g<2>", file.read(), count=1)
+        data, n = re.subn(r"(field\(VAL, \").*(\.\$WCREV\$\"\))", rf"\g<1>{version}\g<2>", file.read(), count=1)
+        if n != 1:
+            logging.error(f"Failed to write version. There were '{n}' replacements.")
+            sys.exit(1)
 
     with open(INSTETC_TEMPLATE_ABSOLUTE_PATH, "w") as file:
         file.write(data)
@@ -53,7 +56,10 @@ def write_gui_version(manifest_path: str, pom_path: str, version: str):
     logging.info(f"Writing version '{version}' to '{manifest_path}'.")
 
     with open(manifest_path, "r") as file:
-        data = re.sub(r"(Bundle-Version: ).*", rf"\g<1>{version}", file.read(), count=1)
+        data, n = re.subn(r"(Bundle-Version: ).*", rf"\g<1>{version}", file.read(), count=1)
+        if n != 1:
+            logging.error(f"Failed to write version. There were '{n}' replacements.")
+            sys.exit(1)
 
     with open(manifest_path, "w") as file:
         file.write(data)
