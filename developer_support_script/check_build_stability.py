@@ -155,7 +155,7 @@ class SystemTestData:
             percentage_test_failed = (failure_count / num_of_builds) * 100
             print(
                 f"{'ERROR' if percentage_test_failed > ERROR_THRESHOLD else 'WARNING'}:{test_name} failed "
-                f"{percentage_test_failed}% of builds (total {num_of_builds}, failed {failure_count} times)"
+                f"{percentage_test_failed:.0f}% of builds (total {num_of_builds}, failed {failure_count} times)"
             )
 
 
