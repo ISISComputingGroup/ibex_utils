@@ -28,10 +28,11 @@ ZN, ZP = "Negative Anti-friction Bias", "Positive Anti-friction Bias"
 AF, TL = "Analog Feedback", "Torque Limit"
 CT, CP, FN, FC = "CT", "CP", "FN", "FC"
 FA, FV = "Feedforward Acceleration", "Feedforward Velocity"
+HOMEVAL_MON, HOMEVAL_SP = "HOMEVAL_MON", "HOMEVAL_SP"
 
 output_order = [AXIS_NAME, PV, SETPOINT, POSITION, UNITS, MOTOR_RES, INV_MOTOR_RES, ENCODER_RES, INV_ENCODER_RES, VELO,
                 MAX_VELO, ACCEL, DECEL_DIST, LOW_LIM, HIGH_LIM, OFF, P, I, D, MTR_TYPE, ENC_TYPE, AUX_ENC_TYPE, K1, K2,
-                K3, ZN, ZP, AF, TL, CT, CP, FN, FC, FA, FV]
+                K3, ZN, ZP, AF, TL, CT, CP, FN, FC, FA, FV, HOMEVAL_MON, HOMEVAL_SP]
 
 
 all_motor_params = {AXIS_NAME: ".DESC", SETPOINT: ".VAL", POSITION: ".RBV",  UNITS: ".EGU", ENCODER_RES: ".ERES",
@@ -41,7 +42,7 @@ all_motor_params = {AXIS_NAME: ".DESC", SETPOINT: ".VAL", POSITION: ".RBV",  UNI
 galil_specific_params = {MTR_TYPE: "_MTRTYPE_CMD", ENC_TYPE: "_MENCTYPE_CMD", AUX_ENC_TYPE: "_AENCTYPE_CMD",
                          K1: "_K1_SP", K2: "_K2_SP", K3: "_K3_SP", ZP: "_ZP_SP", ZN: "_ZN_SP",
                          FV: "_FV_SP", FA: "_FA_SP", FC: "_FC_SP", FN: "_FN_SP",
-                         CP: "_CP_SP", CT: "_CT_SP", AF: "_AF_SP", TL: "_TL_SP"}
+                         CP: "_CP_SP", CT: "_CT_SP", AF: "_AF_SP", TL: "_TL_SP", HOMEVAL_MON: "_HOMEVAL_MON", HOMEVAL_SP: "_HOMEVAL_SP"}
 
 
 def pv_exists(pv):
