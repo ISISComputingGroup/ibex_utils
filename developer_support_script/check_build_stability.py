@@ -163,7 +163,7 @@ def main():
     """
     Main function
     """
-    for job in ["System_Tests", "System_Tests_Squish"]:
+    for job in ["System_Tests", "System_Tests_debug", "System_Tests_static", "System_Tests_win32", "System_Tests_Squish"]:
         print(f"JOB: {job}")
         system_tests_url = (
             f"https://epics-jenkins.isis.rl.ac.uk/job/{job}/{{}}/testReport/api/json"
