@@ -146,7 +146,7 @@ class JobData:
         all_builds = self.num_evaluate_builds + self.num_aborted_builds
         percentage_aborted_builds = (self.num_aborted_builds / all_builds) * 100
         level = calculate_level(percentage_aborted_builds, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
-        print(f"{level}: Aborted builds {percentage_aborted_builds:.0f}% ({self.num_aborted_builds}/{all_builds})")
+        print(f"{level}: Aborted builds [{percentage_aborted_builds:.0f}% ({self.num_aborted_builds}/{all_builds})]")
 
         # Tests.
         for name, num in self.failed_tests.most_common():
