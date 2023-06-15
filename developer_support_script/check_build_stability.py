@@ -1,178 +1,170 @@
 """
-A utility script to retrieve system tests from a jenkins job.
-
-The class currently acts as a singleton.
+A utility script to retrieve tests data from Jenkins jobs.
+Checks for common failures as Jenkins only tracks continuous failures.
 """
 
-# Dependencies
-import json
-import urllib.request
-from collections import Counter
-
-ERROR_THRESHOLD = 50
+import requests
+from collections import Counter, defaultdict
+from typing import Any
 
 
-class SystemTestData:
+WARNING_THRESHOLD_PERCENTAGE = 10
+ERROR_THRESHOLD_PERCENTAGE = 50
+
+
+def request_json(url: str) -> Any:
     """
-    Singleton class to host system test data pulled down from jenkins
+    Utility function to get Json data from Jenkins.
+
+    Args:
+        url: The URL to request.
     """
+    request: requests.Response = requests.get(url)
+    
+    if request.status_code == requests.codes["ok"]:
+        return request.json()
+    else:
+        print(f"ERROR: Failed to get '{url}': [{request.status_code}] {request.reason}")
 
-    def __init__(self, system_tests_url, test_metadata, max_builds_to_check):
-        self.system_tests_url = system_tests_url
-        self.raw_test_metadata = test_metadata
-        self.test_return_quantity = max_builds_to_check
+def calculate_level(percentage: int, error_percentage: int, warning_percentage: int) -> str:
+    """
+    Utility function to calculate log level based on a percentage.
+    
+    Args:
+        percentage: The percentage to calculate.
+        error_percentage: The error threshold.
+        warning_percentage: The warning threshold.
+    """
+    if percentage >= error_percentage:
+        return "ERROR"
+    elif percentage >= warning_percentage:
+        return "WARNING"
+    else:
+        return "INFO"
 
-        self._json_test_metadata = self.request_page_and_metadata()
-        self._raw_builds = self.get_all_builds()
-        (
-            self._current_build,
-            self._recently_completed_builds,
-        ) = (
-            self.get_current_and_recently_completed_builds()
-        )  # pylint: disable=line-too-long
-        self._processed_builds = self.remove_current_build_if_no_results()
-        self.failing_tests = self.retrieve_failed_tests_from_builds()
-        self.top_n_failing_tests = self.get_top_n_failed_tests()
 
-    def request_page_and_metadata(self):
+class JobData:
+    """
+    Calculates and prints common test failures and number of aborted builds in a Jenkins job.
+    """
+    def __init__(self, name: str) -> None:
+        print(f"INFO: Evaluating job '{name}'.")
+
+        self.name = name
+        self.job_json = request_json(f"https://epics-jenkins.isis.rl.ac.uk/job/{name}/api/json")
+        self.builds = self._get_builds()
+        self.num_evaluate_builds = self._get_num_evaluate_builds()
+        self.num_aborted_builds = self._get_num_aborted_builds()
+        self.test_reports = self._get_test_reports()
+        self.failed_tests = self._get_failed_tests()
+
+    def _get_builds(self) -> defaultdict[str, Any]:
         """
-        Request a jenkins webpage and return
-        the metadata json containing system test build info
+        Gets all the build data grouped by status. Ignores builds currently in progress.
 
-        :return: the metadata json
+        Returns:
+            defaultdict: Key is build status, value is the builds Json data. Defaults to empty list.
         """
-        try:
-            with urllib.request.urlopen(self.raw_test_metadata) as page:
-                json_metadata = json.loads(page.read())
-                self._json_test_metadata = json_metadata
-        except urllib.error.HTTPError as e:
-            raise Exception(
-                f"Failed to get metadata for {self.raw_test_metadata}: {e.code}"
-            )
-        return json_metadata
+        builds = defaultdict(list)
 
-    def get_all_builds(self):
-        """
-        Return a list of all builds in the system tests job
-
-        :return: a list of all builds in the system tests job
-        """
-        builds = [build["number"] for build in self._json_test_metadata["builds"]]
+        for build in self.job_json["builds"]:
+            build_json = request_json(f"{build['url']}api/json")
+            if not build_json["inProgress"]:
+                builds[build_json["result"]].append(build_json)
+        
         return builds
 
-    def get_current_and_recently_completed_builds(self):
+    def _get_num_evaluate_builds(self) -> int:
         """
-        Return the current and recently completed builds from the metadata json
-
-        :return: the current and recently complete builds from the metadata json
+        Gets the number of builds that have valid test results.
         """
+        num = 0
 
-        current_build = self._json_test_metadata["lastBuild"]["number"]
-        recently_completed_builds = self._json_test_metadata["lastCompletedBuild"][
-            "number"
-        ]
+        num += len(self.builds["SUCCESS"])
+        num += len(self.builds["UNSTABLE"])
+        num += len(self.builds["FAILURE"])
 
-        return current_build, recently_completed_builds
+        return num
 
-    def remove_current_build_if_no_results(self):
+    def _get_num_aborted_builds(self) -> int:
         """
-        Remove the current build from the list of builds if there
-        are no results for it
-
-        :return: the list of builds without the current build if there
+        Gets the number of aborted builds. Ignores builds that were aborted manually.
+        This will generally be the number of builds that timed out.
+        Uses a more detailed API, as the general build API is missing some data.
         """
-        if self._recently_completed_builds != self._current_build:
-            self._raw_builds.remove(self._current_build)
-        return self._raw_builds
+        aborted_manually = 0
 
-    def retrieve_test_data(self, build_num: int):
-        """
-        Retrieve test data for a given build number
+        for build in self.builds["ABORTED"]:
+            data = request_json(f"https://epics-jenkins.isis.rl.ac.uk/job/{self.name}/{build['number']}/api/json?tree=actions[causes[*]]")
+            for action in data["actions"]:
+                if "_class" in action and action["_class"] == "jenkins.model.InterruptedBuildAction":
+                    if "causes" in action:
+                        for cause in action["causes"]:
+                            if "_class" in cause and cause["_class"] == "jenkins.model.CauseOfInterruption$UserInterruption":
+                                aborted_manually += 1
+                                break
 
-        :param build_num: the build number to retrieve test data for
-        :return: the test data json
-        """
-        print(f"Getting data for {build_num}")
-        test_json = dict()
-        try:
-            with urllib.request.urlopen(
-                self.system_tests_url.format(build_num)
-            ) as page:
-                if page.status == 200:
-                    test_json = json.loads(page.read())
-        except urllib.error.HTTPError as e:
-            print(f"Failed to get test data for {build_num}: {e.code}")
-        return test_json
+        return len(self.builds["ABORTED"]) - aborted_manually
 
-    @staticmethod
-    def add_failed_tests_to_counter(test_json: dict, failing_tests: Counter):
+    def _get_test_reports(self) -> list[Any]:
         """
-        Add failed tests to a Counter object containing all failed tests
+        Gets the test reports of the builds that have failing tests results.
 
-        :param test_json: the test data json
-        :param failing_tests: the Counter object to add failed tests to
-        :return: the Counter object containing all failed tests
+        Returns:
+            list: A list of test reports Json data.
         """
-        try:
-            for test in test_json["suites"]:
-                for case in test["cases"]:
+        test_reports_json = []
+
+        bad_builds = self.builds["UNSTABLE"] + self.builds["FAILURE"]
+        for build in bad_builds:
+            test_reports_json.append(request_json(f"{build['url']}testReport/api/json"))
+
+        return test_reports_json
+
+    def _get_failed_tests(self) -> Counter:
+        """
+        Gets all the failed tests. The name is generated by using the the class name and the test name.
+
+        Returns:
+            Counter: Key is test case name, value is number of failures.
+        """
+        counter = Counter()
+
+        for report in self.test_reports:
+            for suite in report["suites"]:
+                for case in suite["cases"]:
                     if case["status"] == "FAILED":
-                        failing_tests.update([case["className"] + "." + case["name"]])
-        except KeyError as err:
-            print(f"Failed to add failed tests to counter: {err}")
-        return failing_tests
+                        counter[f"{case['className']}.{case['name']}"] += 1
+        
+        return counter
 
-    def retrieve_failed_tests_from_builds(self):
+    def print_results(self) -> None:
         """
-        Retreive tests data and return failed tests from builds
-        within a Counter object.
-
-        :return: a Counter object containing all failed tests
+        Prints the percentage of aborted builds for the job and the percentage failure of each failing test.
         """
-        test_counter = Counter()
-        for test_num in self._processed_builds:
-            test_json = self.retrieve_test_data(test_num)
-            failing_tests = self.add_failed_tests_to_counter(test_json, test_counter)
-        return failing_tests
+        # Aborted builds.
+        all_builds = self.num_evaluate_builds + self.num_aborted_builds
+        percentage_aborted_builds = (self.num_aborted_builds / all_builds) * 100
+        level = calculate_level(percentage_aborted_builds, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
+        print(f"{level}: Aborted builds {percentage_aborted_builds:.0f}% ({self.num_aborted_builds}/{all_builds})")
 
-    def get_top_n_failed_tests(self):
-        """
-        Get the top n failed tests from a Counter object of failed tests
-
-        :return: the top n failed tests
-        """
-        return self.failing_tests.most_common(self.test_return_quantity)
-
-    def print_failing_tests(self, failing_tests):
-        """
-        Print the top n failing tests
-
-        :param failing_tests: the top n failing tests
-        """
-        for test in failing_tests:
-            num_of_builds = len(self._raw_builds)
-            test_name, failure_count = test[0], test[1]
-            percentage_test_failed = (failure_count / num_of_builds) * 100
-            print(
-                f"{'ERROR' if percentage_test_failed > ERROR_THRESHOLD else 'WARNING'}:{test_name} failed "
-                f"{percentage_test_failed:.0f}% of builds (total {num_of_builds}, failed {failure_count} times)"
-            )
-
-
-def main():
-    """
-    Main function
-    """
-    for job in ["System_Tests", "System_Tests_debug", "System_Tests_static", "System_Tests_win32", "System_Tests_Squish"]:
-        print(f"JOB: {job}")
-        system_tests_url = (
-            f"https://epics-jenkins.isis.rl.ac.uk/job/{job}/{{}}/testReport/api/json"
-        )
-        test_metadata = f"https://epics-jenkins.isis.rl.ac.uk/job/{job}/api/json"
-        my_test_data = SystemTestData(system_tests_url, test_metadata, 15)
-        my_test_data.print_failing_tests(my_test_data.top_n_failing_tests)
-        print("\n")
+        # Tests.
+        for name, num in self.failed_tests.most_common():
+            percentage_test_failure = (num / self.num_evaluate_builds) * 100
+            level = calculate_level(percentage_test_failure, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
+            print(f"{level}: {name}\n{percentage_test_failure:.0f}% ({num}/{self.num_evaluate_builds})")
 
 
 if __name__ == "__main__":
-    main()
+    # Jenkins jobs to evaluate.
+    JOBS = [
+        "System_Tests",
+        "System_Tests_debug",
+        "System_Tests_static",
+        "System_Tests_win32",
+        "System_Tests_Squish"
+    ]
+
+    for job in JOBS:
+        job_data = JobData(job)
+        job_data.print_results()
