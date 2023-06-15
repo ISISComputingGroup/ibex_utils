@@ -90,7 +90,6 @@ class JobData:
         """
         Gets the number of aborted builds. Ignores builds that were aborted manually.
         This will generally be the number of builds that timed out.
-        Uses a more detailed API, as the general build API is missing some data.
         """
         aborted_manually = 0
 
