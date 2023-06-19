@@ -25,6 +25,7 @@ def request_json(url: str) -> Any:
         return request.json()
     else:
         print(f"ERROR: Failed to get '{url}': [{request.status_code}] {request.reason}")
+        return None
 
 def calculate_level(percentage: int, error_percentage: int, warning_percentage: int) -> str:
     """
@@ -53,10 +54,11 @@ class JobData:
         self.name = name
         self.job_json = request_json(f"https://epics-jenkins.isis.rl.ac.uk/job/{name}/api/json")
         self.builds = self._get_builds()
+        self.no_test_report_failures = 0
+        self.test_reports = self._get_test_reports()        
+        self.failed_tests = self._get_failed_tests()
         self.num_evaluate_builds = self._get_num_evaluate_builds()
         self.num_aborted_builds = self._get_num_aborted_builds()
-        self.test_reports = self._get_test_reports()
-        self.failed_tests = self._get_failed_tests()
 
     def _get_builds(self) -> defaultdict[str, Any]:
         """
@@ -83,6 +85,7 @@ class JobData:
         num += len(self.builds["SUCCESS"])
         num += len(self.builds["UNSTABLE"])
         num += len(self.builds["FAILURE"])
+        num -= self.no_test_report_failures
 
         return num
 
@@ -116,7 +119,11 @@ class JobData:
 
         bad_builds = self.builds["UNSTABLE"] + self.builds["FAILURE"]
         for build in bad_builds:
-            test_reports_json.append(request_json(f"{build['url']}testReport/api/json"))
+            report = request_json(f"{build['url']}testReport/api/json")
+            if report is not None:
+                test_reports_json.append(report)
+            else:
+                self.no_test_report_failures += 1
 
         return test_reports_json
 
@@ -139,17 +146,31 @@ class JobData:
 
     def print_results(self) -> None:
         """
-        Prints the percentage of aborted builds for the job and the percentage failure of each failing test.
+        Prints the percentage of aborted builds for the job, the percentage of failures with no test report, and the percentage failure of each failing test.
         """
         # Aborted builds.
-        all_builds = self.num_evaluate_builds + self.num_aborted_builds
+        valid_builds = self.num_evaluate_builds + self.no_test_report_failures
+        all_builds = valid_builds + self.num_aborted_builds 
         percentage_aborted_builds = (self.num_aborted_builds / all_builds) * 100
         level = calculate_level(percentage_aborted_builds, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
         print(f"{level}: Aborted builds [{percentage_aborted_builds:.0f}% ({self.num_aborted_builds}/{all_builds})]")
 
+        # Failures with no test report
+        # valid_builds will only be 0 if self.no_test_report_failures is also 0
+        if valid_builds > 0:
+            percentage_no_test_report_failures = (self.no_test_report_failures / valid_builds) * 100
+        else:
+            percentage_no_test_report_failures = 0
+            
+        level = calculate_level(percentage_no_test_report_failures, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
+        print(f"{level}: Failed builds with no Test Report [{percentage_no_test_report_failures:.0f}% ({self.no_test_report_failures}/{valid_builds})]")
+
         # Tests.
         for name, num in self.failed_tests.most_common():
-            percentage_test_failure = (num / self.num_evaluate_builds) * 100
+            if self.num_evaluate_builds > 0:
+                percentage_test_failure = (num / self.num_evaluate_builds) * 100
+            else:
+                percentage_test_failure = 0
             level = calculate_level(percentage_test_failure, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
             print(f"{level}: [{percentage_test_failure:.0f}% ({num}/{self.num_evaluate_builds})] {name}")
 
