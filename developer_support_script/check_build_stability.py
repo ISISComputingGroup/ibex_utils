@@ -167,7 +167,10 @@ class JobData:
 
         # Tests.
         for name, num in self.failed_tests.most_common():
-            percentage_test_failure = (num / self.num_evaluate_builds) * 100
+            if self.num_evaluate_builds > 0:
+                percentage_test_failure = (num / self.num_evaluate_builds) * 100
+            else:
+                percentage_test_failure = 0
             level = calculate_level(percentage_test_failure, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
             print(f"{level}: [{percentage_test_failure:.0f}% ({num}/{self.num_evaluate_builds})] {name}")
 
