@@ -156,7 +156,12 @@ class JobData:
         print(f"{level}: Aborted builds [{percentage_aborted_builds:.0f}% ({self.num_aborted_builds}/{all_builds})]")
 
         # Failures with no test report
-        percentage_no_test_report_failures = (self.no_test_report_failures / valid_builds) * 100
+        # valid_builds will only be 0 if self.no_test_report_failures is also 0
+        if valid_builds > 0:
+            percentage_no_test_report_failures = (self.no_test_report_failures / valid_builds) * 100
+        else:
+            percentage_no_test_report_failures = 0
+            
         level = calculate_level(percentage_no_test_report_failures, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE)
         print(f"{level}: Failed builds with no Test Report [{percentage_no_test_report_failures:.0f}% ({self.no_test_report_failures}/{valid_builds})]")
 
