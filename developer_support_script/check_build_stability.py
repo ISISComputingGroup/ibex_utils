@@ -53,6 +53,7 @@ class JobData:
 
         self.name = name
         self.job_json = request_json(f"https://epics-jenkins.isis.rl.ac.uk/job/{name}/api/json")
+        self.buildable = self.job_json["buildable"]
         self.builds = self._get_builds()
         self.no_test_report_failures = 0
         self.test_reports = self._get_test_reports()        
@@ -68,11 +69,13 @@ class JobData:
             defaultdict: Key is build status, value is the builds Json data. Defaults to empty list.
         """
         builds = defaultdict(list)
-
-        for build in self.job_json["builds"]:
-            build_json = request_json(f"{build['url']}api/json")
-            if not build_json["inProgress"]:
-                builds[build_json["result"]].append(build_json)
+        
+        # ignore projects that are currently disabled
+        if self.buildable:
+            for build in self.job_json["builds"]:
+                build_json = request_json(f"{build['url']}api/json")
+                if not build_json["inProgress"]:
+                    builds[build_json["result"]].append(build_json)
         
         return builds
 
@@ -148,6 +151,10 @@ class JobData:
         """
         Prints the percentage of aborted builds for the job, the percentage of failures with no test report, and the percentage failure of each failing test.
         """
+        if not self.buildable:
+            print("WARNING: build is currently disabled")
+            return
+
         # Aborted builds.
         valid_builds = self.num_evaluate_builds + self.no_test_report_failures
         all_builds = valid_builds + self.num_aborted_builds 
