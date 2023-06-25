@@ -56,10 +56,20 @@ class JobData:
         self.buildable = self.job_json["buildable"]
         self.builds = self._get_builds()
         self.no_test_report_failures = 0
-        self.test_reports = self._get_test_reports()        
+        self.test_reports = self._get_test_reports()
         self.failed_tests = self._get_failed_tests()
         self.num_evaluate_builds = self._get_num_evaluate_builds()
         self.num_aborted_builds = self._get_num_aborted_builds()
+
+    def add_job(self, job):
+        """
+        add another job's results to here so we can get a summary across jobs
+        """
+        self.no_test_report_failures += job.no_test_report_failures
+        self.test_reports.append(job.test_reports)
+        self.failed_tests.update(job.failed_tests)
+        self.num_evaluate_builds += job.num_evaluate_builds
+        self.num_aborted_builds += job.num_aborted_builds
 
     def _get_builds(self) -> defaultdict[str, Any]:
         """
@@ -182,16 +192,31 @@ class JobData:
             print(f"{level}: [{percentage_test_failure:.0f}% ({num}/{self.num_evaluate_builds})] {name}")
 
 
+def process_jobs(jobs, summary_name):
+    first = True
+    job_summary = None
+    for job in jobs:
+        job_data = JobData(job)
+        if first:
+            job_summary = job_data
+            first = False
+        else:
+            job_summary.add_job(job_data)
+        job_data.print_results()
+
+    print(f"INFO: ****** Summary across {summary_name} jobs ******")
+    job_summary.print_results()
+
 if __name__ == "__main__":
     # Jenkins jobs to evaluate.
-    JOBS = [
+    EPICS_JOBS = [
         "System_Tests",
         "System_Tests_debug",
         "System_Tests_static",
         "System_Tests_win32",
+    ]
+    SQUISH_JOBS = [
         "System_Tests_Squish"
     ]
-
-    for job in JOBS:
-        job_data = JobData(job)
-        job_data.print_results()
+    process_jobs(EPICS_JOBS, "EPICS")
+    process_jobs(SQUISH_JOBS, "SQUISH")
