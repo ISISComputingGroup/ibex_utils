@@ -1,6 +1,5 @@
 import os
 import shutil
-import glob
 
 
 from ibex_install_utils.task import task
@@ -29,6 +28,9 @@ class BackupTasks(BaseTasks):
             else:
                 print(f"Moving {src} to {backup_dir}")
                 self._file_utils.move_dir(src, backup_dir, self.prompt)
+        else:
+            self.prompt.prompt_and_raise_if_not_yes(f"You appear to be running a backup without first installing IBEX. Please manually check your installation first.")
+            
 
     @task("Backup old directories")
     def backup_old_directories(self):
@@ -75,14 +77,21 @@ class BackupTasks(BaseTasks):
         EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS')
         PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3')
         GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4')  
+        SETTINGS_PATH = os.path.join(INSTRUMENT_BASE_DIR, "Settings")
+        AUTOSAVE_PATH = os.path.join(INSTRUMENT_BASE_DIR, "Var", "Autosave")
 
         backup_paths = (EPICS_PATH_BACKUP, PYTHON3_PATH_BACKUP, GUI_PATH_BACKUP)
 
         for d in backup_paths:
-            version_list = glob.glob(os.path.join(d, "VERSION.txt"))
-            if len(version_list) < 1:
-                print("Backup failed at", d)
-                raise Exception("Error found with backup")
+            if !(os.path.exists(os.path.join(d, "VERSION.txt"))): 
+                backup_failed_str = "Backup failed at " + d
+                self.prompt.prompt_and_raise_if_not_yes(f(backup_failed_str))
+                self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Continue? ")
+
+        if !os.path.exists(SETTINGS_PATH):
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Settings did not back up properly. Continue? ")
+        if !os.path.exists(AUTOSAVE_PATH):
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Autosave did not back up properly. Continue? ")
 
 
         
