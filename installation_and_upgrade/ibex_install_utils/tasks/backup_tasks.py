@@ -18,16 +18,20 @@ class BackupTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"You appear to be trying to delete the folder, {src}, containing the current working directory {os.getcwd()}. "
                 f"Please do this manually to be on the safe side")
-        elif os.path.exists(backup_dir):
+            return
+        if os.path.exists(backup_dir):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Backup dir {backup_dir} already exists. Please backup this app manually")
-        elif os.path.exists(src):
+            return
+        if os.path.exists(src):
             if copy:
                 print(f"Copying {src} to {backup_dir}")
                 shutil.copytree(src, backup_dir, ignore=ignore)
             else:
                 print(f"Moving {src} to {backup_dir}")
                 self._file_utils.move_dir(src, backup_dir, self.prompt)
+        else: #if src can't be found on the machine
+            self.prompt.prompt_and_raise_if_not_yes(f"You appear to backing up {src}, but it doesn't exist on this machine. If it is Python, this is likely okay. Please manually check your installation first.")
 
     @task("Backup old directories")
     def backup_old_directories(self):
@@ -63,6 +67,33 @@ class BackupTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
                 f"manually")
+
+    #This function checks if the backup has been sucessful by checking for a VERSION.txt file within the backup folders
+    @task("Verify backup") 
+    def backup_checker(self):
+        """
+        Verify backup
+
+        """
+        EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS')
+        PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3')
+        GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4')  
+        SETTINGS_PATH = os.path.join(self._get_backup_dir(), "Settings")
+        AUTOSAVE_PATH = os.path.join(self._get_backup_dir(), "Autosave")
+        UTILS_PATH = os.path.join(self._get_backup_dir(), 'EPICS_UTILS')
+
+        backup_paths = (EPICS_PATH_BACKUP, PYTHON3_PATH_BACKUP, GUI_PATH_BACKUP)
+
+        for d in backup_paths:
+            if not os.path.exists(os.path.join(d, "VERSION.txt")):
+                self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Backup failed at '{d}'. Please backup manually.")
+
+        if not os.path.exists(SETTINGS_PATH):
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Settings did not back up properly. Please backup manually.")
+        if not os.path.exists(AUTOSAVE_PATH):
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Autosave did not back up properly. Please backup manually.")
+        if not os.path.exists(UTILS_PATH):
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. EPICS_Utils did not back up properly. Please backup manually.")
 
     @task("Removing old version of IBEX")
     def remove_old_ibex(self):

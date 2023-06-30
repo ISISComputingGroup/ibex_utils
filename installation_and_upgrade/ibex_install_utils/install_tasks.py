@@ -179,6 +179,7 @@ class UpgradeInstrument:
         self._system_tasks.install_or_upgrade_git()
         self._system_tasks.check_java_installation()
         self._backup_tasks.backup_old_directories()
+        self._backup_tasks.backup_checker()
         self._mysql_tasks.backup_database()
         self._mysql_tasks.truncate_database()
         self._server_tasks.install_ibex_server()
