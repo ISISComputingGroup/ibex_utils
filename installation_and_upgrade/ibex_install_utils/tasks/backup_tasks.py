@@ -32,7 +32,6 @@ class BackupTasks(BaseTasks):
                 self._file_utils.move_dir(src, backup_dir, self.prompt)
         else: #if src can't be found on the machine
             self.prompt.prompt_and_raise_if_not_yes(f"You appear to backing up {src}, but it doesn't exist on this machine. If it is Python, this is likely okay. Please manually check your installation first.")
-            return
 
     @task("Backup old directories")
     def backup_old_directories(self):
