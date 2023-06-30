@@ -86,17 +86,15 @@ class BackupTasks(BaseTasks):
 
         for d in backup_paths:
             if not(os.path.exists(os.path.join(d, "VERSION.txt"))):
-                self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Backup failed at {d} Continue? ")
+                self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Backup failed at '{d}'. Please backup manually.")
 
         if not(os.path.exists(SETTINGS_PATH)):
-            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Settings did not back up properly. Continue? ")
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Settings did not back up properly. Please backup manually.")
         if not(os.path.exists(AUTOSAVE_PATH)):
-            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Autosave did not back up properly. Continue? ")
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Autosave did not back up properly. Please backup manually.")
         if not(os.path.exists(UTILS_PATH)):
-            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. EPICS_Utils did not back up properly. Continue? ")
+            self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. EPICS_Utils did not back up properly. Please backup manually.")
 
-
-        
     @task("Removing old version of IBEX")
     def remove_old_ibex(self):
         """
