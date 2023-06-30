@@ -78,8 +78,8 @@ class BackupTasks(BaseTasks):
         EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS')
         PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3')
         GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4')  
-        SETTINGS_PATH = os.path.join(INSTRUMENT_BASE_DIR, "Settings")
-        AUTOSAVE_PATH = os.path.join(INSTRUMENT_BASE_DIR, "Var", "Autosave")
+        SETTINGS_PATH = os.path.join(self._get_backup_dir(), "Settings")
+        AUTOSAVE_PATH = os.path.join(self._get_backup_dir(), "Autosave")
         UTILS_PATH = os.path.join(self._get_backup_dir(), 'EPICS_UTILS')
 
         backup_paths = (EPICS_PATH_BACKUP, PYTHON3_PATH_BACKUP, GUI_PATH_BACKUP)
