@@ -86,9 +86,7 @@ class BackupTasks(BaseTasks):
 
         for d in backup_paths:
             if not(os.path.exists(os.path.join(d, "VERSION.txt"))):
-                backup_failed_str = "Backup failed at " + d
-                self.prompt.prompt_and_raise_if_not_yes(f(backup_failed_str))
-                self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Continue? ")
+                self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Backup failed at {d} Continue? ")
 
         if not(os.path.exists(SETTINGS_PATH)):
             self.prompt.prompt_and_raise_if_not_yes(f"Error found with backup. Settings did not back up properly. Continue? ")
