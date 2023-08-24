@@ -43,6 +43,16 @@ if "%1" == "INCR" (
 )
 set "RELEASE_SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 
+REM Copy the pydev command history file to temp so it can be copied back in after deploy (otherwise it is overwritten)
+REM this is also done in client install bat, but as we remove client pre-install we need to do it here
+REM too or else it is lost using this route
+set "GENIECMDLOGFILE=history.py"
+set "GENIECMDLOGDIR=C:\Instrument\Apps\Client_E4\workspace\.metadata\.plugins\org.python.pydev.shared_interactive_console"
+if exist "%GENIECMDLOGDIR%\%GENIECMDLOGFILE%" (
+	@echo Copying pydev history file before deleting client
+	robocopy "%GENIECMDLOGDIR%" "%TEMP%" "%GENIECMDLOGFILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+)
+
 if "%1" == "RELEASE" (
     REM set INSTALL_TYPE=instrument_install
     REM set INSTALL_TYPE=training_update
