@@ -34,7 +34,7 @@ class BackupTasks(BaseTasks):
                 print(f"Moving {src} to {backup_dir}")
                 self._file_utils.move_dir(src, backup_dir, self.prompt)
         else: # if src can't be found on the machine
-            if src.lower() in FAILED_BACKUP_DIRS_TO_IGNORE:
+            if src.lower() in self.FAILED_BACKUP_DIRS_TO_IGNORE:
                 print(f"Skipping {src} backup as not present has been marked as OK")
             else:
                 self.prompt.prompt_and_raise_if_not_yes(f"You appear to backing up {src}, but it doesn't exist on this machine. Please manually check your installation first.")
