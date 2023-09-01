@@ -11,6 +11,9 @@ ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, EPI
 
 
 class BackupTasks(BaseTasks):
+    # lowercase names of directories we are not worried about if they do
+    # not exist for example Python which has been Python3 for some time
+    FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
 
     def _backup_dir(self, src, copy=True, ignore=None):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
@@ -30,8 +33,11 @@ class BackupTasks(BaseTasks):
             else:
                 print(f"Moving {src} to {backup_dir}")
                 self._file_utils.move_dir(src, backup_dir, self.prompt)
-        else: #if src can't be found on the machine
-            self.prompt.prompt_and_raise_if_not_yes(f"You appear to backing up {src}, but it doesn't exist on this machine. If it is Python, this is likely okay. Please manually check your installation first.")
+        else: # if src can't be found on the machine
+            if src.lower() in FAILED_BACKUP_DIRS_TO_IGNORE:
+                print(f"Skipping {src} backup as not present has been marked as OK")
+            else:
+                self.prompt.prompt_and_raise_if_not_yes(f"You appear to backing up {src}, but it doesn't exist on this machine. Please manually check your installation first.")
 
     @task("Backup old directories")
     def backup_old_directories(self):
