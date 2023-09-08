@@ -2,6 +2,7 @@ import os
 import shutil
 import psutil
 import glob
+import subprocess
 from win32com.client import Dispatch
 
 from ibex_install_utils.admin_runner import AdminCommandBuilder
@@ -10,7 +11,7 @@ from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, THIRD_PARTY_INSTALLERS_DIR
 from ibex_install_utils.version_check import version_check
 
 GIGABYTE = 1024 ** 3
@@ -30,6 +31,7 @@ SECI_AUTOSTART_LOCATIONS = [os.path.join(USER_STARTUP, SECI), os.path.join(ALLUS
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 
 JAVA_LATEST_VERSION = "17.0.8"
+JAVA_INSTALLER = os.path.join(THIRD_PARTY_INSTALLERS_DIR, "latest_versions", "OpenJDK17U-jdk_x64_windows_hotspot_17.0.6_10.msi")
 
 GIT_LATEST_VERSION = "2.42.0"
 
@@ -110,11 +112,19 @@ class SystemTasks(BaseTasks):
         Checks Java installation
         """
 
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Upgrade openJDK installation by following:\r\n"
-            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java\r\n\r\n"
-            "After following the installer, ensure you close and then re-open your remote desktop session (This "
-            "is a workaround for windows not immediately picking up new environment variables)")
+        if os.path.exists(JAVA_INSTALLER):
+            print(f"Running installer at ({JAVA_INSTALLER})...")
+            subprocess.call(f"msiexec /i {JAVA_INSTALLER}")
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Make sure java installed correctly.\r\n"
+                "After following the installer, ensure you close and then re-open your remote desktop session (This "
+                "is a workaround for windows not immediately picking up new environment variables)")
+        else:
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Upgrade openJDK installation by following:\r\n"
+                "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java\r\n\r\n"
+                "After following the installer, ensure you close and then re-open your remote desktop session (This "
+                "is a workaround for windows not immediately picking up new environment variables)")
 
     @task("Configure COM ports")
     def configure_com_ports(self):
