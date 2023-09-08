@@ -61,7 +61,7 @@ class MysqlTasks(BaseTasks):
         return mysql_bin_dir
     
     def _get_mysql_backup_dir(self):
-        mysql_backup_dir = os.path.join(STAGE_DELETED, self._get_machine_name(), self._generate_backup_dir_name())
+        mysql_backup_dir = os.path.join(STAGE_DELETED, self._get_machine_name(), f"ibex_database_backup_{self._today_date_for_filenames()}")
         if not os.path.exists(mysql_backup_dir):
             os.mkdir(mysql_backup_dir)
         return mysql_backup_dir
