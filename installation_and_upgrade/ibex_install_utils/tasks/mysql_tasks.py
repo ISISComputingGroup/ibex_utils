@@ -11,6 +11,7 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
 from ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.version_check import version_check
 
 try:
     from subprocess import DETACHED_PROCESS
@@ -289,6 +290,7 @@ class MysqlTasks(BaseTasks):
                 f"MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
                 f"Install it from {VCRUNTIME140_INSTALLER} and confirm when complete")
 
+    @version_check(os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe"), MYSQL_LATEST_VERSION)
     @task("Install latest MySQL")
     def install_mysql(self, force=False):
         """

@@ -11,6 +11,7 @@ from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH
+from ibex_install_utils.version_check import version_check
 
 GIGABYTE = 1024 ** 3
 
@@ -28,6 +29,9 @@ SECI_AUTOSTART_LOCATIONS = [os.path.join(USER_STARTUP, SECI), os.path.join(ALLUS
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 
+JAVA_LATEST_VERSION = "17.0.8"
+
+GIT_LATEST_VERSION = "2.42.0"
 
 class SystemTasks(BaseTasks):
     """
@@ -99,6 +103,7 @@ class SystemTasks(BaseTasks):
                                                         f"because '{e}'. Please remove it manually and type 'Y'"
                                                         f" to confirm")
 
+    @version_check("java", JAVA_LATEST_VERSION)
     @task("Install java")
     def check_java_installation(self):
         """
@@ -296,6 +301,7 @@ class SystemTasks(BaseTasks):
             "- Check 'Use Automatic configuration script' and enter http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
             "- Click 'Ok' on all dialogs.")
 
+    @version_check("git", GIT_LATEST_VERSION)
     @task("Update Git")
     def install_or_upgrade_git(self):
         """
