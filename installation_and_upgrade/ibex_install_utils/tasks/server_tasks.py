@@ -446,12 +446,18 @@ class ServerTasks(BaseTasks):
         """
         Select galil driver to use. Return True if old driver in operation or should be used
         """
-        if self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-NEW") and not self.ioc_dir_exists("GALIL-OLD"):
+        # GALIL_OLD/NEW.txt file gets copied to the tmp dir by instrument_deploy.bat
+        tmpdir = tempfile.gettempdir()
+
+        if os.path.exists(os.path.join(tmpdir, "GALIL_OLD.txt")):
+            os.remove(os.path.join(tmpdir, "GALIL_OLD.txt"))
             # we don't need to swap back to new GALIL for the update as install will remove all files anyway
             # we just need to record our current choice
             print("Old galil driver version detected and will automatically be restored after update.")
             return True
-        elif self.ioc_dir_exists("GALIL") and self.ioc_dir_exists("GALIL-OLD") and not self.ioc_dir_exists("GALIL-NEW"):
+        elif  os.path.exists(os.path.join(tmpdir, "GALIL_NEW.txt")):
+            os.remove(os.path.join(tmpdir, "GALIL_NEW.txt"))
+            print("New galil driver version detected and will automatically be restored after update.")
             return False
         else:
             print("Should the old (Y) or new (N) Galil driver be the current default to run?")
