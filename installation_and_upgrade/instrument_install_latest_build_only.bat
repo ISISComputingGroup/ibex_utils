@@ -1,13 +1,10 @@
 REM Install latest version of IBEX
-
-REM argument 1 is CLEAN or INCR for type of build touse (default: CLEAN)
-
+REM argument 1 is CLEAN, INCR or RELEASE for type of build touse (default: CLEAN)
 REM argument 2 is a server build prefix
-REM normally will use EPICS_win7_x64 or EPICS_CLEAN_win7_x64 depending on incremental/clean
-REM with prefix specified will use {prefix}_win7_x64 and {prefix}_CLEAN_win7_x64 for server install source directory
-
+REM  normally will use EPICS_win7_x64 or EPICS_CLEAN_win7_x64 depending on incremental/clean
+REM  with prefix specified will use {prefix}_win7_x64 and {prefix}_CLEAN_win7_x64 for server install source directory
 REM argument 3 can be x86 or x64, defaults to x64 if not specified.
-REM this will change e.g. {prefix}_win7_x64  to {prefix}_win7_x86   as server source directory to use
+REM  this will change e.g. {prefix}_win7_x64  to {prefix}_win7_x86   as server source directory to use
 
 setlocal EnableDelayedExpansion
 
