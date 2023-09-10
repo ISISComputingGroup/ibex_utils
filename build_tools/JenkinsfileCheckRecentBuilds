@@ -4,7 +4,7 @@ pipeline {
 
     agent {  
         label {
-            label "scriptchecker"
+            label "ndw1757"
         }
     }
 
