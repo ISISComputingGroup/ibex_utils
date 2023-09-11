@@ -42,6 +42,22 @@ if exist "%GENIECMDLOGDIR%\%GENIECMDLOGFILE%" (
 	robocopy "%GENIECMDLOGDIR%" "%TEMP%" "%GENIECMDLOGFILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
 )
 
+REM Copy the "GALIL_OLD.txt" file, if it exists, to the tmp dir to inform the IBEX Server installation step which Galil version to use
+set "GALIL_OLD_FILE=GALIL_OLD.txt"
+set "GALIL_OLD_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL-OLD"
+if exist "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" (
+	@echo Copying Galil old text file before deleting client
+	robocopy "%GALIL_OLD_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+)
+
+REM Copy the "GALIL_NEW.txt" file, if it exists, to the tmp dir to inform the IBEX Server installation step which Galil version to use
+set "GALIL_NEW_FILE=GALIL_NEW.txt"
+set "GALIL_NEW_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL-NEW"
+if exist "%GALIL_NEW_DIR%\%GALIL_NEW_FILE%" (
+	@echo Copying Galil new text file before deleting client
+	robocopy "%GALIL_NEW_DIR%" "%TEMP%" "%GALIL_NEW_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+)
+
 REM Set python as share just for script call
 call "%~dp0define_latest_genie_python.bat"
 IF %errorlevel% neq 0 goto ERROR
