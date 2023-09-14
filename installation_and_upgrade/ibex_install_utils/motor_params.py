@@ -4,6 +4,7 @@ load the script into a genie_python console and run as a standard user script.
 """
 
 import csv
+import multiprocessing
 from genie_python import genie as g
 
 g.set_instrument(None, import_instrument_init=False)
@@ -54,10 +55,11 @@ def pv_exists(pv):
     Returns:
         True if the PV exists, False otherwise
     """
+    #print(" ********* Looking for: " + str(pv), flush=True)
     return True if g.get_pv(pv) is not None else False
 
 
-def get_params_for_one_axis(axis):
+def get_params_for_one_axis(axis, data):
     """
     Gets all the interesting parameters for one axis
 
@@ -67,6 +69,12 @@ def get_params_for_one_axis(axis):
     Returns:
         Dict containing the data for each axis
     """
+    #print("RUNNING TESTING MOTOR", flush=True)
+    if pv_exists(axis):
+        print(f"Gathering data for {axis}", flush=True)
+    else: 
+        return 
+    
     axis_values = {name: g.get_pv(axis + pv) for name, pv in all_motor_params.items()}
     axis_values[PV] = axis
 
@@ -86,7 +94,8 @@ def get_params_for_one_axis(axis):
     else:
         print("Assuming not a GALIL")
 
-    return axis_values
+    # return axis_values
+    data.append(axis_values)
 
 
 def get_params_and_save_to_file(file_reference, num_of_controllers=8):
@@ -97,15 +106,27 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
         file_reference (BinaryIO): The csv file to save the data to.
         num_of_controllers (int, optional): The number of motor controllers on the instrument (default is 8)
     """
-    data = []
+    motor_processes = []
+    manager = multiprocessing.Manager()
+    data = manager.list()
     for motor in range(1, num_of_controllers+1):
         for axis in range(1, 9):
             axis_pv = g.prefix_pv_name("MOT:MTR{:02d}{:02d}".format(motor, axis))
-            if pv_exists(axis_pv):
-                print(f"Gathering data for {axis_pv}")
-                data.append(get_params_for_one_axis(axis_pv))
+            #print("JUST BEFORE ADDING PROCESS", flush=True)
+            motor_processes.append(multiprocessing.Process(target=get_params_for_one_axis, args=(axis_pv, data)))
+            
+               
 
-    print(f"Saving to {file_reference.name}")
+    #print("JUST BEFORE STARTING processes", flush=True)
+    for process in motor_processes:
+        process.start()
+        
+
+    for process in motor_processes:
+        process.join()
+    
+
+    #print(f"Saving to {file_reference.name}")
 
     writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction='ignore')
     writer.writeheader()

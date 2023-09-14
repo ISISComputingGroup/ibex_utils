@@ -163,7 +163,7 @@ class UpgradeInstrument:
         self._client_tasks.perform_client_tests()
         self._server_tasks.perform_server_tests()
         self._server_tasks.run_config_checker()
-        self._server_tasks.save_motor_parameters_to_file()
+        self._server_tasks.save_motor_blocks_blockserver_to_file(0)
         self._server_tasks.save_blocks_to_file()
         self._server_tasks.save_blockserver_pv_to_file()
         self._server_tasks.set_alert_url_and_password()
@@ -203,9 +203,9 @@ class UpgradeInstrument:
         """
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
         self._system_tasks.record_running_vis()
-        self._server_tasks.save_motor_parameters_to_file()
-        self._server_tasks.save_blocks_to_file()
-        self._server_tasks.save_blockserver_pv_to_file()
+        self._server_tasks.save_motor_blocks_blockserver_to_file()
+        #self._server_tasks.save_blocks_to_file()
+        #self._server_tasks.save_blockserver_pv_to_file()
 
     def run_truncate_database(self):
         """
