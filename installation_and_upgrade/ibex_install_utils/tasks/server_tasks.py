@@ -477,7 +477,7 @@ class ServerTasks(BaseTasks):
     @task("Backup motors, blocks and blockserver to csv files")
     def save_motor_blocks_blockserver_to_file(self):
         """
-        Saves the motor, blocks and bockserver to csv file.
+        Saves the motor, blocks and blockserver to csv file.
 
         """
         print("NOTE: Blocks and blockserver will finish much quicker than motors backup")
@@ -493,7 +493,6 @@ class ServerTasks(BaseTasks):
         block_backup.join()
         blockserver_backup.join()
 
-    # @task("Save motor parameters to csv file")
     def save_motor_parameters_to_file(self):
         """
         Saves the motor parameters to csv file.
@@ -550,7 +549,6 @@ class ServerTasks(BaseTasks):
     def block_caget(self, block, counter, data):
         data[counter] = f"{self._ca.cget(block)}\r\n"
 
-    # @task("Save blockserver PV to file")
     def save_blockserver_pv_to_file(self):
         """
         Saves the blockserver PV to a file.
