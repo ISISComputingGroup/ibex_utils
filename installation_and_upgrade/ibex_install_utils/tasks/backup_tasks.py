@@ -91,9 +91,7 @@ class BackupTasks(BaseTasks):
             else:
                 print(f"Zipping and moving {src} to {backup_dir}.zip")
                 # self.zip_file(src, backup_dir)
-                input("EXIT NOW AS IT'LL DELETE THE OLD DIR")
-                input("EXIT NOW")
-                input("EXIT")
+                input("BREAKPOINT INPUT")
                 # shutil.rmtree(src, ignore_errors=True)
                 # os.rmdir(src)
                 
@@ -136,8 +134,9 @@ class BackupTasks(BaseTasks):
                 backups_to_move = []
 
             for d in backups_to_move:
-                print(f"Moving backup {d}")
-                self._file_utils.move_dir(d, os.path.join(STAGE_DELETED, self._get_machine_name()), self.prompt)
+                backup = STAGE_DELETED + '\\' + self._get_machine_name() + '\\' + os.path.basename(d)
+                print(f"Moving backup {d} to {backup}")
+                self._file_utils.move_dir(d, backup, self.prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
