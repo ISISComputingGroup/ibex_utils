@@ -22,6 +22,21 @@ def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num
         return os.path.join(build_dir, f"{build_prefix}{build_num}")
     return os.path.join(build_dir, f"{build_prefix}{build_num}", directory_above_build_num)
 
+def _get_dir_size(path="."):
+    total = 0
+    with os.scandir(path) as it:
+        for entry in it:
+            if entry.is_file():
+                total += entry.stat().st_size
+            elif entry.is_dir():
+                total += _get_dir_size(entry.path)
+    return total
+
+def get_size(path='.'):
+    if os.path.isfile(path):
+        return os.path.getsize(path)
+    elif os.path.isdir(path):
+        return _get_dir_size(path)
 
 class FileUtils:
     """

@@ -21,3 +21,5 @@ PYTHON_PATH = os.path.join(APPS_BASE_DIR, "Python")
 PYTHON_3_PATH = os.path.join(APPS_BASE_DIR, "Python3")
 
 GUI_PATH = os.path.join(APPS_BASE_DIR, "Client_E4")
+
+THIRD_PARTY_INSTALLERS_DIR = os.path.join(r"\\isis.cclrc.ac.uk", "shares", "ISIS_Experiment_Controls_Public", "third_party_installers")

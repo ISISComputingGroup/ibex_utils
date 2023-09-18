@@ -313,7 +313,7 @@ class ServerTasks(BaseTasks):
         Saves the motor parameters to csv file.
         """
         with self.timestamped_pv_backups_file(name="motors", directory="motors", extension="csv") as f:
-            get_params_and_save_to_file(f)
+            get_params_and_save_to_file(f, num_of_controllers=16)
 
     @task("Save block parameters to file")
     def save_blocks_to_file(self):

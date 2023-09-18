@@ -2,6 +2,7 @@ import os
 import shutil
 
 
+from ibex_install_utils.file_utils import get_size
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
@@ -15,6 +16,16 @@ class BackupTasks(BaseTasks):
     # not exist for example Python which has been Python3 for some time
     FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
 
+    def _check_backup_space(self, src):
+        # Checks if there is enough space to move dir at src into the backup directory
+        # (all in bytes)
+        _, _, free = shutil.disk_usage(BACKUP_DIR)
+        backup_size = get_size(src)
+        
+        if backup_size > free:
+            needed_space = round((backup_size - free) / (1024 ** 3), 2)
+            self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
+
     def _backup_dir(self, src, copy=True, ignore=None):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
         if src in os.getcwd():
@@ -27,6 +38,8 @@ class BackupTasks(BaseTasks):
                 f"Backup dir {backup_dir} already exists. Please backup this app manually")
             return
         if os.path.exists(src):
+            self._check_backup_space(src)
+
             if copy:
                 print(f"Copying {src} to {backup_dir}")
                 shutil.copytree(src, backup_dir, ignore=ignore)
