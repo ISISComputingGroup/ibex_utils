@@ -55,7 +55,6 @@ def pv_exists(pv):
     Returns:
         True if the PV exists, False otherwise
     """
-    #print(" ********* Looking for: " + str(pv), flush=True)
     return True if g.get_pv(pv) is not None else False
 
 
@@ -69,7 +68,6 @@ def get_params_for_one_axis(axis, data):
     Returns:
         Dict containing the data for each axis
     """
-    #print("RUNNING TESTING MOTOR", flush=True)
     if pv_exists(axis):
         print(f"Gathering data for {axis}", flush=True)
     else: 
@@ -112,21 +110,16 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     for motor in range(1, num_of_controllers+1):
         for axis in range(1, 9):
             axis_pv = g.prefix_pv_name("MOT:MTR{:02d}{:02d}".format(motor, axis))
-            #print("JUST BEFORE ADDING PROCESS", flush=True)
             motor_processes.append(multiprocessing.Process(target=get_params_for_one_axis, args=(axis_pv, data)))
             
                
 
-    #print("JUST BEFORE STARTING processes", flush=True)
     for process in motor_processes:
         process.start()
         
 
     for process in motor_processes:
         process.join()
-    
-
-    #print(f"Saving to {file_reference.name}")
 
     writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction='ignore')
     writer.writeheader()
