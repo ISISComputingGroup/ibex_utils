@@ -166,8 +166,6 @@ class UpgradeInstrument:
         self._server_tasks.perform_server_tests()
         self._server_tasks.run_config_checker()
         self._server_tasks.save_motor_blocks_blockserver_to_file(0)
-        self._server_tasks.save_blocks_to_file()
-        self._server_tasks.save_blockserver_pv_to_file()
         self._server_tasks.set_alert_url_and_password()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._system_tasks.inform_instrument_scientists()
