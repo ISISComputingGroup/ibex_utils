@@ -28,15 +28,6 @@ class BackupTasks(BaseTasks):
 
 
     def zip_file(self, filename, zipname):
-        # raise ValueError('ZIP does not support timestamps before 1980')
-        # ValueError: ZIP does not support timestamps before 1980
-        # shutil.make_archive(zipname, 'zip', filename)
-
-        # using ZipFile take the filename that may be a dir or a file and save all tis conetnats to a zip file
-        # with the same name as the filename
-        # add a progress bar around the zip file making to show its progress
-        # zip all files and all directories recursvely 
-        # with Spinner():
 
         all_files = []
         for root, dirs, files in os.walk(filename):
@@ -86,16 +77,12 @@ class BackupTasks(BaseTasks):
 
             if copy:
                 print(f"Zipping{src} to {backup_dir}")
-                # self.zip_file(src, backup_dir)
-                # shutil.copytree(src, backup_dir, ignore=ignore)
+                self.zip_file(src, backup_dir)
             else:
                 print(f"Zipping and moving {src} to {backup_dir}.zip")
-                # self.zip_file(src, backup_dir)
-                input("BREAKPOINT INPUT")
-                # shutil.rmtree(src, ignore_errors=True)
-                # os.rmdir(src)
+                self.zip_file(src, backup_dir)
+                shutil.rmtree(src, ignore_errors=True)
                 
-                # self._file_utils.move_dir(src, backup_dir, self.prompt)
         else: # if src can't be found on the machine
             if src.lower() in self.FAILED_BACKUP_DIRS_TO_IGNORE:
                 print(f"Skipping {src} backup as not present has been marked as OK")
@@ -141,19 +128,7 @@ class BackupTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
                 f"manually")
-            
-    @task("Transfer old backups to isis shares")
-    def transfer_old_backups_to_isis_shares(self):
-        """
-        Transfer old backups to isis shares
-        """
-        if os.path.exists(BACKUP_DIR):
-            print("Transferring old backups to ISIS shares")
-            self._file_utils.move_dir(BACKUP_DIR, STAGE_DELETED, self.prompt)
-        else:
-            self.prompt.prompt_and_raise_if_not_yes(
-                f"Unable to find backup directory '{BACKUP_DIR}'. Please backup the current installation of IBEX "
-                f"manually")
+
 
     #This function checks if the backup has been sucessful by checking for a VERSION.txt file within the backup folders
     @task("Verify backup") 
