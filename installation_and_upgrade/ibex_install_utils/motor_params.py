@@ -92,7 +92,6 @@ def get_params_for_one_axis(axis, data):
     else:
         print("Assuming not a GALIL")
 
-    # return axis_values
     data.append(axis_values)
 
 
