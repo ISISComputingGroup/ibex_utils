@@ -2,8 +2,10 @@
 Tasks associated with install
 """
 
+import json
 import os
 import warnings
+from genie_python import genie as g
 
 from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
@@ -13,8 +15,7 @@ from ibex_install_utils.tasks.python_tasks import PythonTasks
 from ibex_install_utils.tasks.server_tasks import ServerTasks
 from ibex_install_utils.tasks.system_tasks import SystemTasks
 from ibex_install_utils.tasks.vhd_tasks import VHDTasks
-from ibex_install_utils.ca_utils import get_object_from_compressed_hexed_json
-
+from ibex_install_utils.ca_utils import CaWrapper
 class UpgradeInstrument:
     """
     Class to upgrade the instrument installation to the given version of IBEX.
@@ -205,7 +206,8 @@ class UpgradeInstrument:
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
 
         # Check whether inst is SECI or not
-        central_inst_info =  get_object_from_compressed_hexed_json("CS:INSTLIST")
+        channelWrapper = CaWrapper()
+        central_inst_info =  json.loads(channelWrapper.get_object_from_compressed_hexed_json("CS:INSTLIST"))
 
         central_specific_inst_info = None
         for inst in central_inst_info:
@@ -217,7 +219,7 @@ class UpgradeInstrument:
         if central_specific_inst_info is None:
             warnings.warn("Unable to find instrument in central list of instruments.", UserWarning)
         else:
-            if central_specific_inst_info.seci:
+            if central_specific_inst_info['seci']:
                 self._system_tasks.record_running_vis()
 
 
