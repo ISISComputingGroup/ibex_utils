@@ -4,7 +4,7 @@ import shutil
 import sys
 import zipfile
 
-from ibex_install_utils.file_utils import get_size
+from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
@@ -24,6 +24,8 @@ class BackupTasks(BaseTasks):
         arrow = '=' * int(round(width * percent))
         spaces = ' ' * (width - len(arrow))
         sys.stdout.write(f'\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})')
+        if progress == total:
+            sys.stdout.write('\n')
         sys.stdout.flush()
 
 
@@ -51,7 +53,7 @@ class BackupTasks(BaseTasks):
         # Checks if there is enough space to move dir at src into the backup directory
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
-        backup_size = get_size(src)
+        backup_size = FileUtils.get_size(src)
 
         # We assume that the zipped backup will be 70% of the size of the unzipped backup
         # epics can compress using zip to 1/3 of the original size and avg compression for zip is 62%
@@ -76,7 +78,7 @@ class BackupTasks(BaseTasks):
             self._check_backup_space(src)
 
             if copy:
-                print(f"Zipping{src} to {backup_dir}")
+                print(f"Zipping{src} to {backup_dir}.zip")
                 self.zip_file(src, backup_dir)
             else:
                 print(f"Zipping and moving {src} to {backup_dir}.zip")
@@ -137,12 +139,12 @@ class BackupTasks(BaseTasks):
         Verify backup
 
         """
-        EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS')
-        PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3')
-        GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4')  
-        SETTINGS_PATH = os.path.join(self._get_backup_dir(), "Settings")
-        AUTOSAVE_PATH = os.path.join(self._get_backup_dir(), "Autosave")
-        UTILS_PATH = os.path.join(self._get_backup_dir(), 'EPICS_UTILS')
+        EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS.zip')
+        PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3.zip')
+        GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4.zip')  
+        SETTINGS_PATH = os.path.join(self._get_backup_dir(), "Settings.zip")
+        AUTOSAVE_PATH = os.path.join(self._get_backup_dir(), "Autosave.zip")
+        UTILS_PATH = os.path.join(self._get_backup_dir(), 'EPICS_UTILS.zip')
 
         backup_paths = (EPICS_PATH_BACKUP, PYTHON3_PATH_BACKUP, GUI_PATH_BACKUP)
 

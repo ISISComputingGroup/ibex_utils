@@ -18,7 +18,7 @@ except ImportError:
 import git
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInRun, ErrorInTask
-from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, get_latest_directory_path
+from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
 from ibex_install_utils.motor_params import get_params_and_save_to_file
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
@@ -485,13 +485,17 @@ class ServerTasks(BaseTasks):
         block_backup = multiprocessing.Process(target=self.save_blocks_to_file)
         blockserver_backup = multiprocessing.Process(target=self.save_blockserver_pv_to_file)
        
-        motor_backup.start()
+        
         block_backup.start()
         blockserver_backup.start()
         
-        motor_backup.join()
+        
         block_backup.join()
         blockserver_backup.join()
+
+        # motor backup done on its own as for unknown reasons if not it will hang
+        motor_backup.start()
+        motor_backup.join()
 
     def save_motor_parameters_to_file(self):
         """
@@ -532,6 +536,8 @@ class ServerTasks(BaseTasks):
 
                 for process in block_processes:
                     process.join()
+
+                print("BLOCKS DATA: ", data)
               
                 counter = 0
                 for block in blocks:
@@ -569,7 +575,7 @@ class ServerTasks(BaseTasks):
         pv_processes = []
         for name, pv in pvs_to_save:
             pv_processes.append(
-                multiprocessing.Process(target=self.get_pv, args=(pv, name))
+                multiprocessing.Process(target=self.get_pv, args=(pv, name,))
             )
         
         for process in pv_processes:
@@ -577,8 +583,6 @@ class ServerTasks(BaseTasks):
 
         for process in pv_processes:
             process.join()
-        
-
            
 
         print("Backed up: blockserver config pvs")
@@ -595,9 +599,8 @@ class ServerTasks(BaseTasks):
                     f.write(
                         f"{_pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))}\r\n"
                     )
-                except Exception as e:
-                    print(f"Couldn't get data from {pv} because: {e}")
-                    f.write(e)
+                except:
+                    pass
 
 
     @task("Update the ICP")
@@ -631,7 +634,7 @@ class ServerTasks(BaseTasks):
             self.prompt.confirm_step(
                 f"Upgrade ICP found in Labview Modules? (Detected type: DAE{dae_type})"
             )
-            icp_path = get_latest_directory_path(
+            icp_path = FileUtils.get_latest_directory_path(
                 os.path.join(
                     INST_SHARE_AREA,
                     "kits$",

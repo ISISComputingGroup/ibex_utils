@@ -2,41 +2,15 @@
 Filesystem utility classes
 """
 
+import binascii
 import os
 import shutil
 import time
+import zlib
 from ibex_install_utils.exceptions import UserStop
 from ibex_install_utils.run_process import RunProcess
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
-
-
-def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
-    latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
-    build_num = None
-    for line in open(latest_build_path):
-        build_num = line.strip()
-    if build_num is None or build_num == "":
-        raise IOError(f"Latest build num unknown. Cannot read it from '{latest_build_path}'")
-    if directory_above_build_num is None:
-        return os.path.join(build_dir, f"{build_prefix}{build_num}")
-    return os.path.join(build_dir, f"{build_prefix}{build_num}", directory_above_build_num)
-
-def _get_dir_size(path="."):
-    total = 0
-    with os.scandir(path) as it:
-        for entry in it:
-            if entry.is_file():
-                total += entry.stat().st_size
-            elif entry.is_dir():
-                total += _get_dir_size(entry.path)
-    return total
-
-def get_size(path='.'):
-    if os.path.isfile(path):
-        return os.path.getsize(path)
-    elif os.path.isdir(path):
-        return _get_dir_size(path)
 
 class FileUtils:
     """
@@ -150,3 +124,48 @@ class FileUtils:
                 prompt_message = f"Unable to move '{source}' to '{destination}': {str(ex)}\n Try again?"
                 if prompt.prompt(prompt_message, possibles=["Y", "N"], default="N") != "Y":
                     raise UserStop
+                
+    @staticmethod
+    def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
+        latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
+        build_num = None
+        for line in open(latest_build_path):
+            build_num = line.strip()
+        if build_num is None or build_num == "":
+            raise IOError(f"Latest build num unknown. Cannot read it from '{latest_build_path}'")
+        if directory_above_build_num is None:
+            return os.path.join(build_dir, f"{build_prefix}{build_num}")
+        return os.path.join(build_dir, f"{build_prefix}{build_num}", directory_above_build_num)
+
+    @staticmethod
+    def _get_dir_size(path="."):
+        total = 0
+        with os.scandir(path) as it:
+            for entry in it:
+                if entry.is_file():
+                    total += entry.stat().st_size
+                elif entry.is_dir():
+                    total += FileUtils._get_dir_size(entry.path)
+        return total
+    
+    @staticmethod
+    def get_size(path='.'):
+        if os.path.isfile(path):
+            return os.path.getsize(path)
+        elif os.path.isdir(path):
+            return FileUtils._get_dir_size(path)
+                
+    @staticmethod
+    def dehex_and_decompress(value):
+        """Decompresses the inputted string, assuming it is in hex encoding.
+
+        Args:
+            value (bytes): The string to be decompressed, encoded in hex
+
+        Returns:
+            bytes : A decompressed version of the inputted string
+        """
+        assert type(value) == bytes, \
+            "Non-bytes argument passed to dehex_and_decompress, maybe Python 2/3 compatibility issue\n" \
+            "Argument was type {} with value {}".format(value.__class__.__name__, value)
+        return zlib.decompress(binascii.unhexlify(value))

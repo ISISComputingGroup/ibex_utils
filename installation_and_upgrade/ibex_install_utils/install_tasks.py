@@ -15,7 +15,7 @@ from ibex_install_utils.tasks.python_tasks import PythonTasks
 from ibex_install_utils.tasks.server_tasks import ServerTasks
 from ibex_install_utils.tasks.system_tasks import SystemTasks
 from ibex_install_utils.tasks.vhd_tasks import VHDTasks
-from ibex_install_utils.ca_utils import CaWrapper
+
 class UpgradeInstrument:
     """
     Class to upgrade the instrument installation to the given version of IBEX.
@@ -204,24 +204,27 @@ class UpgradeInstrument:
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
 
         # Check whether inst is SECI or not
-        channelWrapper = CaWrapper()
-        central_inst_info =  json.loads(channelWrapper.get_object_from_compressed_hexed_json("CS:INSTLIST"))
+        central_inst_info = g.get_pv("TE:NDW2455:CS:INSTLIST")
+        central_inst_info = FileUtils.dehex_and_decompress(bytes(central_inst_info, encoding="utf8")).decode("utf-8")
+        central_inst_info = json.loads(central_inst_info)
 
         central_specific_inst_info = None
         for inst in central_inst_info:
 
-            if inst['name'] == g.my_pv_prefix[3:-1]:
+            if inst["name"] == g.my_pv_prefix[3:-1]:
                 central_specific_inst_info = inst
                 break
         
         if central_specific_inst_info is None:
             warnings.warn("Unable to find instrument in central list of instruments.", UserWarning)
         else:
-            if central_specific_inst_info['seci']:
+            if central_specific_inst_info["seci"] == "true":
+                print("This is a SECI instrument.")
                 self._system_tasks.record_running_vis()
 
 
         self._server_tasks.save_motor_blocks_blockserver_to_file()
+        input("STOP HERE")
 
     def run_truncate_database(self):
         """

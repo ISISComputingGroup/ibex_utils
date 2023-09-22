@@ -94,6 +94,8 @@ def get_params_for_one_axis(axis, data):
 
     data.append(axis_values)
 
+def caget():
+        return self._ca.cget(block)
 
 def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     """
@@ -106,6 +108,7 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     motor_processes = []
     manager = multiprocessing.Manager()
     data = manager.list()
+    
     for motor in range(1, num_of_controllers+1):
         for axis in range(1, 9):
             axis_pv = g.prefix_pv_name("MOT:MTR{:02d}{:02d}".format(motor, axis))
@@ -119,10 +122,18 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
 
     for process in motor_processes:
         process.join()
+    
+    print("Data: ", data)
+
+    def get_motor_number(item):
+        return int(item['Axis Name'].split(' ')[0].replace('MTR', ''))
+
+    # Sort the data by motor number
+    sorted_data = sorted(data, key=get_motor_number)
 
     writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction='ignore')
     writer.writeheader()
-    writer.writerows(data)
+    writer.writerows(sorted_data)
 
 
 def get_params_and_save(file_name, num_of_controllers=8):
