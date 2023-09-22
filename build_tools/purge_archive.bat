@@ -17,7 +17,7 @@ set errcode=!errorlevel!
 for /F "skip=1" %%I in ('wmic path win32_localtime get dayofweek') do (set /a DOW=%%I 2>NUL)
 if %DOW% neq 6 (
     @echo Skipping debug symbol cleanup as day of week %DOW% is not 6
-    exit /b !errcode"
+    exit /b !errcode!
 )
 REM Remove old debug symbols from the archive
 set "AGESTORE=c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\agestore.exe"
