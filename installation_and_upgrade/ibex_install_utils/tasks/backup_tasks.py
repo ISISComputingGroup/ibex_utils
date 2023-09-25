@@ -72,10 +72,6 @@ class BackupTasks(BaseTasks):
 
             self.update_progress_bar(i, total_files)
         
-        
-
-        
-       
 
     def _check_backup_space(self, src):
         # Checks if there is enough space to move dir at src into the backup directory
@@ -106,14 +102,13 @@ class BackupTasks(BaseTasks):
             self._check_backup_space(src)
 
             if copy:
-                print(f"Copying {src} to {backup_dir}.zip")
+                print(f"Copying {src} to {backup_dir}")
                 self.move_file(src, backup_dir, copy=True)
                 # self.zip_file(src, backup_dir)
             else:
-                print(f"Moving {src} to {backup_dir}.zip")
+                print(f"Moving {src} to {backup_dir}")
                 self.move_file(src, backup_dir)
                 # self.zip_file(src, backup_dir)
-                # shutil.rmtree(src, ignore_errors=True)
                 
         else: # if src can't be found on the machine
             if src.lower() in self.FAILED_BACKUP_DIRS_TO_IGNORE:
@@ -155,6 +150,7 @@ class BackupTasks(BaseTasks):
             for d in backups_to_move:
                 backup = STAGE_DELETED + '\\' + self._get_machine_name() + '\\' + os.path.basename(d)
                 print(f"Moving backup {d} to {backup}")
+                # self.move_file(d, backup, copy=False)
                 self._file_utils.move_dir(d, backup, self.prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(
@@ -169,12 +165,12 @@ class BackupTasks(BaseTasks):
         Verify backup
 
         """
-        EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS.zip')
-        PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3.zip')
-        GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4.zip')  
-        SETTINGS_PATH = os.path.join(self._get_backup_dir(), "Settings.zip")
-        AUTOSAVE_PATH = os.path.join(self._get_backup_dir(), "Autosave.zip")
-        UTILS_PATH = os.path.join(self._get_backup_dir(), 'EPICS_UTILS.zip')
+        EPICS_PATH_BACKUP = os.path.join(self._get_backup_dir(),'EPICS')
+        PYTHON3_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Python3')
+        GUI_PATH_BACKUP = os.path.join(self._get_backup_dir(),'Client_E4')  
+        SETTINGS_PATH = os.path.join(self._get_backup_dir(), "Settings")
+        AUTOSAVE_PATH = os.path.join(self._get_backup_dir(), "Autosave")
+        UTILS_PATH = os.path.join(self._get_backup_dir(), 'EPICS_UTILS')
 
         backup_paths = (EPICS_PATH_BACKUP, PYTHON3_PATH_BACKUP, GUI_PATH_BACKUP)
 
