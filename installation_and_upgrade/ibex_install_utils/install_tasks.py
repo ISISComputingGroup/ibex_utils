@@ -223,7 +223,6 @@ class UpgradeInstrument:
 
 
         self._server_tasks.save_motor_blocks_blockserver_to_file()
-        input("STOP HERE")
 
     def run_truncate_database(self):
         """
