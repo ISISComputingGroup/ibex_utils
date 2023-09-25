@@ -44,6 +44,34 @@ class BackupTasks(BaseTasks):
                     self.update_progress_bar(i, len(all_files))
                     i = i + 1
 
+    def move_file(self, src, dst, copy=False):
+        all_files = []
+        for root, dirs, files in os.walk(src):
+            for file in files:
+                all_files.append((os.path.join(root, file), os.path.join(dst, os.path.relpath(root, src))))
+
+        total_files = len(all_files)
+
+        if copy:
+            operation = shutil.copy
+        else:
+            operation = shutil.move
+
+        i = 0
+        for file, dest_dir in all_files:
+            try:
+                if not os.path.exists(dest_dir):
+                    os.makedirs(dest_dir)
+                if os.path.exists(file):
+                    operation(file, os.path.join(dest_dir, os.path.basename(file)))
+                    i += 1
+                else:
+                    print(f"File not found: {file}")
+            except Exception as e:
+                print(f"Error: {e}")
+
+            self.update_progress_bar(i, total_files)
+        
         
 
         
@@ -78,12 +106,14 @@ class BackupTasks(BaseTasks):
             self._check_backup_space(src)
 
             if copy:
-                print(f"Zipping{src} to {backup_dir}.zip")
-                self.zip_file(src, backup_dir)
+                print(f"Copying {src} to {backup_dir}.zip")
+                self.move_file(src, backup_dir, copy=True)
+                # self.zip_file(src, backup_dir)
             else:
-                print(f"Zipping and moving {src} to {backup_dir}.zip")
-                self.zip_file(src, backup_dir)
-                shutil.rmtree(src, ignore_errors=True)
+                print(f"Moving {src} to {backup_dir}.zip")
+                self.move_file(src, backup_dir)
+                # self.zip_file(src, backup_dir)
+                # shutil.rmtree(src, ignore_errors=True)
                 
         else: # if src can't be found on the machine
             if src.lower() in self.FAILED_BACKUP_DIRS_TO_IGNORE:
@@ -104,7 +134,7 @@ class BackupTasks(BaseTasks):
 
             # Move the folders
             for app_path in ALL_INSTALL_DIRECTORIES:
-                self._backup_dir(app_path, copy=False)
+                self._backup_dir(app_path, copy=True)
 
             
 
