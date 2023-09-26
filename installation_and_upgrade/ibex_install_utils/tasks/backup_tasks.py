@@ -79,11 +79,7 @@ class BackupTasks(BaseTasks):
         _, _, free = shutil.disk_usage(BACKUP_DIR)
         backup_size = FileUtils.get_size(src)
 
-        # We assume that the zipped backup will be 70% of the size of the unzipped backup
-        # epics can compress using zip to 1/3 of the original size and avg compression for zip is 62%
-        estimated_zipped_backup_size = 0.7 * backup_size
-
-        if estimated_zipped_backup_size > free:
+        if backup_size > free:
             needed_space = round((estimated_zipped_backup_size - free) / (1024 ** 3), 2)
             self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
 
