@@ -80,7 +80,7 @@ class BackupTasks(BaseTasks):
         backup_size = FileUtils.get_size(src)
 
         if backup_size > free:
-            needed_space = round((estimated_zipped_backup_size - free) / (1024 ** 3), 2)
+            needed_space = round((backup_size - free) / (1024 ** 3), 2)
             self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
 
     def _backup_dir(self, src, copy=True, ignore=None):
