@@ -536,8 +536,6 @@ class ServerTasks(BaseTasks):
 
                 for process in block_processes:
                     process.join()
-
-                print("BLOCKS DATA: ", data)
               
                 counter = 0
                 for block in blocks:

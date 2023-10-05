@@ -49,7 +49,6 @@ class CaWrapper:
             None if the PV was not available, otherwise the decoded json object
         """
         data = self.get_local_pv(name)
-        print("Data: ", data)
         if data is None:
             return None
         else:

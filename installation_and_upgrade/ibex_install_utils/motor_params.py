@@ -94,9 +94,6 @@ def get_params_for_one_axis(axis, data):
 
     data.append(axis_values)
 
-def caget():
-        return self._ca.cget(block)
-
 def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     """
     Gets all the motor parameters and saves them to an open file reference as a csv.
@@ -122,8 +119,6 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
 
     for process in motor_processes:
         process.join()
-    
-    print("Data: ", data)
 
     def get_motor_number(item):
         return int(item['Axis Name'].split(' ')[0].replace('MTR', ''))
