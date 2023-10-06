@@ -4,7 +4,8 @@ load the script into a genie_python console and run as a standard user script.
 """
 
 import csv
-import multiprocessing
+import sys
+import multiprocessing.dummy as multiprocessing
 from genie_python import genie as g
 
 g.set_instrument(None, import_instrument_init=False)
@@ -55,10 +56,14 @@ def pv_exists(pv):
     Returns:
         True if the PV exists, False otherwise
     """
-    return True if g.get_pv(pv) is not None else False
+    try:
+        g.get_pv(pv)
+        return True 
+    except:
+        print("PV does not exist: " + pv)
+        return False
 
-
-def get_params_for_one_axis(axis, data):
+def get_params_for_one_axis(axis, data, g, progress, total):
     """
     Gets all the interesting parameters for one axis
 
@@ -68,11 +73,6 @@ def get_params_for_one_axis(axis, data):
     Returns:
         Dict containing the data for each axis
     """
-    if pv_exists(axis):
-        print(f"Gathering data for {axis}", flush=True)
-    else: 
-        return 
-    
     axis_values = {name: g.get_pv(axis + pv) for name, pv in all_motor_params.items()}
     axis_values[PV] = axis
 
@@ -94,6 +94,21 @@ def get_params_for_one_axis(axis, data):
 
     data.append(axis_values)
 
+    progress.value += 1
+    update_progress_bar(progress.value, total)
+
+def update_progress_bar(progress, total, width=20):
+    percent = (progress/total) 
+    arrow = '=' * int(round(width * percent))
+    spaces = ' ' * (width - len(arrow))
+    sys.stdout.write(f'\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})')
+    if progress == total:
+        sys.stdout.write('\n')
+    sys.stdout.flush()
+
+
+
+
 def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     """
     Gets all the motor parameters and saves them to an open file reference as a csv.
@@ -105,20 +120,30 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     motor_processes = []
     manager = multiprocessing.Manager()
     data = manager.list()
+    progress = manager.Value('i', 0)
+    list_of_axis_pvs = []
     
     for motor in range(1, num_of_controllers+1):
         for axis in range(1, 9):
             axis_pv = g.prefix_pv_name("MOT:MTR{:02d}{:02d}".format(motor, axis))
-            motor_processes.append(multiprocessing.Process(target=get_params_for_one_axis, args=(axis_pv, data)))
+            list_of_axis_pvs.append(axis_pv)
+
+    connected_motors = g.connected_pvs_in_list(list_of_axis_pvs)
+
+    print("Connected motors: " + str(connected_motors))
+
+    number_of_motors = len(connected_motors)
+    update_progress_bar(progress.value, number_of_motors)
+    for axis in connected_motors:
+        motor_processes.append(multiprocessing.Process(target=get_params_for_one_axis, args=(axis, data, g, progress, number_of_motors)))
+    
             
                
 
     for process in motor_processes:
         process.start()
-        
-
-    for process in motor_processes:
         process.join()
+
 
     def get_motor_number(item):
         return int(item['Axis Name'].split(' ')[0].replace('MTR', ''))

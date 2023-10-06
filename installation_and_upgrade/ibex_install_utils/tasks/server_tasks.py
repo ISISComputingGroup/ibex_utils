@@ -4,6 +4,7 @@ import os
 import pprint
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -480,22 +481,19 @@ class ServerTasks(BaseTasks):
         Saves the motor, blocks and blockserver to csv file.
 
         """
-        print("NOTE: Blocks and blockserver will finish much quicker than motors backup")
-        motor_backup = multiprocessing.Process(target=self.save_motor_parameters_to_file)
-        block_backup = multiprocessing.Process(target=self.save_blocks_to_file)
-        blockserver_backup = multiprocessing.Process(target=self.save_blockserver_pv_to_file)
-       
         
-        block_backup.start()
-        blockserver_backup.start()
-        
-        
-        block_backup.join()
-        blockserver_backup.join()
+        print("Backing up: motor params pvs")
+        self.save_motor_parameters_to_file()
+        print("Finished backing up: motor params pvs")
 
-        # motor backup done on its own as for unknown reasons if not it will hang
-        motor_backup.start()
-        motor_backup.join()
+        print("Backing up: block pvs")
+        self.save_blocks_to_file()
+        print("Finished backing up: block pvs")
+
+        print("Backing up: blockserver config pvs")
+        self.save_blockserver_pv_to_file()
+        print("Finished backing up: blockserver config pvs")
+
 
     def save_motor_parameters_to_file(self):
         """
@@ -506,8 +504,6 @@ class ServerTasks(BaseTasks):
             name="motors", directory="motors", extension="csv"
         ) as f:
             get_params_and_save_to_file(f)
-
-        print("Backed up: motor params pvs")
 
     def save_blocks_to_file(self):
         """
@@ -527,14 +523,12 @@ class ServerTasks(BaseTasks):
                     data.append(" ")
                 for block in blocks:
                     block_processes.append(
-                        multiprocessing.Process(target=self.block_caget, args=(block, counter, data))
+                        multiprocessing.Process(target=self.block_caget, args=(block, counter, data,))
                     )
                     counter += 1
 
                 for process in block_processes:
                     process.start()
-
-                for process in block_processes:
                     process.join()
               
                 counter = 0
@@ -548,10 +542,9 @@ class ServerTasks(BaseTasks):
                     "Blockserver available but no blocks found - not archiving anything"
                 )
 
-        print("Backed up: block pvs")
-
     def block_caget(self, block, counter, data):
         data[counter] = f"{self._ca.cget(block)}\r\n"
+
 
     def save_blockserver_pv_to_file(self):
         """
@@ -570,6 +563,7 @@ class ServerTasks(BaseTasks):
             ("synoptic_names", "CS:SYNOPTICS:NAMES"),
         ]
 
+
         pv_processes = []
         for name, pv in pvs_to_save:
             pv_processes.append(
@@ -578,12 +572,8 @@ class ServerTasks(BaseTasks):
         
         for process in pv_processes:
             process.start()
-
-        for process in pv_processes:
             process.join()
-           
 
-        print("Backed up: blockserver config pvs")
 
 
     def get_pv(self, pv, name):
