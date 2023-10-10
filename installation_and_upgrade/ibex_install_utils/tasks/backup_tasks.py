@@ -19,7 +19,7 @@ class BackupTasks(BaseTasks):
     FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
 
 
-    def update_progress_bar(progress, total, width=20):
+    def update_progress_bar(self,progress, total, width=20):
         if total !=0:
             percent = (progress/total) 
             arrow = '=' * int(round(width * percent))
