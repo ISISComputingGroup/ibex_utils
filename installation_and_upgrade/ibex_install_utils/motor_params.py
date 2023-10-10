@@ -98,13 +98,14 @@ def get_params_for_one_axis(axis, data, g, progress, total):
     update_progress_bar(progress.value, total)
 
 def update_progress_bar(progress, total, width=20):
-    percent = (progress/total) 
-    arrow = '=' * int(round(width * percent))
-    spaces = ' ' * (width - len(arrow))
-    sys.stdout.write(f'\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})')
-    if progress == total:
-        sys.stdout.write('\n')
-    sys.stdout.flush()
+    if total !=0:
+        percent = (progress/total) 
+        arrow = '=' * int(round(width * percent))
+        spaces = ' ' * (width - len(arrow))
+        sys.stdout.write(f'\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})')
+        if progress == total:
+            sys.stdout.write('\n')
+        sys.stdout.flush()
 
 
 

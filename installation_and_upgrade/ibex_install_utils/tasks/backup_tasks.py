@@ -19,14 +19,15 @@ class BackupTasks(BaseTasks):
     FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
 
 
-    def update_progress_bar(self, progress, total, width=20):
-        percent = (progress/total) 
-        arrow = '=' * int(round(width * percent))
-        spaces = ' ' * (width - len(arrow))
-        sys.stdout.write(f'\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})')
-        if progress == total:
-            sys.stdout.write('\n')
-        sys.stdout.flush()
+    def update_progress_bar(progress, total, width=20):
+        if total !=0:
+            percent = (progress/total) 
+            arrow = '=' * int(round(width * percent))
+            spaces = ' ' * (width - len(arrow))
+            sys.stdout.write(f'\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})')
+            if progress == total:
+                sys.stdout.write('\n')
+            sys.stdout.flush()
 
 
     def zip_file(self, filename, zipname):
