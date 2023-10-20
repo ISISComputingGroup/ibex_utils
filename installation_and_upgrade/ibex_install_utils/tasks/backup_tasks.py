@@ -147,7 +147,6 @@ class BackupTasks(BaseTasks):
             for d in backups_to_move:
                 backup = STAGE_DELETED + '\\' + self._get_machine_name() + '\\' + os.path.basename(d)
                 print(f"Moving backup {d} to {backup}")
-                # self.move_file(d, backup, copy=False)
                 self._file_utils.move_dir(d, backup, self.prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(

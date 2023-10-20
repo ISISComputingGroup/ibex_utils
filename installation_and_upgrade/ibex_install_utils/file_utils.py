@@ -79,6 +79,22 @@ class FileUtils:
             if os.path.exists(path):
                 prompt.prompt_and_raise_if_not_yes(f'Error when deleting "{path}". Please do this manually')
 
+    @staticmethod
+    def robocopy_copy(src, dst, prompt, retries=10):
+        for _ in range(retries):
+            try:
+                args = [f"{src}", f"{dst}", "/E", "/PURGE", "/XJ", "/R:2",  "/LOG:NUL", "/MT",  "/NFL", "/NDL" ,"/NP"]
+                RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
+            except Exception as e:
+                print("Error copying files with robocopy: " + str(e))
+
+            if os.path.exists(dst):
+                break
+            else:
+                print(f"Copy of {src} to {dst} failed, will retry in 5 seconds")
+                # Sleep for a few seconds in case e.g. antivirus has a lock on a file we're trying to delete
+                time.sleep(5)
+
     def mkdir_recursive(self, path):
         """
         Make a directory and all its ancestors
@@ -104,7 +120,7 @@ class FileUtils:
             dst: Destination directory
             prompt (ibex_install_utils.user_prompt.UserPrompt): prompt object to communicate with user
         """
-        shutil.copytree(src, dst)
+        FileUtils.robocopy_copy(src, dst, prompt)
         FileUtils.remove_tree(src, prompt)
 
     @staticmethod
