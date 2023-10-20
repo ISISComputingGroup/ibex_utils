@@ -125,8 +125,8 @@ class BackupTasks(BaseTasks):
         
 
             # Move the folders
-            for app_path in ALL_INSTALL_DIRECTORIES:
-                self._backup_dir(app_path, copy=True)
+            for src in ALL_INSTALL_DIRECTORIES:
+                self._backup_dir(src, copy=True)
 
             
 

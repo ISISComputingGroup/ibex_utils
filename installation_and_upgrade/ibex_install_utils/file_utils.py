@@ -83,8 +83,8 @@ class FileUtils:
     def robocopy_copy(src, dst, prompt, retries=10):
         for _ in range(retries):
             try:
-                args = [f"{src}", f"{dst}", "/E", "/PURGE", "/XJ", "/R:2",  "/LOG:NUL", "/MT",  "/NFL", "/NDL" ,"/NP"]
-                RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
+                args = [f"{src}", f"{dst}", "/E", "/PURGE", "/XJ", "/R:2",  "/LOG:NUL", "/MT",  "/NFL", "/NDL" ,"/NP", "/MT:32"]
+                RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args, expected_return_codes=[0, 1]).run()
             except Exception as e:
                 print("Error copying files with robocopy: " + str(e))
 
