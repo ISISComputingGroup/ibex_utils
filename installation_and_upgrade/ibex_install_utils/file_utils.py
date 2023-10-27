@@ -53,7 +53,7 @@ class FileUtils:
                     if os.path.isdir(path):
                         args = [f"{empty_dir}", f"{path}", "/PURGE", "/NJH", "/NJS", "/NP", "/NFL", "/NDL", "/NS", "/NC", "/R:1", "/LOG:NUL"]
                         try:
-                            RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
+                            RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args, expected_return_codes=[0,1,2]).run()
                         except:
                             pass
                     os.rmdir(empty_dir)
@@ -80,10 +80,10 @@ class FileUtils:
                 prompt.prompt_and_raise_if_not_yes(f'Error when deleting "{path}". Please do this manually')
 
     @staticmethod
-    def robocopy_copy(src, dst, prompt, retries=10):
+    def robocopy_move(src, dst, prompt, retries=10):
         for _ in range(retries):
             try:
-                args = [f"{src}", f"{dst}", "/E", "/PURGE", "/XJ", "/R:2",  "/LOG:NUL", "/MT",  "/NFL", "/NDL" ,"/NP", "/MT:32"]
+                args = [f"{src}", f"{dst}","/E", "/MOV", "/PURGE", "/XJ", "/R:2", "/LOG:NUL", "/NFL", "/NDL", "/NP", "/MT:32"]
                 RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args, expected_return_codes=[0, 1]).run()
             except Exception as e:
                 print("Error copying files with robocopy: " + str(e))
@@ -120,7 +120,7 @@ class FileUtils:
             dst: Destination directory
             prompt (ibex_install_utils.user_prompt.UserPrompt): prompt object to communicate with user
         """
-        FileUtils.robocopy_copy(src, dst, prompt)
+        FileUtils.robocopy_move(src, dst, prompt)
         FileUtils.remove_tree(src, prompt)
 
     @staticmethod
