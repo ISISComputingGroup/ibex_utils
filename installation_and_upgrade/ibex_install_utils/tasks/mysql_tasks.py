@@ -11,6 +11,7 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
 from ibex_install_utils.user_prompt import UserPrompt
+from ibex_install_utils.version_check import version_check
 
 try:
     from subprocess import DETACHED_PROCESS
@@ -60,7 +61,7 @@ class MysqlTasks(BaseTasks):
         return mysql_bin_dir
     
     def _get_mysql_backup_dir(self):
-        mysql_backup_dir = os.path.join(STAGE_DELETED, self._get_machine_name(), self._generate_backup_dir_name())
+        mysql_backup_dir = os.path.join(STAGE_DELETED, self._get_machine_name(), f"ibex_database_backup_{self._today_date_for_filenames()}")
         if not os.path.exists(mysql_backup_dir):
             os.mkdir(mysql_backup_dir)
         return mysql_backup_dir
@@ -289,6 +290,7 @@ class MysqlTasks(BaseTasks):
                 f"MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
                 f"Install it from {VCRUNTIME140_INSTALLER} and confirm when complete")
 
+    @version_check(os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe"), MYSQL_LATEST_VERSION)
     @task("Install latest MySQL")
     def install_mysql(self, force=False):
         """

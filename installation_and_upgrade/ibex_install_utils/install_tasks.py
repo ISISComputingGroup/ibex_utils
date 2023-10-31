@@ -10,6 +10,7 @@ from genie_python import genie as g
 from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
 from ibex_install_utils.tasks.client_tasks import ClientTasks
+from ibex_install_utils.tasks.git_tasks import GitTasks
 from ibex_install_utils.tasks.mysql_tasks import MysqlTasks
 from ibex_install_utils.tasks.python_tasks import PythonTasks
 from ibex_install_utils.tasks.server_tasks import ServerTasks
@@ -51,6 +52,9 @@ class UpgradeInstrument:
             user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
         self._backup_tasks = BackupTasks(
+            user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
+
+        self._git_tasks = GitTasks(
             user_prompt, server_source_dir, client_source_dir, genie_python3_dir, ibex_version, file_utils)
 
     @staticmethod
@@ -178,6 +182,7 @@ class UpgradeInstrument:
         """
         self._system_tasks.install_or_upgrade_git()
         self._system_tasks.check_java_installation()
+        self._git_tasks.show_git_status()
         self._backup_tasks.backup_old_directories()
         self._backup_tasks.backup_checker()
         self._mysql_tasks.backup_database()

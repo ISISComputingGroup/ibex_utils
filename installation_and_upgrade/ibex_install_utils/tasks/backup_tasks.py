@@ -18,7 +18,6 @@ class BackupTasks(BaseTasks):
     # not exist for example Python which has been Python3 for some time
     FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
 
-
     def update_progress_bar(self,progress, total, width=20):
         if total !=0:
             percent = (progress/total) 
@@ -79,7 +78,6 @@ class BackupTasks(BaseTasks):
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
         backup_size = FileUtils.get_size(src)
-
         if backup_size > free:
             needed_space = round((backup_size - free) / (1024 ** 3), 2)
             self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
