@@ -23,9 +23,9 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
   SETLOCAL
   call "%~dp0define_latest_genie_python.bat"
   call C:\Instrument\Apps\EPICS\config_env.bat
-  set "PYTHONDIR=!LATEST_PYTHON_DIR!"
-  set "PYTHONHOME=!LATEST_PYTHON_DIR!"
-  set "PYTHONPATH=!LATEST_PYTHON_DIR!"
+  set "PYTHONDIR=C:\Instrument\Apps\Python3\"
+  set "PYTHONHOME=C:\Instrument\Apps\Python3\
+  set "PYTHONPATH=C:\Instrument\Apps\Python3\
   call "!LATEST_PYTHON!" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_pre_stop
   IF !errorlevel! neq 0 goto ERROR
   start /wait cmd /c "%STOP_IBEX%"

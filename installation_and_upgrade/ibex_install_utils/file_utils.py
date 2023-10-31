@@ -2,14 +2,15 @@
 Filesystem utility classes
 """
 
+import binascii
 import os
 import shutil
 import time
+import zlib
 from ibex_install_utils.exceptions import UserStop
 from ibex_install_utils.run_process import RunProcess
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
-
 
 def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
     latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
@@ -79,7 +80,7 @@ class FileUtils:
                     if os.path.isdir(path):
                         args = [f"{empty_dir}", f"{path}", "/PURGE", "/NJH", "/NJS", "/NP", "/NFL", "/NDL", "/NS", "/NC", "/R:1", "/LOG:NUL"]
                         try:
-                            RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args).run()
+                            RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args, expected_return_codes=[0,1,2]).run()
                         except:
                             pass
                     os.rmdir(empty_dir)
@@ -104,6 +105,22 @@ class FileUtils:
         else:
             if os.path.exists(path):
                 prompt.prompt_and_raise_if_not_yes(f'Error when deleting "{path}". Please do this manually')
+
+    @staticmethod
+    def robocopy_move(src, dst, prompt, retries=10):
+        for _ in range(retries):
+            try:
+                args = [f"{src}", f"{dst}","/E", "/MOV", "/PURGE", "/XJ", "/R:2", "/LOG:NUL", "/NFL", "/NDL", "/NP", "/MT:32"]
+                RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args, expected_return_codes=[0, 1]).run()
+            except Exception as e:
+                print("Error copying files with robocopy: " + str(e))
+
+            if os.path.exists(dst):
+                break
+            else:
+                print(f"Copy of {src} to {dst} failed, will retry in 5 seconds")
+                # Sleep for a few seconds in case e.g. antivirus has a lock on a file we're trying to delete
+                time.sleep(5)
 
     def mkdir_recursive(self, path):
         """
@@ -130,7 +147,7 @@ class FileUtils:
             dst: Destination directory
             prompt (ibex_install_utils.user_prompt.UserPrompt): prompt object to communicate with user
         """
-        shutil.copytree(src, dst)
+        FileUtils.robocopy_move(src, dst, prompt)
         FileUtils.remove_tree(src, prompt)
 
     @staticmethod
@@ -150,3 +167,48 @@ class FileUtils:
                 prompt_message = f"Unable to move '{source}' to '{destination}': {str(ex)}\n Try again?"
                 if prompt.prompt(prompt_message, possibles=["Y", "N"], default="N") != "Y":
                     raise UserStop
+                
+    @staticmethod
+    def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
+        latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
+        build_num = None
+        for line in open(latest_build_path):
+            build_num = line.strip()
+        if build_num is None or build_num == "":
+            raise IOError(f"Latest build num unknown. Cannot read it from '{latest_build_path}'")
+        if directory_above_build_num is None:
+            return os.path.join(build_dir, f"{build_prefix}{build_num}")
+        return os.path.join(build_dir, f"{build_prefix}{build_num}", directory_above_build_num)
+
+    @staticmethod
+    def _get_dir_size(path="."):
+        total = 0
+        with os.scandir(path) as it:
+            for entry in it:
+                if entry.is_file():
+                    total += entry.stat().st_size
+                elif entry.is_dir():
+                    total += FileUtils._get_dir_size(entry.path)
+        return total
+    
+    @staticmethod
+    def get_size(path='.'):
+        if os.path.isfile(path):
+            return os.path.getsize(path)
+        elif os.path.isdir(path):
+            return FileUtils._get_dir_size(path)
+                
+    @staticmethod
+    def dehex_and_decompress(value):
+        """Decompresses the inputted string, assuming it is in hex encoding.
+
+        Args:
+            value (bytes): The string to be decompressed, encoded in hex
+
+        Returns:
+            bytes : A decompressed version of the inputted string
+        """
+        assert type(value) == bytes, \
+            "Non-bytes argument passed to dehex_and_decompress, maybe Python 2/3 compatibility issue\n" \
+            "Argument was type {} with value {}".format(value.__class__.__name__, value)
+        return zlib.decompress(binascii.unhexlify(value))

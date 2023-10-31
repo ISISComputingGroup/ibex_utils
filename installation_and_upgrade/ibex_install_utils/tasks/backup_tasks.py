@@ -1,12 +1,14 @@
 import os
 import shutil
+import shutil
+import sys
+import zipfile
 
-
-from ibex_install_utils.file_utils import get_size
+from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
-    PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH
+    PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH, STAGE_DELETED
 
 ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, EPICS_UTILS_PATH)
 
@@ -16,12 +18,66 @@ class BackupTasks(BaseTasks):
     # not exist for example Python which has been Python3 for some time
     FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
 
+    def update_progress_bar(self,progress, total, width=20):
+        if total !=0:
+            percent = (progress/total) 
+            arrow = '=' * int(round(width * percent))
+            spaces = ' ' * (width - len(arrow))
+            sys.stdout.write(f'\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})')
+            if progress == total:
+                sys.stdout.write('\n')
+            sys.stdout.flush()
+
+
+    def zip_file(self, filename, zipname):
+
+        all_files = []
+        for root, dirs, files in os.walk(filename):
+            for file in files:
+                all_files.append(os.path.join(root, file))
+        
+        i = 1
+        with zipfile.ZipFile(zipname + ".zip", 'w', zipfile.ZIP_DEFLATED, strict_timestamps=False) as zipf:
+            for root, dirs, files in os.walk(filename):
+                for file in files:
+                    zipf.write(os.path.join(root, file), arcname=os.path.join(root, file).replace(filename, ''))
+                    self.update_progress_bar(i, len(all_files))
+                    i = i + 1
+
+    def move_file(self, src, dst, copy=False):
+        all_files = []
+        for root, dirs, files in os.walk(src):
+            for file in files:
+                all_files.append((os.path.join(root, file), os.path.join(dst, os.path.relpath(root, src))))
+
+        total_files = len(all_files)
+
+        if copy:
+            operation = shutil.copy
+        else:
+            operation = shutil.move
+
+        i = 0
+        for file, dest_dir in all_files:
+            try:
+                if not os.path.exists(dest_dir):
+                    os.makedirs(dest_dir)
+                if os.path.exists(file):
+                    operation(file, os.path.join(dest_dir, os.path.basename(file)))
+                    i += 1
+                else:
+                    print(f"File not found: {file}")
+            except Exception as e:
+                print(f"Error: {e}")
+
+            self.update_progress_bar(i, total_files)
+        
+
     def _check_backup_space(self, src):
         # Checks if there is enough space to move dir at src into the backup directory
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
-        backup_size = get_size(src)
-        
+        backup_size = FileUtils.get_size(src)
         if backup_size > free:
             needed_space = round((backup_size - free) / (1024 ** 3), 2)
             self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
@@ -42,10 +98,13 @@ class BackupTasks(BaseTasks):
 
             if copy:
                 print(f"Copying {src} to {backup_dir}")
-                shutil.copytree(src, backup_dir, ignore=ignore)
+                self.move_file(src, backup_dir, copy=True)
+                # self.zip_file(src, backup_dir)
             else:
                 print(f"Moving {src} to {backup_dir}")
-                self._file_utils.move_dir(src, backup_dir, self.prompt)
+                self.move_file(src, backup_dir)
+                # self.zip_file(src, backup_dir)
+                
         else: # if src can't be found on the machine
             if src.lower() in self.FAILED_BACKUP_DIRS_TO_IGNORE:
                 print(f"Skipping {src} backup as not present has been marked as OK")
@@ -61,31 +120,37 @@ class BackupTasks(BaseTasks):
             if not os.path.exists(BACKUP_DIR):
                 os.mkdir(BACKUP_DIR)
 
-            # Delete all but the oldest backup
-            current_backups = [os.path.join(BACKUP_DIR, d) for d in os.listdir(BACKUP_DIR)
-                               if os.path.isdir(os.path.join(BACKUP_DIR, d)) and d.startswith("ibex_backup")]
-            if len(current_backups) > 0:
-                all_but_newest_backup = sorted(current_backups, key=os.path.getmtime)[:-1]
-                backups_to_delete = all_but_newest_backup
-            else:
-                backups_to_delete = []
-
-            for d in backups_to_delete:
-                print(f"Removing backup {d}")
-                self._file_utils.remove_tree(os.path.join(BACKUP_DIR, d), self.prompt)
+        
 
             # Move the folders
-            for app_path in ALL_INSTALL_DIRECTORIES:
-                self._backup_dir(app_path, copy=False)
+            for src in ALL_INSTALL_DIRECTORIES:
+                self._backup_dir(src, copy=True)
+
+            
 
             # Backup settings and autosave
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"), ignore=shutil.ignore_patterns("labview modules",
                                                                                      "$RECYCLE.BIN", "System Volume Information"))
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "var", "Autosave"))
+
+             # Move all but the newest backup
+            current_backups = [os.path.join(BACKUP_DIR, d) for d in os.listdir(BACKUP_DIR)
+                               if os.path.isdir(os.path.join(BACKUP_DIR, d)) and d.startswith("ibex_backup")]
+            if len(current_backups) > 0:
+                all_but_newest_backup = sorted(current_backups, key=os.path.getmtime)[:-1]
+                backups_to_move = all_but_newest_backup
+            else:
+                backups_to_move = []
+
+            for d in backups_to_move:
+                backup = STAGE_DELETED + '\\' + self._get_machine_name() + '\\' + os.path.basename(d)
+                print(f"Moving backup {d} to {backup}")
+                self._file_utils.move_dir(d, backup, self.prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
                 f"manually")
+
 
     #This function checks if the backup has been sucessful by checking for a VERSION.txt file within the backup folders
     @task("Verify backup") 

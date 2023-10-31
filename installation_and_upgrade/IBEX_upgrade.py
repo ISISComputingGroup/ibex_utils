@@ -11,7 +11,7 @@ import semantic_version
 from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
 from ibex_install_utils.exceptions import UserStop, ErrorInTask
 from ibex_install_utils.user_prompt import UserPrompt
-from ibex_install_utils.file_utils import get_latest_directory_path
+from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.logger import Logger
 
 def _get_latest_release_path(release_dir):
@@ -131,13 +131,13 @@ if __name__ == "__main__":
             epics_build_dir = os.path.join(args.kits_icp_dir, "EPICS", args.server_build_prefix+"_CLEAN_win7_" + args.server_arch)
 
         try:
-            DIRECTORIES["EPICS"] = get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS" + server_suffix)
+            DIRECTORIES["EPICS"] = FileUtils.get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS" + server_suffix)
 
             client_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
-            DIRECTORIES["Client"] = get_latest_directory_path(client_build_dir, "BUILD")
+            DIRECTORIES["Client"] = FileUtils.get_latest_directory_path(client_build_dir, "BUILD")
 
             genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
-            DIRECTORIES["genie_python_3"] = get_latest_directory_path(genie_python3_build_dir, "BUILD-")
+            DIRECTORIES["genie_python_3"] = FileUtils.get_latest_directory_path(genie_python3_build_dir, "BUILD-")
         except IOError as e:
             print(e)
             sys.exit(3)

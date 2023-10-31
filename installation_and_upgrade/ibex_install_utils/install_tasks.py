@@ -2,7 +2,10 @@
 Tasks associated with install
 """
 
+import json
 import os
+import warnings
+from genie_python import genie as g
 
 from ibex_install_utils.file_utils import FileUtils, LABVIEW_DAE_DIR
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
@@ -13,7 +16,6 @@ from ibex_install_utils.tasks.python_tasks import PythonTasks
 from ibex_install_utils.tasks.server_tasks import ServerTasks
 from ibex_install_utils.tasks.system_tasks import SystemTasks
 from ibex_install_utils.tasks.vhd_tasks import VHDTasks
-
 
 class UpgradeInstrument:
     """
@@ -167,9 +169,7 @@ class UpgradeInstrument:
         self._client_tasks.perform_client_tests()
         self._server_tasks.perform_server_tests()
         self._server_tasks.run_config_checker()
-        self._server_tasks.save_motor_parameters_to_file()
-        self._server_tasks.save_blocks_to_file()
-        self._server_tasks.save_blockserver_pv_to_file()
+        self._server_tasks.save_motor_blocks_blockserver_to_file(0)
         self._server_tasks.set_alert_url_and_password()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._system_tasks.inform_instrument_scientists()
@@ -207,10 +207,27 @@ class UpgradeInstrument:
             Current the server can not be started or stopped in this python script.
         """
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
-        self._system_tasks.record_running_vis()
-        self._server_tasks.save_motor_parameters_to_file()
-        self._server_tasks.save_blocks_to_file()
-        self._server_tasks.save_blockserver_pv_to_file()
+
+        # Check whether inst is SECI or not
+        central_inst_info = g.get_pv("CS:INSTLIST")
+        central_inst_info = FileUtils.dehex_and_decompress(bytes(central_inst_info, encoding="utf8")).decode("utf-8")
+        central_inst_info = json.loads(central_inst_info)
+
+        central_specific_inst_info = None
+        for inst in central_inst_info:
+
+            if inst["name"] == g.my_pv_prefix[3:-1]:
+                central_specific_inst_info = inst
+                break
+        
+        if central_specific_inst_info is None:
+            warnings.warn("Unable to find instrument in central list of instruments.", UserWarning)
+        else:
+            if central_specific_inst_info["seci"] == "true":
+                self._system_tasks.record_running_vis()
+
+
+        self._server_tasks.save_motor_blocks_blockserver_to_file()
 
     def run_truncate_database(self):
         """

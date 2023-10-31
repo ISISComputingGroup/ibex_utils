@@ -17,3 +17,4 @@ relPaths.sh
 **/.vscode
 .project
 *.py.bak
+*/.vs
