@@ -27,7 +27,7 @@ except ImportError:
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.32"
+MYSQL_LATEST_VERSION = "8.0.35"
 MYSQL_ZIP = os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL",
                          f"mysql-{MYSQL_LATEST_VERSION}-winx64.zip")
 
