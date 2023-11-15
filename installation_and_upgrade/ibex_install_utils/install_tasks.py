@@ -199,6 +199,7 @@ class UpgradeInstrument:
         self._system_tasks.update_release_notes()
         self._system_tasks.reapply_hotfixes()
         self._python_tasks.update_script_definitions()
+        self._git_tasks.checkout_to_release_branch()
 
     def run_instrument_deploy_pre_stop(self):
         """
