@@ -13,10 +13,8 @@ class GitTasks(BaseTasks):
 
     @task(f"Swap instrument git branch to release on CONTROL-SVCS")
     def checkout_to_release_branch(self):
-        subprocess.call(f"cd {EPICS_PATH}", shell=True)
         version = open(f"{EPICS_PATH}/VERSION.txt").read().split()[0] 
-        subprocess.call(f"git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/EPICS.git", shell=True)
-        inst_name = g.my_pv_prefix.split(":")[1]
-        subprocess.call(f"git checkout -b {inst_name}", shell=True)
-        subprocess.call(f"git push -u origin {inst_name}", shell=True)
+        subprocess.call(f"cd {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/EPICS.git", shell=True)
+        subprocess.call(f"cd {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True)
+        subprocess.call(f"cd {EPICS_PATH} && git push -u origin %COMPUTERNAME%", shell=True)
     
