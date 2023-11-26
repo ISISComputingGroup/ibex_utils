@@ -214,6 +214,7 @@ if __name__ == "__main__":
         "System_Tests_debug",
         "System_Tests_static",
         "System_Tests_win32",
+        "System_Tests_galilold",
     ]
     SQUISH_JOBS = [
         "System_Tests_Squish"
