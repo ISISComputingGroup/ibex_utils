@@ -15,6 +15,7 @@ class GitTasks(BaseTasks):
     def checkout_to_release_branch(self):
         version = open(f"{EPICS_PATH}/VERSION.txt").read().split()[0] 
         subprocess.call(f"cd {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/EPICS.git", shell=True)
+        subprocess.call(f"cd {EPICS_PATH} && git add .", shell=True)
         subprocess.call(f"cd {EPICS_PATH} && git commit -m 'Initial deploy commit'", shell=True)
         subprocess.call(f"cd {EPICS_PATH} && git stash", shell=True)
         subprocess.call(f"cd {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True)
