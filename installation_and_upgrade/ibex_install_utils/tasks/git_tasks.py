@@ -17,6 +17,8 @@ class GitTasks(BaseTasks):
         # assumes the alias 'origin' does not exist yet
         subprocess.call(f"cd {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/EPICS.git", shell=True)
         print("Added the remote")
+        subprocess.call(f"cd {EPICS_PATH} && git fetch", shell=True)
+        print("Fetched remote")
         subprocess.call(f"cd {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True)
         print("Checked out to the new branch")
         subprocess.call(f"cd {EPICS_PATH} && git push -u origin %COMPUTERNAME%", shell=True)
