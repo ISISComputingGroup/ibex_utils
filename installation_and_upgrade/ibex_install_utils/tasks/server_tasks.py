@@ -769,7 +769,12 @@ class ServerTasks(BaseTasks):
         if use_old:
             print("Restoring Old galil driver version.")
             #RunProcess(EPICS_PATH, "swap_galil.bat", prog_args=["OLD"]).run()
-            RunProcess("git", prog_args=["checkout", "galil-old"]).run()
+            RunProcess(
+                working_dir=EPICS_PATH,
+                executable_file="git",
+                executable_directory="",
+                prog_args=["checkout", "galil-old"],
+            ).run()
 
     def ioc_dir_exists(self, ioc_dirname):
         full_ioc_path = os.path.join(EPICS_IOC_PATH, ioc_dirname)
