@@ -21,7 +21,7 @@ class GitTasks(BaseTasks):
 
         if re.match(version_pattern, version) is None:
             # assume nightly build so don't want to make new branch/checkout
-            print(f"Version {version} is not a release version, skipping")
+            print(f"Version {version} is not a release version, skipping swapping to release branch")
             return
         
         try:
@@ -39,9 +39,9 @@ class GitTasks(BaseTasks):
         
         try:
             subprocess.check_call(f"cd {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True)
-            print("Checked out to the new branch")
+            print("Checked out to the new release branch")
         except subprocess.CalledProcessError as e:
-            print(f"Error checking out to new branch: {e}")
+            print(f"Error checking out to new release branch: {e}")
         
         try:
             subprocess.check_call(f"cd {EPICS_PATH} && git push -u origin %COMPUTERNAME%", shell=True)
