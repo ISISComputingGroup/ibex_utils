@@ -193,11 +193,11 @@ class UpgradeInstrument:
         self._mysql_tasks.install_mysql()
 
         self._client_tasks.install_ibex_client()
+        self._git_tasks.checkout_to_release_branch()
         self._server_tasks.upgrade_instrument_configuration()
         self._server_tasks.update_calibrations_repository()
         self._system_tasks.apply_changes_noted_in_release_notes()
         self._system_tasks.update_release_notes()
-        self._git_tasks.checkout_to_release_branch()
         self._system_tasks.reapply_hotfixes()
         self._python_tasks.update_script_definitions()
 
