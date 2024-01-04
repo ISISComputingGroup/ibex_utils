@@ -287,7 +287,7 @@ class ServerTasks(BaseTasks):
                     raise ErrorInTask("Git branch is not the same as machine name")
                 try:
                     print(f"     fetch: {repo.git.fetch()}")
-                    print(f"     merge: {repo.git.merge("origin/master")}")
+                    print(f"     merge: {repo.git.merge('origin/master')}")
                 except git.GitCommandError as e:
                     # do gc and prune to remove issues with stale references
                     # this does a pack that takes a while, hence not do every time
@@ -295,7 +295,7 @@ class ServerTasks(BaseTasks):
                     print(f"        gc: {repo.git.gc(prune='now')}")
                     print(f"     prune: {repo.git.remote('prune', 'origin')}")
                     print(f"     fetch: {repo.git.fetch()}")
-                    print(f"     merge: {repo.git.merge("origin/master")}")
+                    print(f"     merge: {repo.git.merge('origin/master')}")
                 # no longer push let the instrument do that on start up if needed
             except git.GitCommandError as e:
                 print(
