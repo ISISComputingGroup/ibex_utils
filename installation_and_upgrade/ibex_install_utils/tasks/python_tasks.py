@@ -3,7 +3,7 @@ import os
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INSTRUMENT_BASE_DIR
 
 
 class PythonTasks(BaseTasks):
@@ -27,3 +27,12 @@ class PythonTasks(BaseTasks):
             print("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
                   "Check with the scientists that it is ok to do this." + \
                   "You can do it by git pull, you may need to merge changes made on the instrument.")
+
+    @task("Remove instrument scripts githooks")
+    def remove_instrument_script_githooks(self):
+        """
+        Remove the githooks in the instrument scripts dierectory
+        """
+        hook_path = os.path.join(INSTRUMENT_BASE_DIR,"scripts", ".git", "hooks", "commit-msg")
+        if os.path.exists(hook_path):
+            os.remove(hook_path)

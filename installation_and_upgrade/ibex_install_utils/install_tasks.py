@@ -200,6 +200,7 @@ class UpgradeInstrument:
         self._system_tasks.update_release_notes()
         self._system_tasks.reapply_hotfixes()
         self._python_tasks.update_script_definitions()
+        self._python_tasks.remove_instrument_script_githooks()
 
     def run_instrument_deploy_pre_stop(self):
         """
