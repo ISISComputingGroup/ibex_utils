@@ -25,7 +25,7 @@ class GitTasks(BaseTasks):
             return
         
         try:
-        # assumes the alias 'origin' does not exist yet
+            # assumes the alias 'origin' does not exist yet
             subprocess.check_call(f"cd {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/EPICS.git", shell=True)
             print("Added the remote")
         except subprocess.CalledProcessError as e:
@@ -38,13 +38,22 @@ class GitTasks(BaseTasks):
             print(f"Error fetching remote: {e}")
         
         try:
+            # run a git status to rebuild index if needed 
+            subprocess.check_call(f"cd {EPICS_PATH} && git status", shell=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running git status: {e}")
+
+        try:
             subprocess.check_call(f"cd {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True)
             print("Checked out to the new release branch")
-        except subprocess.CalledProcessError as e:
-            print(f"Error checking out to new release branch: {e}")
-        
-        try:
             subprocess.check_call(f"cd {EPICS_PATH} && git push -u origin %COMPUTERNAME%", shell=True)
             print("Pushed to the remote")
         except subprocess.CalledProcessError as e:
-            print(f"Error pushing to remote: {e}")    
+            print(f"Error checking out to new release branch and push: {e}")
+
+# something for the future in case creting new beranch fails - maybe one exists we want to use?
+#            try:
+#                subprocess.check_call(f"cd {EPICS_PATH} && git checkout %COMPUTERNAME%", shell=True)
+#                print("Switched to existing release branch")
+#            except subprocess.CalledProcessError as e:
+#                print(f"Error switching to existing release branch and push: {e}")
