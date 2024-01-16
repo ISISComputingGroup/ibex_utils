@@ -346,7 +346,7 @@ class SystemTasks(BaseTasks):
         """
         self.prompt.prompt_and_raise_if_not_yes(message, default="Y")
 
-    def _read_file(path, error_text):
+    def _read_file(self, path, error_text):
         """
         print a file contents to screen
         """
