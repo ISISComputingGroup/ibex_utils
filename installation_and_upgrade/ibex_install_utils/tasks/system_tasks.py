@@ -346,6 +346,18 @@ class SystemTasks(BaseTasks):
         """
         self.prompt.prompt_and_raise_if_not_yes(message, default="Y")
 
+    def _read_file(path, error_text):
+        """
+        print a file contents to screen
+        """
+        data = ""
+        try:
+            with open(path, 'r') as fin:
+                data = fin.read()
+        except:
+            data = error_text
+        return data
+
     def user_confirm_upgrade_type_on_machine(self, machine_type):
         """
         Print information about the current upgrade and prompt the user
@@ -354,9 +366,15 @@ class SystemTasks(BaseTasks):
 
         """
         print(f"Upgrade {BaseTasks._get_machine_name()} as a {machine_type}")
+        server_version = self._read_file(os.path.join(self._server_source_dir, 'VERSION.txt'), 'UNKNOWN')
         print(f"    Server source: {self._server_source_dir}")
+        print(f"          version: {server_version}")
+        client_version = self._read_file(os.path.join(self._client_source_dir, 'Client', 'VERSION.txt'), 'UNKNOWN')
         print(f"    Client source: {self._client_source_dir}")
+        print(f"          version: {client_version}")
+        python_version = self._read_file(os.path.join(self._genie_python_3_source_dir, 'VERSION.txt'), 'UNKNOWN')
         print(f"    Python 3 source: {self._genie_python_3_source_dir}")
+        print(f"            version: {python_version}")
         answer = self.prompt.prompt("Continue? [Y/N]", ["Y", "N"], "Y")
         if answer != "Y":
             raise UserStop()
