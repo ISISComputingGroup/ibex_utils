@@ -44,7 +44,7 @@ class BackupTasks(BaseTasks):
                     self.update_progress_bar(i, len(all_files))
                     i = i + 1
 
-    def move_file(self, src, dst, copy=False):
+    def move_file(self, src, dst, copy=False, ignore=None):
         all_files = []
         for root, dirs, files in os.walk(src):
             for file in files:
@@ -62,9 +62,12 @@ class BackupTasks(BaseTasks):
             try:
                 if not os.path.exists(dest_dir):
                     os.makedirs(dest_dir)
+                # check if the file is in ignore copytree list and if so skip it
                 if os.path.exists(file):
-                    operation(file, os.path.join(dest_dir, os.path.basename(file)))
-                    i += 1
+                    if ignore is not None:
+                        if not ignore(file, os.path.basename(file)):
+                            operation(file, os.path.join(dest_dir, os.path.basename(file)))
+                            i += 1
                 else:
                     print(f"File not found: {file}")
             except Exception as e:
@@ -98,11 +101,11 @@ class BackupTasks(BaseTasks):
 
             if copy:
                 print(f"Copying {src} to {backup_dir}")
-                self.move_file(src, backup_dir, copy=True)
+                self.move_file(src, backup_dir, copy=True, ignore=ignore)
                 # self.zip_file(src, backup_dir)
             else:
                 print(f"Moving {src} to {backup_dir}")
-                self.move_file(src, backup_dir)
+                self.move_file(src, backup_dir, ignore=ignore)
                 # self.zip_file(src, backup_dir)
                 
         else: # if src can't be found on the machine
