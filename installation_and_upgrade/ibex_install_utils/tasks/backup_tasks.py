@@ -17,9 +17,6 @@ class BackupTasks(BaseTasks):
     # lowercase names of directories we are not worried about if they do
     # not exist for example Python which has been Python3 for some time
     FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
-    number_of_files = 0
-    current_file_index = 0
-    temp_copy_bool = False
 
     def update_progress_bar(self,progress, total, width=20):
         if total !=0:
