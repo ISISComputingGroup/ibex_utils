@@ -17,6 +17,9 @@ class BackupTasks(BaseTasks):
     # lowercase names of directories we are not worried about if they do
     # not exist for example Python which has been Python3 for some time
     FAILED_BACKUP_DIRS_TO_IGNORE = [ r'c:\instrument\apps\python' ]
+    number_of_files = 0
+    current_file_index = 0
+    temp_copy_bool = False
 
     def update_progress_bar(self,progress, total, width=20):
         if total !=0:
@@ -43,38 +46,36 @@ class BackupTasks(BaseTasks):
                     zipf.write(os.path.join(root, file), arcname=os.path.join(root, file).replace(filename, ''))
                     self.update_progress_bar(i, len(all_files))
                     i = i + 1
-
+                    
     def move_file(self, src, dst, copy=False, ignore=None):
-        all_files = []
-        for root, dirs, files in os.walk(src):
-            for file in files:
-                all_files.append((os.path.join(root, file), os.path.join(dst, os.path.relpath(root, src))))
+        number_of_files = 0
+        current_file_index = 0
 
-        total_files = len(all_files)
+        def count_files_copy_function(src, dst):
+            nonlocal number_of_files
+            number_of_files += 1
 
-        if copy:
-            operation = shutil.copy
-        else:
-            operation = shutil.move
+        def copy_function(src, dst):
+            nonlocal current_file_index
 
-        i = 0
-        for file, dest_dir in all_files:
+            if copy:
+                operation = shutil.copy
+            else:
+                operation = shutil.move
+
             try:
-                if not os.path.exists(dest_dir):
-                    os.makedirs(dest_dir)
-                # check if the file is in ignore copytree list and if so skip it
-                if os.path.exists(file):
-                    if ignore is not None:
-                        if not ignore(file, os.path.basename(file)):
-                            operation(file, os.path.join(dest_dir, os.path.basename(file)))
-                            i += 1
-                else:
-                    print(f"File not found: {file}")
+                operation(src, dst)
+            except PermissionError as e:
+                print(f"PermissionError: {e}")
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"An unexpected error occurred: {e}")
 
-            self.update_progress_bar(i, total_files)
-        
+            current_file_index += 1
+            self.update_progress_bar(current_file_index, number_of_files)
+
+        shutil.copytree(src, dst, ignore=ignore, copy_function=count_files_copy_function)
+        shutil.copytree(src, dst, ignore=ignore, copy_function=copy_function, dirs_exist_ok=True)
+    
 
     def _check_backup_space(self, src):
         # Checks if there is enough space to move dir at src into the backup directory
