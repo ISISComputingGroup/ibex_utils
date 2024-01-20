@@ -42,20 +42,22 @@ if exist "%GENIECMDLOGDIR%\%GENIECMDLOGFILE%" (
 	robocopy "%GENIECMDLOGDIR%" "%TEMP%" "%GENIECMDLOGFILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
 )
 
-REM Copy the "GALIL_OLD.txt" file, if it exists, to the tmp dir to inform the IBEX Server installation step which Galil version to use
+REM Create the "GALIL_OLD.txt" or "GALIL_NEX.txt" file in tmp dir
+REM to inform the IBEX Server installation step which Galil version to use
 set "GALIL_OLD_FILE=GALIL_OLD.txt"
-set "GALIL_OLD_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL-OLD"
-if exist "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" (
-	@echo Copying Galil old text file before deleting client
-	robocopy "%GALIL_OLD_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
-)
-
-REM Copy the "GALIL_NEW.txt" file, if it exists, to the tmp dir to inform the IBEX Server installation step which Galil version to use
 set "GALIL_NEW_FILE=GALIL_NEW.txt"
-set "GALIL_NEW_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL-NEW"
-if exist "%GALIL_NEW_DIR%\%GALIL_NEW_FILE%" (
-	@echo Copying Galil new text file before deleting client
-	robocopy "%GALIL_NEW_DIR%" "%TEMP%" "%GALIL_NEW_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+set "GALIL_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL"
+set "GALIL_OLD_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL-OLD"
+if exist "%TEMP%\%GALIL_OLD_FILE%" del "%TEMP%\%GALIL_OLD_FILE%"
+if exist "%TEMP%\%GALIL_NEW_FILE%" del "%TEMP%\%GALIL_NEW_FILE%"
+if exist "%GALIL_DIR%\%GALIL_OLD_FILE%" (
+	@echo Detected old Galil driver
+	robocopy "%GALIL_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+)
+if exist "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" (
+    REM GALIL-OLD has not been renamed to GALIL hence we must be using new driver
+	@echo Detected new Galil driver
+	copy /y "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" "%TEMP%\%GALIL_NEW_FILE%"
 )
 
 REM Set python as share just for script call

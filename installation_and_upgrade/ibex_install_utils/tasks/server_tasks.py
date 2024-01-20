@@ -733,7 +733,7 @@ class ServerTasks(BaseTasks):
         """
         Select galil driver to use. Return True if old driver in operation or should be used
         """
-        # GALIL_OLD/NEW.txt file gets copied to the tmp dir by instrument_deploy.bat
+        # GALIL_OLD.txt file gets copied to the tmp dir by instrument_deploy.bat
         tmpdir = tempfile.gettempdir()
 
         if os.path.exists(os.path.join(tmpdir, "GALIL_OLD.txt")):
