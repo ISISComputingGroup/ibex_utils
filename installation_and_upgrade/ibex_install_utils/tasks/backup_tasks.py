@@ -43,35 +43,36 @@ class BackupTasks(BaseTasks):
                     zipf.write(os.path.join(root, file), arcname=os.path.join(root, file).replace(filename, ''))
                     self.update_progress_bar(i, len(all_files))
                     i = i + 1
+                    
+    def backup_files(self, src, dst, copy=False, ignore=None):
+        number_of_files = 0
+        current_file_index = 0
 
-    def move_file(self, src, dst, copy=False):
-        all_files = []
-        for root, dirs, files in os.walk(src):
-            for file in files:
-                all_files.append((os.path.join(root, file), os.path.join(dst, os.path.relpath(root, src))))
+        def count_files_copy_function(src, dst):
+            nonlocal number_of_files
+            number_of_files += 1
 
-        total_files = len(all_files)
+        def copy_function(src, dst):
+            nonlocal current_file_index
 
-        if copy:
-            operation = shutil.copy
-        else:
-            operation = shutil.move
+            if copy:
+                operation = shutil.copy2
+            else:
+                operation = shutil.move
 
-        i = 0
-        for file, dest_dir in all_files:
             try:
-                if not os.path.exists(dest_dir):
-                    os.makedirs(dest_dir)
-                if os.path.exists(file):
-                    operation(file, os.path.join(dest_dir, os.path.basename(file)))
-                    i += 1
-                else:
-                    print(f"File not found: {file}")
+                operation(src, dst)
+            except PermissionError as e:
+                print(f"PermissionError: {e}")
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"An unexpected error occurred: {e}")
 
-            self.update_progress_bar(i, total_files)
-        
+            current_file_index += 1
+            self.update_progress_bar(current_file_index, number_of_files)
+
+        shutil.copytree(src, dst, ignore=ignore, copy_function=count_files_copy_function)
+        shutil.copytree(src, dst, ignore=ignore, copy_function=copy_function, dirs_exist_ok=True)
+    
 
     def _check_backup_space(self, src):
         # Checks if there is enough space to move dir at src into the backup directory
@@ -98,11 +99,11 @@ class BackupTasks(BaseTasks):
 
             if copy:
                 print(f"Copying {src} to {backup_dir}")
-                self.move_file(src, backup_dir, copy=True)
+                self.backup_files(src, backup_dir, copy=True, ignore=ignore)
                 # self.zip_file(src, backup_dir)
             else:
                 print(f"Moving {src} to {backup_dir}")
-                self.move_file(src, backup_dir)
+                self.backup_files(src, backup_dir, ignore=ignore)
                 # self.zip_file(src, backup_dir)
                 
         else: # if src can't be found on the machine
