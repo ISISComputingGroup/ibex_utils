@@ -44,7 +44,7 @@ class BackupTasks(BaseTasks):
                     self.update_progress_bar(i, len(all_files))
                     i = i + 1
                     
-    def move_file(self, src, dst, copy=False, ignore=None):
+    def backup_files(self, src, dst, copy=False, ignore=None):
         number_of_files = 0
         current_file_index = 0
 
@@ -56,7 +56,7 @@ class BackupTasks(BaseTasks):
             nonlocal current_file_index
 
             if copy:
-                operation = shutil.copy
+                operation = shutil.copy2
             else:
                 operation = shutil.move
 
@@ -99,11 +99,11 @@ class BackupTasks(BaseTasks):
 
             if copy:
                 print(f"Copying {src} to {backup_dir}")
-                self.move_file(src, backup_dir, copy=True, ignore=ignore)
+                self.backup_files(src, backup_dir, copy=True, ignore=ignore)
                 # self.zip_file(src, backup_dir)
             else:
                 print(f"Moving {src} to {backup_dir}")
-                self.move_file(src, backup_dir, ignore=ignore)
+                self.backup_files(src, backup_dir, ignore=ignore)
                 # self.zip_file(src, backup_dir)
                 
         else: # if src can't be found on the machine
