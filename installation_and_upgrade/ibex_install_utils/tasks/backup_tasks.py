@@ -14,8 +14,7 @@ from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DA
 ## tuple (PATH,ignore) with ignore pattern passed to shutil.copytree during backup
 ## used to exclude directories from a running instrument that are either not useful
 ## or e.g. may have too long a path or some other issues
-ALL_INSTALL_DIRECTORIES =
-(
+ALL_INSTALL_DIRECTORIES = (
   # tempted to add '*.pyc', '__pycache__' but then it is not an identical backup if renamed back
   (EPICS_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
   (PYTHON_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
