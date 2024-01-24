@@ -14,6 +14,7 @@ if not exist "%SOURCE%" (
     @echo as disconnected. If it is, click on it in explorer to reconnect then try this
     @echo script again. If there are no D: or O: network drives mapped in explorer, then
     @echo you will need to to provide network credentials for access - see wiki
+    @echo https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Deployment-on-an-Instrument-Control-PC 
     goto ERROR
 )
 
