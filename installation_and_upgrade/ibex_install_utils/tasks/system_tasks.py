@@ -30,8 +30,8 @@ SECI_AUTOSTART_LOCATIONS = [os.path.join(USER_STARTUP, SECI), os.path.join(ALLUS
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
 
-JAVA_LATEST_VERSION = "17.0.8"
-JAVA_INSTALLER = os.path.join(THIRD_PARTY_INSTALLERS_DIR, "latest_versions", "OpenJDK17U-jdk_x64_windows_hotspot_17.0.6_10.msi")
+JAVA_LATEST_VERSION = "17.0.9"
+JAVA_INSTALLER = os.path.join(THIRD_PARTY_INSTALLERS_DIR, "latest_versions", "OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.msi")
 
 GIT_LATEST_VERSION = "2.42.0"
 
