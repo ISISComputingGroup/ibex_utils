@@ -10,8 +10,18 @@ from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
     PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH, STAGE_DELETED
 
-ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, EPICS_UTILS_PATH)
 
+## tuple (PATH,ignore) with ignore pattern passed to shutil.copytree during backup
+## used to exclude directories from a running instrument that are either not useful
+## or e.g. may have too long a path or some other issues
+ALL_INSTALL_DIRECTORIES = (
+  # tempted to add '*.pyc', '__pycache__' but then it is not an identical backup if renamed back
+  (EPICS_PATH, shutil.ignore_patterns('jettywork', '*.*dmp', '*.stackdump')),
+  (PYTHON_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
+  (PYTHON_3_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
+  (GUI_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
+  (EPICS_UTILS_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump'))
+)
 
 class BackupTasks(BaseTasks):
     # lowercase names of directories we are not worried about if they do
@@ -124,8 +134,8 @@ class BackupTasks(BaseTasks):
         
 
             # Move the folders
-            for src in ALL_INSTALL_DIRECTORIES:
-                self._backup_dir(src, copy=True)
+            for path in ALL_INSTALL_DIRECTORIES:
+                self._backup_dir(path[0], ignore=path[1], copy=True)
 
             
 
@@ -188,4 +198,4 @@ class BackupTasks(BaseTasks):
 
         """
         for path in ALL_INSTALL_DIRECTORIES:
-            self._file_utils.remove_tree(path, self.prompt, leave_top_if_link=True)
+            self._file_utils.remove_tree(path[0], self.prompt, leave_top_if_link=True)
