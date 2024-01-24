@@ -16,10 +16,10 @@ from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, BACKUP_DA
 ## or e.g. may have too long a path or some other issues
 ALL_INSTALL_DIRECTORIES = (
   # tempted to add '*.pyc', '__pycache__' but then it is not an identical backup if renamed back
-  (EPICS_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
+  (EPICS_PATH, shutil.ignore_patterns('jettywork', '*.*dmp', '*.stackdump')),
   (PYTHON_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
   (PYTHON_3_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
-  (GUI_PATH, shutil.ignore_patterns('jettywork', '.tmp*', '*.*dmp', '*.stackdump')),
+  (GUI_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump')),
   (EPICS_UTILS_PATH, shutil.ignore_patterns('*.*dmp', '*.stackdump'))
 )
 
