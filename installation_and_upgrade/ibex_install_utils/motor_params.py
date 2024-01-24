@@ -147,7 +147,12 @@ def get_params_and_save_to_file(file_reference, num_of_controllers=8):
 
 
     def get_motor_number(item):
-        return int(item['Axis Name'].split(' ')[0].replace('MTR', ''))
+        try:
+            return int(item['Axis Name'].split(' ')[0].replace('MTR', ''))
+        except:
+            # Currently only used for sorting so we can return -1 to bubble these PVs up to the top
+            # if PV doesn't naming convention of MTRx where x is number (e.g. MTRNORTH)
+            return -1
 
     # Sort the data by motor number
     sorted_data = sorted(data, key=get_motor_number)
