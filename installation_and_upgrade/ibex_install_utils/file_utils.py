@@ -5,6 +5,7 @@ Filesystem utility classes
 import binascii
 import os
 import shutil
+import tempfile
 import time
 import zlib
 from ibex_install_utils.exceptions import UserStop
@@ -203,7 +204,9 @@ class FileUtils:
             number_of_files += 1
             size_of_dir += os.path.getsize(src)
         
-        shutil.copytree(path, 'C:/data', ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
+        temp_dir = tempfile.gettempdir()
+        backup_temp_dir = os.path.join(temp_dir, "copy_tree_temp_dir")
+        shutil.copytree(path, backup_temp_dir, ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
         return size_of_dir, number_of_files
 
                 

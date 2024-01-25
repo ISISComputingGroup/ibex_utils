@@ -74,7 +74,7 @@ class BackupTasks(BaseTasks):
 
             current_file_index += 1
             self.update_progress_bar(current_file_index, number_of_files)
-            
+
         shutil.copytree(src, dst, ignore=ignore, copy_function=copy_function, dirs_exist_ok=True)
     
 
@@ -86,8 +86,8 @@ class BackupTasks(BaseTasks):
         if backup_size > free:
             needed_space = round((backup_size - free) / (1024 ** 3), 2)
             self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
-        else:
-            return backup_size, number_of_files
+
+        return backup_size, number_of_files
 
     def _backup_dir(self, src, copy=True, ignore=None):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
