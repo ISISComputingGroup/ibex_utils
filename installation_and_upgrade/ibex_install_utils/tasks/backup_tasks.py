@@ -66,7 +66,7 @@ class BackupTasks(BaseTasks):
                 operation = shutil.move
 
             try:
-                operation(src, dst)
+                operation(FileUtils.winapi_path(src), FileUtils.winapi_path(dst))
             except PermissionError as e:
                 print(f"PermissionError: {e}")
             except Exception as e:
@@ -75,7 +75,8 @@ class BackupTasks(BaseTasks):
             current_file_index += 1
             self.update_progress_bar(current_file_index, number_of_files)
 
-        shutil.copytree(src, dst, ignore=ignore, copy_function=copy_function, dirs_exist_ok=True)
+        shutil.copytree(FileUtils.winapi_path(src), FileUtils.winapi_path(dst), ignore=ignore,
+                        copy_function=copy_function, dirs_exist_ok=True)
     
 
     def _check_backup_space(self, src, ignore=None):
@@ -126,15 +127,11 @@ class BackupTasks(BaseTasks):
         """
         if os.path.exists(BACKUP_DATA_DIR):
             if not os.path.exists(BACKUP_DIR):
-                os.mkdir(BACKUP_DIR)
-
-        
+                os.mkdir(BACKUP_DIR)      
 
             # Move the folders
             for path in ALL_INSTALL_DIRECTORIES:
                 self._backup_dir(path[0], ignore=path[1], copy=True)
-
-            
 
             # Backup settings and autosave
             self._backup_dir(os.path.join(INSTRUMENT_BASE_DIR, "Settings"), ignore=shutil.ignore_patterns("labview modules",
