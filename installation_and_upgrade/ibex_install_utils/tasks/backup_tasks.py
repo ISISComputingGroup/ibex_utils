@@ -54,13 +54,8 @@ class BackupTasks(BaseTasks):
                     self.update_progress_bar(i, len(all_files))
                     i = i + 1
                     
-    def backup_files(self, src, dst, copy=False, ignore=None):
-        number_of_files = 0
+    def backup_files(self, src, dst, copy=False, ignore=None, number_of_files=0):
         current_file_index = 0
-
-        def count_files_copy_function(src, dst):
-            nonlocal number_of_files
-            number_of_files += 1
 
         def copy_function(src, dst):
             nonlocal current_file_index
@@ -79,19 +74,20 @@ class BackupTasks(BaseTasks):
 
             current_file_index += 1
             self.update_progress_bar(current_file_index, number_of_files)
-
-        shutil.copytree(src, dst, ignore=ignore, copy_function=count_files_copy_function)
+            
         shutil.copytree(src, dst, ignore=ignore, copy_function=copy_function, dirs_exist_ok=True)
     
 
-    def _check_backup_space(self, src):
+    def _check_backup_space(self, src, ignore=None):
         # Checks if there is enough space to move dir at src into the backup directory
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
-        backup_size = FileUtils.get_size(src)
+        backup_size, number_of_files = FileUtils.get_size_and_number_of_files(src, ignore=ignore)
         if backup_size > free:
             needed_space = round((backup_size - free) / (1024 ** 3), 2)
             self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
+        else:
+            return backup_size, number_of_files
 
     def _backup_dir(self, src, copy=True, ignore=None):
         backup_dir = os.path.join(self._get_backup_dir(), os.path.basename(src))
@@ -105,15 +101,15 @@ class BackupTasks(BaseTasks):
                 f"Backup dir {backup_dir} already exists. Please backup this app manually")
             return
         if os.path.exists(src):
-            self._check_backup_space(src)
+            backup_size, number_of_files = self._check_backup_space(src, ignore=ignore)
 
             if copy:
                 print(f"Copying {src} to {backup_dir}")
-                self.backup_files(src, backup_dir, copy=True, ignore=ignore)
+                self.backup_files(src, backup_dir, copy=True, ignore=ignore, number_of_files=number_of_files)
                 # self.zip_file(src, backup_dir)
             else:
                 print(f"Moving {src} to {backup_dir}")
-                self.backup_files(src, backup_dir, ignore=ignore)
+                self.backup_files(src, backup_dir, ignore=ignore, number_of_files=number_of_files)
                 # self.zip_file(src, backup_dir)
                 
         else: # if src can't be found on the machine
