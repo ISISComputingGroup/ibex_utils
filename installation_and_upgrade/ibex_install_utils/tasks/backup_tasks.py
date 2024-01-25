@@ -83,9 +83,10 @@ class BackupTasks(BaseTasks):
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
         backup_size, number_of_files = FileUtils.get_size_and_number_of_files(src, ignore=ignore)
-        if backup_size > free:
+        while backup_size > free:
             needed_space = round((backup_size - free) / (1024 ** 3), 2)
             self.prompt.prompt_and_raise_if_not_yes(f"You don't have enough space to backup. Free up {needed_space} GB at {BACKUP_DIR}")
+            _, _, free = shutil.disk_usage(BACKUP_DIR)
 
         return backup_size, number_of_files
 
