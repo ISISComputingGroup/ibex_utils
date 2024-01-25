@@ -13,6 +13,17 @@ from ibex_install_utils.run_process import RunProcess
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 
+def _winapi_path(dos_path):
+    path = os.path.abspath(dos_path)
+    long_path_identifier = "\\\\?\\"
+    if path.startswith(long_path_identifier):
+        win_path = path
+    elif path.startswith("\\\\"):
+        win_path = long_path_identifier + "UNC\\" + path[2:]
+    else:
+        win_path = long_path_identifier + path
+    return win_path
+
 def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
     latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
     build_num = None
@@ -26,7 +37,7 @@ def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num
 
 def _get_dir_size(path="."):
     total = 0
-    with os.scandir(path) as it:
+    with os.scandir(_winapi_path(path)) as it:
         for entry in it:
             if entry.is_file():
                 total += entry.stat().st_size
@@ -35,10 +46,11 @@ def _get_dir_size(path="."):
     return total
 
 def get_size(path='.'):
-    if os.path.isfile(path):
-        return os.path.getsize(path)
-    elif os.path.isdir(path):
-        return _get_dir_size(path)
+    wpath = _winapi_path(path)
+    if os.path.isfile(wpath):
+        return os.path.getsize(wpath)
+    elif os.path.isdir(wpath):
+        return _get_dir_size(wpath)
 
 class FileUtils:
     """
@@ -123,6 +135,10 @@ class FileUtils:
                 # Sleep for a few seconds in case e.g. antivirus has a lock on a file we're trying to delete
                 time.sleep(5)
 
+    @staticmethod
+    def winapi_path(dos_path):
+        return _winapi_path(dos_path)
+
     def mkdir_recursive(self, path):
         """
         Make a directory and all its ancestors
@@ -184,7 +200,7 @@ class FileUtils:
     @staticmethod
     def _get_dir_size(path="."):
         total = 0
-        with os.scandir(path) as it:
+        with os.scandir(winapi_path(path)) as it:
             for entry in it:
                 if entry.is_file():
                     total += entry.stat().st_size
@@ -206,7 +222,7 @@ class FileUtils:
         
         temp_dir = tempfile.gettempdir()
         backup_temp_dir = os.path.join(temp_dir, "copy_tree_temp_dir")
-        shutil.copytree(path, backup_temp_dir, ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
+        shutil.copytree(winapi_path(path), winapi_path(backup_temp_dir), ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
         return size_of_dir, number_of_files
 
                 
