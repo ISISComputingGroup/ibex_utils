@@ -24,7 +24,7 @@ def _winapi_path(dos_path):
         win_path = long_path_identifier + path
     return win_path
 
-def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
+def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None):
     latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
     build_num = None
     for line in open(latest_build_path):
@@ -102,7 +102,7 @@ class FileUtils:
                     else:
                         os.rmdir(path)
                 else:
-                    shutil.rmtree(path)
+                    shutil.rmtree(FileUtils.winapi_path(path))
             except (IOError, OSError, WindowsError):
                 pass
 
@@ -178,7 +178,7 @@ class FileUtils:
         """
         while True:
             try:
-                shutil.move(source, destination)
+                shutil.move(FileUtils.winapi_path(source), FileUtils.winapi_path(destination))
                 break
             except shutil.Error as ex:
                 prompt_message = f"Unable to move '{source}' to '{destination}': {str(ex)}\n Try again?"
@@ -200,7 +200,7 @@ class FileUtils:
     @staticmethod
     def _get_dir_size(path="."):
         total = 0
-        with os.scandir(winapi_path(path)) as it:
+        with os.scandir(FileUtils.winapi_path(path)) as it:
             for entry in it:
                 if entry.is_file():
                     total += entry.stat().st_size
@@ -218,11 +218,11 @@ class FileUtils:
             nonlocal size_of_dir
             nonlocal number_of_files
             number_of_files += 1
-            size_of_dir += os.path.getsize(src)
+            size_of_dir += os.path.getsize(FileUtils.winapi_path(src))
         
         temp_dir = tempfile.gettempdir()
         backup_temp_dir = os.path.join(temp_dir, "copy_tree_temp_dir")
-        shutil.copytree(winapi_path(path), winapi_path(backup_temp_dir), ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
+        shutil.copytree(FileUtils.winapi_path(path), FileUtils.winapi_path(backup_temp_dir), ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
         return size_of_dir, number_of_files
 
                 
