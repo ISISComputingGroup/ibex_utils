@@ -67,7 +67,7 @@ RELEASE_5_5_0_ISISDAE_DIR = os.path.join(
     "windows-x64",
 )
 
-INSTCONFIGS_GIT_URL = "https://control-svcs.isis.cclrc.ac.uk/git/?p=instconfigs/inst.git;a=heads"
+INSTCONFIGS_GIT_URL = "https://control-svcs.isis.cclrc.ac.uk/git/?p=instconfigs/inst.git;a=shortlog;h=refs/heads/{}"
 
 class ServerTasks(BaseTasks):
     """
@@ -403,7 +403,7 @@ class ServerTasks(BaseTasks):
         )
 
         print(
-            f"Checking that configurations are being pushed to the appropriate repository ({INSTCONFIGS_GIT_URL})"
+            f"Checking that configurations are being pushed to the appropriate repository ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
         )
         repo = git.Repo(self._get_config_path())
         repo.git.fetch()
@@ -414,7 +414,7 @@ class ServerTasks(BaseTasks):
         else:
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Unexpected git status. Please confirm that configurations are being pushed to the appropriate "
-                f"remote repository ({INSTCONFIGS_GIT_URL})"
+                f"remote repository ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
             )
 
         self.prompt.prompt_and_raise_if_not_yes(
