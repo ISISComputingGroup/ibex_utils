@@ -5,6 +5,7 @@ Filesystem utility classes
 import binascii
 import os
 import shutil
+import tempfile
 import time
 import zlib
 from ibex_install_utils.exceptions import UserStop
@@ -192,11 +193,22 @@ class FileUtils:
         return total
     
     @staticmethod
-    def get_size(path='.'):
-        if os.path.isfile(path):
-            return os.path.getsize(path)
-        elif os.path.isdir(path):
-            return FileUtils._get_dir_size(path)
+    def get_size_and_number_of_files(path='.', ignore=None):
+        # use copytree to get size of directory
+        size_of_dir = 0
+        number_of_files = 0
+
+        def total_up_size(src, dst):
+            nonlocal size_of_dir
+            nonlocal number_of_files
+            number_of_files += 1
+            size_of_dir += os.path.getsize(src)
+        
+        temp_dir = tempfile.gettempdir()
+        backup_temp_dir = os.path.join(temp_dir, "copy_tree_temp_dir")
+        shutil.copytree(path, backup_temp_dir, ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
+        return size_of_dir, number_of_files
+
                 
     @staticmethod
     def dehex_and_decompress(value):
