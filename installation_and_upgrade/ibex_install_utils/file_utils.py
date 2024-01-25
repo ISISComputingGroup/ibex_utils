@@ -200,7 +200,7 @@ class FileUtils:
     @staticmethod
     def _get_dir_size(path="."):
         total = 0
-        with os.scandir(winapi_path(path)) as it:
+        with os.scandir(FileUtils.winapi_path(path)) as it:
             for entry in it:
                 if entry.is_file():
                     total += entry.stat().st_size
@@ -222,7 +222,7 @@ class FileUtils:
         
         temp_dir = tempfile.gettempdir()
         backup_temp_dir = os.path.join(temp_dir, "copy_tree_temp_dir")
-        shutil.copytree(winapi_path(path), winapi_path(backup_temp_dir), ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
+        shutil.copytree(FileUtils.winapi_path(path), FileUtils.winapi_path(backup_temp_dir), ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
         return size_of_dir, number_of_files
 
                 
