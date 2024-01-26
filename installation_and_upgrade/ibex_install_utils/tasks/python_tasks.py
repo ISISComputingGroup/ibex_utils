@@ -35,4 +35,7 @@ class PythonTasks(BaseTasks):
         """
         hook_path = os.path.join(INSTRUMENT_BASE_DIR,"scripts", ".git", "hooks", "commit-msg")
         if os.path.exists(hook_path):
-            os.remove(hook_path)
+            try:
+                os.remove(hook_path)
+            except:
+                print(f"Unable to remove {hook_path}")
