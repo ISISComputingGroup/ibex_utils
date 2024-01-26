@@ -15,6 +15,10 @@ class GitTasks(BaseTasks):
     @task(f"Swap instrument git branch to release on CONTROL-SVCS")
     def checkout_to_release_branch(self):
         version_pattern = r'^\d+\.\d+\.\d+$'
+        if self._server_source_dir.endswith('32'):
+            remote_repo = "EPICS32.git"
+        else:
+            remote_repo = "EPICS.git"
 
         with open(f"{EPICS_PATH}/VERSION.txt") as file:
             version = file.read().split()[0]
@@ -26,7 +30,7 @@ class GitTasks(BaseTasks):
         
         try:
             # assumes the alias 'origin' does not exist yet
-            subprocess.check_call(f"cd {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/EPICS.git", shell=True)
+            subprocess.check_call(f"cd {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/{remote_repo}", shell=True)
             print("Added the remote")
         except subprocess.CalledProcessError as e:
             print(f"Error creating remote: {e}")
@@ -50,6 +54,7 @@ class GitTasks(BaseTasks):
             print("Pushed to the remote")
         except subprocess.CalledProcessError as e:
             print(f"Error checking out to new release branch and push: {e}")
+            print(f"Branch may previously exist either locally or remotely - intervention required")
 
 # something for the future in case creting new beranch fails - maybe one exists we want to use?
 #            try:
