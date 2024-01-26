@@ -1,0 +1,11 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Jan 04 14:26:33 GMT 2024
+https\://repo.maven.apache.org/maven2/.lastUpdated=1704378393808
+http\://download.eclipse.org/eclipse/updates/4.18/.error=Could not transfer artifact net.bytebuddy\:byte-buddy-parent\:pom\:1.9.3 from/to eclipse-updates (http\://download.eclipse.org/eclipse/updates/4.18)\: Cannot access http\://download.eclipse.org/eclipse/updates/4.18 with type p2 using the available connector factories\: BasicRepositoryConnectorFactory
+http\://downloads.efxclipse.bestsolution.at/p2-repos/openjfx-11/repository/.error=Could not transfer artifact net.bytebuddy\:byte-buddy-parent\:pom\:1.9.3 from/to openjfx (http\://downloads.efxclipse.bestsolution.at/p2-repos/openjfx-11/repository)\: Cannot access http\://downloads.efxclipse.bestsolution.at/p2-repos/openjfx-11/repository with type p2 using the available connector factories\: BasicRepositoryConnectorFactory
+http\://download.eclipse.org/releases/2020-12/.error=Could not transfer artifact net.bytebuddy\:byte-buddy-parent\:pom\:1.9.3 from/to eclipse (http\://download.eclipse.org/releases/2020-12)\: Cannot access http\://download.eclipse.org/releases/2020-12 with type p2 using the available connector factories\: BasicRepositoryConnectorFactory
+http\://download.eclipse.org/efxclipse/runtime-released/3.5.0/site/.error=Could not transfer artifact net.bytebuddy\:byte-buddy-parent\:pom\:1.9.3 from/to efx (http\://download.eclipse.org/efxclipse/runtime-released/3.5.0/site)\: Cannot access http\://download.eclipse.org/efxclipse/runtime-released/3.5.0/site with type p2 using the available connector factories\: BasicRepositoryConnectorFactory
+@p2-openjfx-http\://downloads.efxclipse.bestsolution.at/p2-repos/openjfx-11/repository/.lastUpdated=1704378393782
+@p2-eclipse-http\://download.eclipse.org/releases/2020-12/.lastUpdated=1704378393763
+@p2-efx-http\://download.eclipse.org/efxclipse/runtime-released/3.5.0/site/.lastUpdated=1704378393776
+@p2-eclipse-updates-http\://download.eclipse.org/eclipse/updates/4.18/.lastUpdated=1704378393770
