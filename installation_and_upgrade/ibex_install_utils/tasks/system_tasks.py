@@ -319,7 +319,7 @@ class SystemTasks(BaseTasks):
         """
         git_path = shutil.which("git")
         if os.path.exists(git_path):
-            if "program files" in os.path.realpath(git_path.lower()):
+            if "program files" in os.path.realpath(git_path).lower():
                 print(f"git installed as admin detected in '{git_path}', attempting to upgrade as admin.")
                 admin_commands = AdminCommandBuilder()
                 admin_commands.add_command(f'"{git_path}"', "update-git-for-windows --yes", expected_return_val=None)
