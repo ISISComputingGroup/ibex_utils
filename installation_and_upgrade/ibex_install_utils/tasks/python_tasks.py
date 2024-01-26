@@ -37,5 +37,5 @@ class PythonTasks(BaseTasks):
         if os.path.exists(hook_path):
             try:
                 os.remove(hook_path)
-            except:
-                print(f"Unable to remove {hook_path}")
+            except Exception as e:
+                print(f"Unable to remove {hook_path}: {e}")
