@@ -409,12 +409,13 @@ class ServerTasks(BaseTasks):
         repo.git.fetch()
         status = repo.git.status()
         print(f"Current repository status is: {status}")
-        if f"up-to-date with 'origin/{self._get_machine_name()}" in status:
+        if f"up to date with 'origin/{self._get_machine_name()}'" in status:
             print("Configurations updating correctly")
         else:
             self.prompt.prompt_and_raise_if_not_yes(
-                f"Unexpected git status. Please confirm that configurations are being pushed to the appropriate "
-                f"remote repository ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
+                f"Repository status shown above is either not 'up to date' or not attached to correct branch. "
+                f"Please confirm that configurations are being pushed to the appropriate "
+                f"remote repository branch ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
             )
 
         self.prompt.prompt_and_raise_if_not_yes(
