@@ -319,7 +319,7 @@ class SystemTasks(BaseTasks):
         """
         git_path = shutil.which("git")
         if os.path.exists(git_path):
-            if "program files" in git_path.lower():
+            if "program files" in os.path.realpath(git_path).lower():
                 print(f"git installed as admin detected in '{git_path}', attempting to upgrade as admin.")
                 admin_commands = AdminCommandBuilder()
                 admin_commands.add_command(f'"{git_path}"', "update-git-for-windows --yes", expected_return_val=None)
@@ -334,7 +334,7 @@ class SystemTasks(BaseTasks):
                            executable_file=git_path,
                            executable_directory="",
                            prog_args=["update-git-for-windows", "--yes"],
-                           expected_return_code=None).run()
+                           expected_return_codes=None).run()
             self.prompt.prompt_and_raise_if_not_yes("Press Y/N if Git has installed correctly", default="Y")
         else:
             self.prompt.prompt_and_raise_if_not_yes("Download and Install Git from https://git-scm.com/downloads")
