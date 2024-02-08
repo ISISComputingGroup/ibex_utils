@@ -8,6 +8,8 @@ from ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
 
 
 class BaseTasks:
+    _backup_dir = None
+
     def __init__(self, user_prompt, server_source_dir, client_source_dir, genie_python3_dir,
                  ibex_version, file_utils=FileUtils()):
         """
@@ -57,9 +59,16 @@ class BaseTasks:
     @staticmethod
     def _get_backup_dir():
         """
+        The backup directory contains the date of backup, if this script is
+        running over multiple days this will return the date this method was first called.
+        
         Returns: The backup dir, will create it if needed (both old and dir).
         Raises: IOError if the base dir doesn't exist
         """
+        # Return cached backup directory if there is one
+        if BaseTasks._backup_dir is not None:
+            return BaseTasks._backup_dir
+        
         new_backup_dir = os.path.join(BACKUP_DIR, BaseTasks._generate_backup_dir_name())
 
         if not os.path.exists(BACKUP_DATA_DIR):
@@ -68,5 +77,8 @@ class BaseTasks:
             os.mkdir(BACKUP_DIR)
         if not os.path.exists(new_backup_dir):
             os.mkdir(new_backup_dir)
+        # cache backup dir name (useful when backup happens over multiple days)
+        # it will always refer to the date when backup was started
+        BaseTasks._backup_dir = new_backup_dir
         return new_backup_dir
 

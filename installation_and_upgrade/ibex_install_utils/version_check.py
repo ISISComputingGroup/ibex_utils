@@ -16,7 +16,7 @@ def version_check(program, version):
         """
     
     def _version_check_decorator(func):
-        def _wrapper(self_of_decorated_method):
+        def _wrapper(self_of_decorated_method, *args, **kwargs):
             print(f"Checking \'{program}\' version ...")
 
             try:
@@ -29,9 +29,9 @@ def version_check(program, version):
                     return
                 else:
                     print(f"{INDENT}The installed version appears to be different to required ({version})")
-                    func(self_of_decorated_method)
+                    func(self_of_decorated_method, *args, **kwargs)
             except:
                 print(f"{INDENT}Error occured while checking version, tried to execute \'{program} --version\'")
-                func(self_of_decorated_method)
+                func(self_of_decorated_method, *args, **kwargs)
         return _wrapper
     return _version_check_decorator
