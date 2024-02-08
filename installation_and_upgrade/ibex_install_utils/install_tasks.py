@@ -132,6 +132,7 @@ class UpgradeInstrument:
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
         self._client_tasks.install_ibex_client()
+        self._git_tasks.checkout_to_release_branch()
         self._server_tasks.setup_config_repository()
         self._server_tasks.upgrade_instrument_configuration()
         self._system_tasks.configure_com_ports()
