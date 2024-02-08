@@ -5,7 +5,6 @@ call "%~dp0check_for_admin_console.bat"
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
-set "SUFFIX=%1"
 call "%~dp0\define_latest_genie_python.bat"
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
