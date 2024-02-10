@@ -17,4 +17,6 @@ jobs:
       
     - name : Run tests 
       working-directory: ./installation_and_upgrade
-      run : python -m unittest discover
+      run: |
+        pip install pytest pytest-cov
+        python -m pytest --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
