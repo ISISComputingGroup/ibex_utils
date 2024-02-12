@@ -100,8 +100,14 @@ def get_latest_version_in_dir(path=THIRD_PARTY_INSTALLERS_LATEST_DIR, file_patte
     file_paths = [os.path.join(path, f) for f in filenames]
     return get_latest_version(file_paths)
 
+def version_as_number(path: str):
+    version = get_version_from_metadata(path)
+    version = get_major_minor_patch(version)
+    ver = version.replace(".", "")
+    return int(ver)
+    
 def get_latest_version(paths: List[str]):
-    latest = max(paths, key=get_version_from_metadata)  # Comparing version strings works
+    latest = max(paths, key=version_as_number)  # Comparing version as integers works
     version = get_version_from_metadata(latest)
     return (latest, version)
 
