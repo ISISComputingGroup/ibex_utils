@@ -1,6 +1,6 @@
 import pytest
 import os
-from mock import patch
+from unittest.mock import patch
 from ibex_install_utils.version_check import *
 
 def get_version_from_name(name):
