@@ -10,8 +10,6 @@ import logging
 from ibex_install_utils.tasks.common_paths import THIRD_PARTY_INSTALLERS_LATEST_DIR
 from typing import List
 
-JAVA_INSTALLER_VERSION_REGEX = r"^OpenJDK.*?([0-9.]*)_?[0-9]*.msi"
-GIT_INSTALLER_VERSION_REGEX = r"^Git-([0-9.]*)-[0-9]*-bit.exe"
 VERSION_REGEX = r"\s([0-9]+\.[0-9]+(\.[0-9]+)+)"
 
 JAVA_INSTALLER_PATTERN = r"^OpenJDK.*?([0-9.]*)_?[0-9]*.msi"
@@ -22,7 +20,7 @@ MSI_PRODUCT_VERSION_PROPERTY = "ProductVersion"
 
 INDENT = "    "
 
-def version_check(program, version):
+def version_check(program):
     """
         Decorator for tasks that check program version numbers.
 
@@ -35,25 +33,14 @@ def version_check(program, version):
     def _version_check_decorator(func):
         def _wrapper(self_of_decorated_method, *args, **kwargs):
             print(f"Checking \'{program}\' version ...")
-
             try:
-                version_output = subprocess.check_output(f"{program} --version").decode()
-                version_text = version_output.strip().replace("\n", f"\n{INDENT}")
-
-                installed_version = re.search(VERSION_REGEX, version_text).group(1)
+                installed_version = get_installed_version(program)
                 print(f"Installed version: {installed_version}")
                 _, latest_version = get_latest_version_in_dir(file_pattern=get_version_pattern(program))
 
-                print(f"{INDENT}Installed version details:\n{INDENT}{version_text}")
-
-                # try:
-                # installed_version = get_version(version_text, VERSION_REGEX)
                 if get_major_minor_patch(installed_version) == get_major_minor_patch(latest_version):
                     print(f"{INDENT}Matches required version ({latest_version}), skipping update task.")
                     return
-                # except:
-                #     print(f"{INDENT}Failed to extract version number from details.")
-                #     raise Exception()
 
                 print(f"{INDENT}The installed version appears to be different to required ({latest_version})")
                 # func(self_of_decorated_method, *args, force=True, **kwargs)
@@ -66,9 +53,9 @@ def version_check(program, version):
 
 def get_version_pattern(program):
     if program == "java":
-        return JAVA_INSTALLER_VERSION_REGEX
+        return JAVA_INSTALLER_PATTERN
     elif program == "git":
-        return GIT_INSTALLER_VERSION_REGEX
+        return GIT_INSTALLER_PATTERN
     raise Exception(f"No version pattern regex for program \"{program}\".")
 
 def get_major_minor_patch(version: str):
@@ -78,7 +65,15 @@ def get_major_minor_patch(version: str):
     if segments < 3:
         extracted += ".0" * (3 - segments)
     return extracted
-
+    
+def get_installed_version(program):
+    version_output = subprocess.check_output(f"{program} --version").decode()
+    installed_version = re.search(VERSION_REGEX, version_output).group(1)
+    return get_major_minor_patch(installed_version)
+    
+def get_filenames_in_dir(dir):
+    filenames = next(os.walk(dir), (None, None, []))[2]  # [] if no file
+    return filenames
 
 def get_latest_version_in_dir(path=THIRD_PARTY_INSTALLERS_LATEST_DIR, file_pattern=JAVA_INSTALLER_PATTERN):
     """
@@ -94,7 +89,7 @@ def get_latest_version_in_dir(path=THIRD_PARTY_INSTALLERS_LATEST_DIR, file_patte
     logging.basicConfig(level=logging.DEBUG)
 
     # Get filenames in directory
-    filenames = next(os.walk(path), (None, None, []))[2]  # [] if no file
+    filenames = get_filenames_in_dir(path)
     # Filter for relevant files matching regex
     filenames = [f for f in filenames if re.search(file_pattern, f)]
     file_paths = [os.path.join(path, f) for f in filenames]
@@ -158,6 +153,8 @@ def get_version_from_metadata(path):
 
     Args:
         path: The path to the file.
+    Returns:
+        The version string.
     """
     version = None
     if path.endswith(".msi"):
