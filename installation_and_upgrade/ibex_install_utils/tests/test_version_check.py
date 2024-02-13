@@ -4,6 +4,9 @@ from unittest.mock import patch
 from ibex_install_utils.version_check import *
 
 def get_version_from_name(name):
+    """
+    Return version number read out from the filename
+    """
     basename = os.path.basename(name)
     version = re.search(r"([0-9]+\.[0-9]+(\.[0-9]+)+)", basename).group(1)
     return get_major_minor_patch(version)
@@ -28,24 +31,18 @@ class TestVersionCheck:
         with pytest.raises(AttributeError):
             get_major_minor_patch("java 17.2.4")
 
-    @patch("ibex_install_utils.version_check.get_msi_property")
-    @patch("ibex_install_utils.version_check.get_file_version")
+    @patch("ibex_install_utils.version_check.get_msi_property", return_value="17.0.4.0")
+    @patch("ibex_install_utils.version_check.get_file_version", return_value="2.0.3.0")
     def test_get_version_from_metadata(self, mock_get_file_version, mock_get_msi_property):
-        mock_get_msi_property.return_value = "17.0.4.0"
-        mock_get_file_version.return_value = "2.0.3.0"
-        
         assert get_version_from_metadata("something.msi") == "17.0.4.0"
         assert get_version_from_metadata("something.exe") == "2.0.3.0"
         
         with pytest.raises(Exception):
             get_version_from_metadata("something.txt") 
 
-    @patch("ibex_install_utils.version_check.get_msi_property")
-    @patch("ibex_install_utils.version_check.get_file_version")
+    @patch("ibex_install_utils.version_check.get_msi_property", return_value="17.0.4")
+    @patch("ibex_install_utils.version_check.get_file_version", return_value="2.0.3.0")
     def test_get_latest_version(self, mock_get_file_version, mock_get_msi_property):
-        mock_get_msi_property.return_value = "17.0.4"
-        mock_get_file_version.return_value = "2.0.3.0"
-
         assert get_latest_version(["./java.msi", "./git.exe"]) == ("./java.msi", "17.0.4")
 
         with pytest.raises(Exception):
