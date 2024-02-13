@@ -1,7 +1,10 @@
 import pytest
 import os
-from unittest.mock import patch
+from unittest.mock import Mock
 from ibex_install_utils.version_check import *
+from ibex_install_utils.java import Java
+from ibex_install_utils.git import Git
+from ibex_install_utils.software import is_higher
 
 def get_version_from_name(name):
     """
@@ -9,9 +12,27 @@ def get_version_from_name(name):
     """
     basename = os.path.basename(name)
     version = re.search(r"([0-9]+\.[0-9]+(\.[0-9]+)+)", basename).group(1)
-    return get_major_minor_patch(version)
+    return version
+
+
+MOCK_JAVA_INSTALLERS = [
+    "OpenJDK_17.0.4.3_1.msi", # latest
+    "OpenJDK_17.0.1_1.msi",
+    "OpenJDK_17.0.4_1.msi",
+    "OpenJDK_16.0.4.6_1.msi"
+]
+
+MOCK_GIT_INSTALLERS = [
+    "Git-2.3.0-1.exe",
+    "Git-2.3.2-1-bit.exe",  # latest
+    "Git-1.2.3-1-bit.exe"
+]
 
 class TestVersionCheck:
+
+    def test_is_higher(self):
+        assert is_higher("17.0", "17.0.1") == True
+        assert is_higher("17.0.6", "17.0.1") == False
 
     def test_get_major_minor_patch(self):
         # good version patterns
@@ -31,53 +52,66 @@ class TestVersionCheck:
         with pytest.raises(AttributeError):
             get_major_minor_patch("java 17.2.4")
 
-    @patch("ibex_install_utils.version_check.get_msi_property", return_value="17.0.4.0")
-    @patch("ibex_install_utils.version_check.get_file_version", return_value="2.0.3.0")
-    def test_get_version_from_metadata(self, mock_get_file_version, mock_get_msi_property):
-        assert get_version_from_metadata("something.msi") == "17.0.4.0"
-        assert get_version_from_metadata("something.exe") == "2.0.3.0"
-        
-        with pytest.raises(Exception):
-            get_version_from_metadata("something.txt") 
+    def test_GIVEN_java_latest_WHEN_version_checked_THEN_decorated_function_not_called(self):
+        javaMock = Java()
 
-    @patch("ibex_install_utils.version_check.get_msi_property", return_value="17.0.4")
-    @patch("ibex_install_utils.version_check.get_file_version", return_value="2.0.3.0")
-    def test_get_latest_version(self, mock_get_file_version, mock_get_msi_property):
-        assert get_latest_version(["./java.msi", "./git.exe"]) == ("./java.msi", "17.0.4")
+        javaMock.get_installed_version = Mock(return_value="17.0.4")
+        javaMock.get_installer_version = Mock(side_effect=get_version_from_name)
+        javaMock.find_installers = Mock(return_value=MOCK_JAVA_INSTALLERS)
 
-        with pytest.raises(Exception):
-            get_latest_version(["./java.msi", "./git.exe", "./something.txt"])
+        inner_function = Mock()
 
-    @patch("ibex_install_utils.version_check.get_version_from_metadata", side_effect=get_version_from_name)
-    @patch("ibex_install_utils.version_check.get_installed_version")
-    @patch("ibex_install_utils.version_check.get_filenames_in_dir")
-    def test_version_check(self, mock_get_filenames_in_dir, mock_get_installed_version, mock_get_version_from_metadata):
-        mock_get_filenames_in_dir.return_value = ["OpenJDK_17.0.1_1.msi",
-                                                  "OpenJDK_17.0.4_1.msi",
-                                                  "OpenJDK_16.0.4.6_1.msi"]
-        mock_get_installed_version.return_value = "17.0.4"
+        @version_check(javaMock)
+        def function(_):
+            inner_function()
 
-        @version_check("java")
-        def should_run(_, should_run):
-            # As a result of the version check decorator this should not run
-            # if the simulated verions match
-            assert should_run == True
+        function(self)
+        inner_function.assert_not_called()
 
-        should_run(self, False)
+    def test_GIVEN_java_old_WHEN_version_checked_THEN_decorated_function_called(self):
+        javaMock = Java()
 
-        mock_get_installed_version.return_value = "17.0.0.3"
+        javaMock.get_installed_version = Mock(return_value="17.0.0")
+        javaMock.get_installer_version = Mock(side_effect=get_version_from_name)
+        javaMock.find_installers = Mock(return_value=MOCK_JAVA_INSTALLERS)
 
-        should_run(self, True)  #TODO fix because we will never know if it ran or not
+        functionMock = Mock()
 
-        mock_get_filenames_in_dir.return_value = ["Git-2.3.0-1.exe",
-                                                  "Git-2.3.2-1-bit.exe",
-                                                  "Git-1.2.3-1-bit.exe"]
-        mock_get_installed_version.return_value = "2.3.2.1" # fourth segment is disregarded in comparison
+        @version_check(javaMock)
+        def function(_):
+            functionMock()
 
-        @version_check("git")
-        def should_run_git(_, should_run):
-            # As a result of the version check decorator this should not run
-            # if the simulated verions match
-            assert should_run == True
-        
-        should_run_git(self, False)
+        function(self)
+        functionMock.assert_called_once()
+
+    def test_GIVEN_git_latest_WHEN_version_checked_THEN_decorated_function_not_called(self):
+        gitMock = Git()
+
+        gitMock.get_installed_version = Mock(return_value="2.3.2")
+        gitMock.get_installer_version = Mock(side_effect=get_version_from_name)
+        gitMock.find_installers = Mock(return_value=MOCK_GIT_INSTALLERS)
+
+        functionMock = Mock()
+
+        @version_check(gitMock)
+        def function(_):
+            functionMock()
+
+        function(self)
+        functionMock.assert_not_called()
+
+    def test_GIVEN_git_old_WHEN_version_checked_THEN_decorated_function_called(self):
+        gitMock = Git()
+
+        gitMock.get_installed_version = Mock(return_value="2.3.0")
+        gitMock.get_installer_version = Mock(side_effect=get_version_from_name)
+        gitMock.find_installers = Mock(return_value=MOCK_GIT_INSTALLERS)
+
+        functionMock = Mock()
+
+        @version_check(gitMock)
+        def function(_):
+            functionMock()
+
+        function(self)
+        functionMock.assert_called_once()

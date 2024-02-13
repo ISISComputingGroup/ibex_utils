@@ -1,14 +1,9 @@
 """
 Third party program version checker infrastructure.
 """
-import subprocess
 import re
-import msilib
-import os
-import win32api
-import logging
 from ibex_install_utils.tasks.common_paths import THIRD_PARTY_INSTALLERS_LATEST_DIR
-from typing import List
+from ibex_install_utils.software import Software
 
 VERSION_REGEX = r"\s([0-9]+\.[0-9]+(\.[0-9]+)+)"
 
@@ -19,8 +14,8 @@ WIX_INSTALLER_PATTERN = r"^wix.*\.exe"
 MSI_PRODUCT_VERSION_PROPERTY = "ProductVersion"
 
 INDENT = "    "
-
-def version_check(program):
+    
+def version_check(software: Software):
     """
         Decorator for tasks that check program version numbers.
 
@@ -32,11 +27,11 @@ def version_check(program):
     
     def _version_check_decorator(func):
         def _wrapper(self_of_decorated_method, *args, **kwargs):
-            print(f"Checking \'{program}\' version ...")
+            print(f"Checking \'{software}\' version ...")
             try:
-                installed_version = get_installed_version(program)
+                installed_version = software.get_installed_version()
                 print(f"Installed version: {installed_version}")
-                _, latest_version = get_latest_version_in_dir(file_pattern=get_version_pattern(program))
+                _, latest_version = software.find_latest_installer()
 
                 if get_major_minor_patch(installed_version) == get_major_minor_patch(latest_version):
                     print(f"{INDENT}Matches required version ({latest_version}), skipping update task.")
@@ -51,12 +46,6 @@ def version_check(program):
         return _wrapper
     return _version_check_decorator
 
-def get_version_pattern(program):
-    if program == "java":
-        return JAVA_INSTALLER_PATTERN
-    elif program == "git":
-        return GIT_INSTALLER_PATTERN
-    raise Exception(f"No version pattern regex for program \"{program}\".")
 
 def get_major_minor_patch(version: str):
     version_pattern = r"^([0-9]+(\.[0-9]+){0,2})(\.[0-9]+)?$"
@@ -65,103 +54,3 @@ def get_major_minor_patch(version: str):
     if segments < 3:
         extracted += ".0" * (3 - segments)
     return extracted
-    
-def get_installed_version(program):
-    version_output = subprocess.check_output(f"{program} --version").decode()
-    installed_version = re.search(VERSION_REGEX, version_output).group(1)
-    return get_major_minor_patch(installed_version)
-    
-def get_filenames_in_dir(dir):
-    filenames = next(os.walk(dir), (None, None, []))[2]  # [] if no file
-    return filenames
-
-def get_latest_version_in_dir(path=THIRD_PARTY_INSTALLERS_LATEST_DIR, file_pattern=JAVA_INSTALLER_PATTERN):
-    """
-    Retrieves the latest version from the shares folder conforming to the regex pattern.
-
-    Args:
-        version_pattern: the regex that matches the installers version number as its first group.
-    Returns:
-        The latest version matching the regex on the shares.
-    Raises:
-        Exception: Raises exception if no matches were found.
-    """
-    logging.basicConfig(level=logging.DEBUG)
-
-    # Get filenames in directory
-    filenames = get_filenames_in_dir(path)
-    # Filter for relevant files matching regex
-    filenames = [f for f in filenames if re.search(file_pattern, f)]
-    file_paths = [os.path.join(path, f) for f in filenames]
-    return get_latest_version(file_paths)
-
-def version_as_number(path: str):
-    version = get_version_from_metadata(path)
-    version = get_major_minor_patch(version)
-    ver = version.replace(".", "")
-    return int(ver)
-    
-def get_latest_version(paths: List[str]):
-    latest = max(paths, key=version_as_number)  # Comparing version as integers works
-    version = get_version_from_metadata(latest)
-    return (latest, version)
-
-def get_file_version(path: str):
-    """Reads the version of a file from file version info.
-
-    Args:
-        path: The path to the file.
-    Returns:
-        The string version (x.x.x.x) on successful read, None otherwise.
-    """
-    version = None
-    try:
-        info = win32api.GetFileVersionInfo(path, '\\')
-        ms = info['FileVersionMS']
-        ls = info['FileVersionLS']
-        version = f"{win32api.HIWORD(ms)}.{win32api.LOWORD(ms)}.{win32api.HIWORD(ls)}.{win32api.LOWORD(ls)}"
-    except:
-        logging.exception(f"Can't get file version info of '{path}'")
-    logging.info(f"Read version '{version}' from file info of '{path}'")
-    return version
-
-def get_msi_property(path: str, property: str):
-    """Reads a property from msi metadata database of a file.
-
-    Args:
-        path: The path to the file.
-        property: The property to read.
-    Returns:
-        The string value of the property on successful read, None otherwise.
-    """
-    value = None
-    try:
-        db = msilib.OpenDatabase(path, msilib.MSIDBOPEN_READONLY)
-        view = db.OpenView("SELECT Value FROM Property WHERE Property='" + property + "'")
-        view.Execute(None)
-        result = view.Fetch()
-        value = result.GetString(1)
-    except:
-        logging.exception(f"Can't read property '{property}' from file '{path}'.")
-    logging.info(f"Read value '{value}' for property '{property}' from file '{path}'.")
-    return value
-
-def get_version_from_metadata(path):
-    """
-    Reads the product version from file metadata.
-    Currently supports .msi and .exe
-
-    Args:
-        path: The path to the file.
-    Returns:
-        The version string.
-    """
-    version = None
-    if path.endswith(".msi"):
-        version = get_msi_property(path, MSI_PRODUCT_VERSION_PROPERTY)
-    elif path.endswith(".exe"):
-        version = get_file_version(path)
-    
-    if version is None:
-        raise Exception(f"Can't get version of {path}")
-    return version
