@@ -74,7 +74,7 @@ class Software(ABC):
         # The following did not always work, because it only takes major minor patch into consideration.
         # latest = max(installer_paths, key=lambda path : int(get_major_minor_patch(self.get_installer_version(path)).replace(".", "")))
         return (latest_installer, latest_version)
-    
+
 def is_higher(v1, v2):
     """
     Returns True if v2 represents a higher version than v1.

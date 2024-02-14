@@ -2,16 +2,11 @@
 Third party program version checker infrastructure.
 """
 import re
-from ibex_install_utils.tasks.common_paths import THIRD_PARTY_INSTALLERS_LATEST_DIR
 from ibex_install_utils.software import Software
 
 VERSION_REGEX = r"\s([0-9]+\.[0-9]+(\.[0-9]+)+)"
 
-JAVA_INSTALLER_PATTERN = r"^OpenJDK.*?([0-9.]*)_?[0-9]*.msi"
-GIT_INSTALLER_PATTERN = r"^Git-([0-9.]*)-[0-9]*-bit.exe"
 WIX_INSTALLER_PATTERN = r"^wix.*\.exe"
-
-MSI_PRODUCT_VERSION_PROPERTY = "ProductVersion"
 
 INDENT = "    "
     
@@ -27,10 +22,10 @@ def version_check(software: Software):
     
     def _version_check_decorator(func):
         def _wrapper(self_of_decorated_method, *args, **kwargs):
-            print(f"Checking \'{software}\' version ...")
+            print(f"Checking \'{software.get_name()}\' version ...")
             try:
                 installed_version = software.get_installed_version()
-                print(f"Installed version: {installed_version}")
+                print(f"{INDENT}Installed version: {installed_version}")
                 _, latest_version = software.find_latest_installer()
 
                 if get_major_minor_patch(installed_version) == get_major_minor_patch(latest_version):

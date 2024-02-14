@@ -1,8 +1,7 @@
-import logging
 import re
 import subprocess
-import win32api
 
+from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.software import Software
 from ibex_install_utils.version_check import VERSION_REGEX, get_major_minor_patch
 
@@ -20,24 +19,4 @@ class Git(Software):
         return r"^Git-([0-9.]*)-[0-9]*-bit.exe"
     
     def get_installer_version(self, path: str) -> str:
-        return get_file_version(path)
-
-
-def get_file_version(path: str):
-    """Reads the version of a file from file version info.
-
-    Args:
-        path: The path to the file.
-    Returns:
-        The string version (x.x.x.x) on successful read, None otherwise.
-    """
-    version = None
-    try:
-        info = win32api.GetFileVersionInfo(path, '\\')
-        ms = info['FileVersionMS']
-        ls = info['FileVersionLS']
-        version = f"{win32api.HIWORD(ms)}.{win32api.LOWORD(ms)}.{win32api.HIWORD(ls)}.{win32api.LOWORD(ls)}"
-    except:
-        logging.exception(f"Can't get file version info of '{path}'")
-    logging.info(f"Read version '{version}' from file info of '{path}'")
-    return version
+        return FileUtils.get_version(path)
