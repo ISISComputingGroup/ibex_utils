@@ -66,11 +66,9 @@ class Software(ABC):
         latest_version = self.get_installer_version(latest_installer)
         for installer in installer_paths:
             v = self.get_installer_version(installer)
-            print("latest: " + latest_version)
-            print("version: " + v)
+            #TODO do some logging
 
             if is_higher(latest_version, v):
-                print("higher")
                 latest_installer = installer
                 latest_version = v
         # The following did not always work, because it only takes major minor patch into consideration.
@@ -97,6 +95,8 @@ def is_higher(v1, v2):
         except:
             s2 = 0
         
-        if s2 < s1:
+        if s1 < s2:
+            return True
+        elif s1 > s2:
             return False
-    return True
+    return False
