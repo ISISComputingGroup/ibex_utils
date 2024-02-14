@@ -291,7 +291,6 @@ class MysqlTasks(BaseTasks):
                 f"MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
                 f"Install it from {VCRUNTIME140_INSTALLER} and confirm when complete")
 
-    # @version_check(os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysql.exe"), MYSQL_LATEST_VERSION)
     @version_check(MySQL())
     @task("Install latest MySQL")
     def install_mysql(self, force=False):
