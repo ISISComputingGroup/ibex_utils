@@ -1,7 +1,3 @@
-#use the following command in an epic terminal 
-#python -m pytest
-#to run the file as a temp fix
-
 import io
 import os
 from unittest.mock import patch, Mock
@@ -22,7 +18,7 @@ BACKUP_DIRECTORIES = [
 
 class TestBackupTasks:
     @patch('sys.stdout', new_callable=io.StringIO)
-    def test_update_progress_bar(self, mockstdout):
+    def test_WHEN_updating_THEN_progress_bar_works(self, mockstdout):
    
         BackupTasks('','','','','').update_progress_bar(10, 20)
         expected_output = '\rProgress: [==========          ] 50% (10/20)'
@@ -35,4 +31,3 @@ class TestBackupTasks:
 
         for dir in BACKUP_DIRECTORIES:
             os.path.exists.assert_any_call(dir)
-
