@@ -2,7 +2,7 @@
 Third party program version checker infrastructure.
 """
 import re
-from ibex_install_utils.software import Software
+from ibex_install_utils.software_dependency import SoftwareDependency
 
 VERSION_REGEX = r"\s([0-9]+\.[0-9]+(\.[0-9]+)+)"
 
@@ -10,7 +10,7 @@ WIX_INSTALLER_PATTERN = r"^wix.*\.exe"
 
 INDENT = "    "
     
-def version_check(software: Software):
+def version_check(software: SoftwareDependency):
     """
         Decorator for tasks that check program version numbers.
 
@@ -26,7 +26,7 @@ def version_check(software: Software):
             try:
                 installed_version = software.get_installed_version()
                 print(f"{INDENT}Installed version: {installed_version}")
-                _, latest_version = software.find_latest_installer()
+                _, latest_version = software.find_latest()
 
                 if get_major_minor_patch(installed_version) == get_major_minor_patch(latest_version):
                     print(f"{INDENT}Matches required version ({latest_version}), skipping update task.")

@@ -12,7 +12,7 @@ from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
 from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.version_check import version_check
-from ibex_install_utils.mysql import MySQL
+from ibex_install_utils.software_dependency.mysql import MySQL
 
 try:
     from subprocess import DETACHED_PROCESS

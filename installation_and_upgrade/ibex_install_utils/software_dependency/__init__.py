@@ -4,10 +4,9 @@ import re
 from abc import ABC, abstractmethod
 from ibex_install_utils.tasks.common_paths import THIRD_PARTY_INSTALLERS_LATEST_DIR
 
-class Software(ABC):
+class SoftwareDependency(ABC):
     """
-    Represents a software installed on the system whose version can be checked
-    and whose installers are located in some dir on the system.
+    Represents a software dependency installed on the system.
     """
 
     @abstractmethod
@@ -25,47 +24,52 @@ class Software(ABC):
         ...
 
     @abstractmethod
-    def get_installer_pattern(self) -> str:
+    def get_file_pattern(self) -> str:
         """
-        Return the regex to match the installer file for this software.
+        Return the regex to match the files describing different versions of this software.
         """
         ...
 
     @abstractmethod
-    def get_installer_version(self, path: str) -> str:
+    def get_version_of(self, path: str) -> str:
         """
-        Return the version of the installer file.
+        Return the version of the software dependency described by the path.
 
         Args:
-            path: The path to the installer file.
+            path: The path to the dir/file.
         """
         ...
     
-    def get_installers_dir(self) -> str:
+    def get_search_dir(self) -> str:
         """
-        Return the path to the directory where the installer(s) are located
+        Return the path to the directory containing the available versions of the software.
         """
         return THIRD_PARTY_INSTALLERS_LATEST_DIR
     
-    def find_installers(self) -> list[str]:
+    def find_available(self) -> list[str]:
         """
-        Return a list of paths pointing to the installers for this software.
+        Return a list of paths pointing to the available versions of this software on the system.
         """
         # Get filenames in directory
-        filenames = next(os.walk(self.get_installers_dir()), (None, None, []))[2]  # [] if no file
+        filenames = next(os.walk(self.get_search_dir()), (None, None, []))[2]  # [] if no file
         # Filter for relevant files matching regex
-        filenames = [f for f in filenames if re.search(self.get_installer_pattern(), f)]
-        file_paths = [os.path.join(self.get_installers_dir(), f) for f in filenames]
+        filenames = [f for f in filenames if re.search(self.get_file_pattern(), f)]
+        file_paths = [os.path.join(self.get_search_dir(), f) for f in filenames]
 
         return file_paths
 
-    def find_latest_installer(self) -> tuple[str, str]:
-        installer_paths = self.find_installers()
+    def find_latest(self) -> tuple[str, str]:
+        """
+        Return a tuple of (dependency_file, version)
+        where the dependency_file points to the location describing the latest version of the software
+        and the version is the version of this dependency.
+        """
+        installer_paths = self.find_available()
         # Compare versions
         latest_installer = installer_paths[0]
-        latest_version = self.get_installer_version(latest_installer)
+        latest_version = self.get_version_of(latest_installer)
         for installer in installer_paths:
-            v = self.get_installer_version(installer)
+            v = self.get_version_of(installer)
             #TODO do some logging
 
             if is_higher(latest_version, v):

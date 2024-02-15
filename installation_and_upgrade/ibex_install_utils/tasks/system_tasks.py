@@ -13,8 +13,8 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, THIRD_PARTY_INSTALLERS_DIR
 from ibex_install_utils.version_check import version_check
-from ibex_install_utils.java import Java
-from ibex_install_utils.git import Git
+from ibex_install_utils.software_dependency.java import Java
+from ibex_install_utils.software_dependency.git import Git
 
 GIGABYTE = 1024 ** 3
 
@@ -113,7 +113,7 @@ class SystemTasks(BaseTasks):
         """
         Checks Java installation
         """
-        installer, _ = Java().find_latest_installer()
+        installer, _ = Java().find_latest()
 
         if os.path.exists(installer):
             print(f"Running installer at ({installer})...")

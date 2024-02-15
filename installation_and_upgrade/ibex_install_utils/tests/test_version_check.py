@@ -2,9 +2,10 @@ import pytest
 import os
 from unittest.mock import Mock
 from ibex_install_utils.version_check import *
-from ibex_install_utils.java import Java
-from ibex_install_utils.git import Git
-from ibex_install_utils.software import is_higher
+from ibex_install_utils.software_dependency.java import Java
+from ibex_install_utils.software_dependency.git import Git
+from ibex_install_utils.software_dependency.mysql import MySQL
+from ibex_install_utils.software_dependency import is_higher
 
 def get_version_from_name(name):
     """
@@ -56,8 +57,8 @@ class TestVersionCheck:
         javaMock = Java()
 
         javaMock.get_installed_version = Mock(return_value="17.0.4")
-        javaMock.get_installer_version = Mock(side_effect=get_version_from_name)
-        javaMock.find_installers = Mock(return_value=MOCK_JAVA_INSTALLERS)
+        javaMock.get_version_of = Mock(side_effect=get_version_from_name)
+        javaMock.find_available = Mock(return_value=MOCK_JAVA_INSTALLERS)
 
         inner_function = Mock()
 
@@ -72,8 +73,8 @@ class TestVersionCheck:
         javaMock = Java()
 
         javaMock.get_installed_version = Mock(return_value="17.0.0")
-        javaMock.get_installer_version = Mock(side_effect=get_version_from_name)
-        javaMock.find_installers = Mock(return_value=MOCK_JAVA_INSTALLERS)
+        javaMock.get_version_of = Mock(side_effect=get_version_from_name)
+        javaMock.find_available = Mock(return_value=MOCK_JAVA_INSTALLERS)
 
         functionMock = Mock()
 
@@ -88,8 +89,8 @@ class TestVersionCheck:
         gitMock = Git()
 
         gitMock.get_installed_version = Mock(return_value="2.3.2")
-        gitMock.get_installer_version = Mock(side_effect=get_version_from_name)
-        gitMock.find_installers = Mock(return_value=MOCK_GIT_INSTALLERS)
+        gitMock.get_version_of = Mock(side_effect=get_version_from_name)
+        gitMock.find_available = Mock(return_value=MOCK_GIT_INSTALLERS)
 
         functionMock = Mock()
 
@@ -104,8 +105,8 @@ class TestVersionCheck:
         gitMock = Git()
 
         gitMock.get_installed_version = Mock(return_value="2.3.0")
-        gitMock.get_installer_version = Mock(side_effect=get_version_from_name)
-        gitMock.find_installers = Mock(return_value=MOCK_GIT_INSTALLERS)
+        gitMock.get_version_of = Mock(side_effect=get_version_from_name)
+        gitMock.find_available = Mock(return_value=MOCK_GIT_INSTALLERS)
 
         functionMock = Mock()
 
