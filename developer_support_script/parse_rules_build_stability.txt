@@ -1,0 +1,5 @@
+# allow for [timestamp]
+start /(?i)^(\[[^]]*\] )?\*\*\*\*\*\*/
+error /(?i)^(\[[^]]*\] )?error:/
+warning /(?i)^(\[[^]]*\] )?warning:?/
+info /(?i)^(\[[^]]*\] )?info:?/
