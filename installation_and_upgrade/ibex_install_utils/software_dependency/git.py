@@ -1,7 +1,7 @@
 import re
 import subprocess
 
-from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.file_utils import get_version
 from ibex_install_utils.software_dependency import SoftwareDependency
 from ibex_install_utils.version_check import VERSION_REGEX, get_major_minor_patch
 
@@ -18,4 +18,4 @@ class Git(SoftwareDependency):
         return r"^Git-([0-9.]*)-[0-9]*-bit.exe"
     
     def get_version_of(self, path: str) -> str:
-        return FileUtils.get_version(path)
+        return get_version(path)

@@ -5,7 +5,7 @@ import subprocess
 from ibex_install_utils.software_dependency import SoftwareDependency
 from ibex_install_utils.version_check import VERSION_REGEX, get_major_minor_patch
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA
-from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.file_utils import get_version, file_in_zip
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 
@@ -26,8 +26,8 @@ class MySQL(SoftwareDependency):
         filename, _ = os.path.splitext(os.path.basename(path))
 
         exe_within_zip = f'{filename}/bin/mysql.exe'
-        with FileUtils.file_in_zip(path, exe_within_zip) as mysql_exe:
-            return FileUtils.get_version(mysql_exe.name)
+        with file_in_zip(path, exe_within_zip) as mysql_exe:
+            return get_version(mysql_exe.name)
     
     def get_search_dir(self) -> str:
         return os.path.join(INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "MySQL")

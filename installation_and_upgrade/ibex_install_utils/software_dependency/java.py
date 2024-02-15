@@ -1,7 +1,7 @@
 import re
 import subprocess
 
-from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.file_utils import get_msi_property
 from ibex_install_utils.software_dependency import SoftwareDependency
 from ibex_install_utils.version_check import VERSION_REGEX, get_major_minor_patch
 
@@ -18,4 +18,4 @@ class Java(SoftwareDependency):
         return r"^OpenJDK.*?([0-9.]*)_?[0-9]*.msi"
     
     def get_version_of(self, path: str) -> str:
-        return FileUtils.get_msi_property(path, "ProductVersion")
+        return get_msi_property(path, "ProductVersion")

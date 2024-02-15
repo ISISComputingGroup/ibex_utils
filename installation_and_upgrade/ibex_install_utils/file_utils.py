@@ -246,72 +246,69 @@ class FileUtils:
             "Argument was type {} with value {}".format(value.__class__.__name__, value)
         return zlib.decompress(binascii.unhexlify(value))
 
-    @staticmethod
-    def get_version(path: str):
-        """Reads the version of a file from file version info.
+def get_version(path: str):
+    """Reads the version of a file from file version info.
 
-        Args:
-            path: The path to the file.
-        Returns:
-            The string version (x.x.x.x) on successful read, None otherwise.
-        """
-        version = None
-        try:
-            info = win32api.GetFileVersionInfo(path, '\\')
-            ms = info['FileVersionMS']
-            ls = info['FileVersionLS']
-            version = f"{win32api.HIWORD(ms)}.{win32api.LOWORD(ms)}.{win32api.HIWORD(ls)}.{win32api.LOWORD(ls)}"
-        except:
-            logging.exception(f"Can't get file version info of '{path}'")
-        logging.info(f"Read version '{version}' from file info of '{path}'")
-        return version
-    
-    @staticmethod
-    def get_msi_property(path: str, property: str) -> str:
-        """Reads a property from msi metadata database of a file.
+    Args:
+        path: The path to the file.
+    Returns:
+        The string version (x.x.x.x) on successful read, None otherwise.
+    """
+    version = None
+    try:
+        info = win32api.GetFileVersionInfo(path, '\\')
+        ms = info['FileVersionMS']
+        ls = info['FileVersionLS']
+        version = f"{win32api.HIWORD(ms)}.{win32api.LOWORD(ms)}.{win32api.HIWORD(ls)}.{win32api.LOWORD(ls)}"
+    except:
+        logging.exception(f"Can't get file version info of '{path}'")
+    logging.info(f"Read version '{version}' from file info of '{path}'")
+    return version
 
-        Args:
-            path: The path to the file.
-            property: The property to read.
-        Returns:
-            The string value of the property on successful read, None otherwise.
-        """
-        value = None
-        try:
-            db = msilib.OpenDatabase(path, msilib.MSIDBOPEN_READONLY)
-            view = db.OpenView("SELECT Value FROM Property WHERE Property='" + property + "'")
-            view.Execute(None)
-            result = view.Fetch()
-            value = result.GetString(1)
-        except:
-            logging.exception(f"Can't read property '{property}' from file '{path}'.")
-        logging.info(f"Read value '{value}' for property '{property}' from file '{path}'.")
-        return value
+def get_msi_property(path: str, property: str) -> str:
+    """Reads a property from msi metadata database of a file.
 
-    @contextmanager
-    @staticmethod
-    def file_in_zip(zipname, peek_at_filename: str):
-        """
-        Usage:
-            with file_in_zip(zipname, filename_within_zip) as file:
-                do something
-        """
-        _, file_extension = os.path.splitext(peek_at_filename)
-        try:
-            tmp = tempfile.NamedTemporaryFile(mode='wb', suffix=file_extension, delete=False)  # Manually delete file.
-            
-            with zipfile.ZipFile(zipname) as z:
-                with z.open(peek_at_filename) as zf:
-                    shutil.copyfileobj(zf, tmp)
+    Args:
+        path: The path to the file.
+        property: The property to read.
+    Returns:
+        The string value of the property on successful read, None otherwise.
+    """
+    value = None
+    try:
+        db = msilib.OpenDatabase(path, msilib.MSIDBOPEN_READONLY)
+        view = db.OpenView("SELECT Value FROM Property WHERE Property='" + property + "'")
+        view.Execute(None)
+        result = view.Fetch()
+        value = result.GetString(1)
+    except:
+        logging.exception(f"Can't read property '{property}' from file '{path}'.")
+    logging.info(f"Read value '{value}' for property '{property}' from file '{path}'.")
+    return value
 
-            #! Workaround
-            # Wen trying to read file version you get:
-            # 'The specified image file did not contain a resource section.'
-            # unless you close and reopen the file.
-            tmp.close()
-            tmp = open(tmp.name)
+@contextmanager
+def file_in_zip(zipname, peek_at_filename: str):
+    """
+    Usage:
+        with file_in_zip(zipname, filename_within_zip) as file:
+            do something
+    """
+    _, file_extension = os.path.splitext(peek_at_filename)
+    try:
+        tmp = tempfile.NamedTemporaryFile(mode='wb', suffix=file_extension, delete=False)  # Manually delete file.
+        
+        with zipfile.ZipFile(zipname) as z:
+            with z.open(peek_at_filename) as zf:
+                shutil.copyfileobj(zf, tmp)
 
-            yield tmp
-        finally:
-            tmp.close()
-            os.remove(tmp.name)  # Manually remove temp file
+        #! Workaround
+        # Wen trying to read file version you get:
+        # 'The specified image file did not contain a resource section.'
+        # unless you close and reopen the file.
+        tmp.close()
+        tmp = open(tmp.name)
+
+        yield tmp
+    finally:
+        tmp.close()
+        os.remove(tmp.name)  # Manually remove temp file
