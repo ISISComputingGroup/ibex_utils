@@ -1,6 +1,7 @@
 import os
 
 INSTRUMENT_BASE_DIR = os.path.join("C:\\", "Instrument")
+SCRIPTS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Scripts")
 APPS_BASE_DIR = os.path.join(INSTRUMENT_BASE_DIR, "Apps")
 VAR_DIR = os.path.join(INSTRUMENT_BASE_DIR, "var")
 INST_SHARE_AREA = os.path.join(r"\\isis.cclrc.ac.uk", "inst$")
