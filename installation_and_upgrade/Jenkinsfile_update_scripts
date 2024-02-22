@@ -35,7 +35,7 @@ pipeline {
                 echo 'Check Instrument/Scripts can have a clean merge master, and then merge master into it'
                 timeout(time: 1, unit: 'HOURS') {
                     bat '''
-                        call call_update_scripts.bat
+                        call installation_and_upgrade/call_update_scripts.bat
                     '''
                 }
             }
