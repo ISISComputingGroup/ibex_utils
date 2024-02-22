@@ -23,7 +23,7 @@ class UpdateScripts(BaseTasks):
             print(f"Error Fetching all changes and merging: {e}")
 
         try:
-            subprocess.check_call(f"cd {SCRIPTS_BASE_DIR} && git push -u origin %COMPUTERNAME%", shell=True)
+            subprocess.check_call(f"cd {SCRIPTS_BASE_DIR} && git push --set-upstream origin %COMPUTERNAME%", shell=True)
             print("Pushing to branch")
         except subprocess.CalledProcessError as e:
             print(f"Error pushing to branch: {e}")
@@ -37,3 +37,6 @@ class UpdateScripts(BaseTasks):
 if __name__ == "__main__":
     prompt = UserPrompt(False,True)
     UpdateScripts(prompt, "", "", "", "", "").update_scripts()
+
+
+
