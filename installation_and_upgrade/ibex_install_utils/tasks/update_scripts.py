@@ -35,7 +35,7 @@ class UpdateScripts(BaseTasks):
             print(f"Error pushing to branch: {e}")
 
 if __name__ == "__main__":
-    prompt = UserPrompt(False,True)
+    prompt = UserPrompt(True,False)
     UpdateScripts(prompt, "", "", "", "", "").update_scripts()
 
 

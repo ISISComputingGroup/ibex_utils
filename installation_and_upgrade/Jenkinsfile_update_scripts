@@ -1,0 +1,56 @@
+#!groovy
+
+pipeline {
+    // using same agnert as ConfigCheck job
+    agent {
+        label {
+            label 'ConfigCheck'
+        }
+    }
+
+    triggers {
+        cron('H 8 * * *')
+    }
+
+    environment {
+        SSH_CREDENTIALS = credentials('SSH')
+        TEST_INSTRUMENT_LIST = "${TEST_INSTRUMENT_LIST}"
+        USE_TEST_INSTRUMENT_LIST = "${USE_TEST_INSTRUMENT_LIST}"
+        DEBUG_MODE = "${DEBUG_MODE}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                timeout(time: 2, unit: 'HOURS') {
+                    retry(5) {
+                        checkout scm
+                    }
+                }
+            }
+        }
+
+        stage('Check Instrument/Scripts can have master merged into it') {
+            steps {
+                echo 'Check Instrument/Scripts can have a clean merge master, and then merge master into it'
+                timeout(time: 1, unit: 'HOURS') {
+                    bat '''
+                        call call_update_scripts.bat
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            logParser([
+                projectRulePath: 'parse_rules',
+                parsingRulesPath: '',
+                showGraphs: true,
+                unstableOnWarning: true,
+                useProjectRule: true,
+            ])
+        }
+    }
+}
