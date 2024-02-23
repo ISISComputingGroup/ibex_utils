@@ -6,7 +6,6 @@ import os
 import subprocess
 from types import NoneType
 from typing import Union, List
-
 from ibex_install_utils.exceptions import ErrorInRun
 
 
@@ -14,9 +13,11 @@ class RunProcess:
     """
     Create a process runner to run a process.
     """
+
     def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None,
                  capture_pipes=True, std_in=None, log_command_args=True,
-                 expected_return_codes: Union[int, List[int], None] = [0]):
+                 expected_return_codes: Union[int, List[int], None] = [0], capture_last_output=False,
+                 progress_metric=[]):
         """
         Create a process that needs running
 
@@ -31,6 +32,9 @@ class RunProcess:
             log_command_args (bool): Whether to show the full command line that is being executed.
             expected_return_codes (int, None, List[int]): The expected return code for this command. Set it to None to
                 disable return-code checking.
+            capture_last_output: Whether to record the last console output of a command while pipes are captured.
+            progress_metric: A list that is either empty if progress is not being calculated, or contains the output to
+                count, the 100% value, and optionally a label for printing progress
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
@@ -38,8 +42,11 @@ class RunProcess:
         self._prog_args = prog_args
         self._capture_pipes = capture_pipes
         self._stdin = std_in
+        self._capture_last_output = capture_last_output
+        self.captured_output = ""
+        self._progress_metric = progress_metric
         if isinstance(expected_return_codes, int):
-            expected_return_codes = [expected_return_codes]   
+            expected_return_codes = [expected_return_codes]
         self._expected_return_codes = expected_return_codes
         self.log_command_args = log_command_args
         if std_in is not None and self._capture_pipes:
@@ -86,8 +93,10 @@ class RunProcess:
                 process = subprocess.Popen(command_line, cwd=self._working_dir,
                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                            universal_newlines=True)
-                for stdout_line in iter(process.stdout.readline, ""):
-                    print(f"    > {stdout_line}")
+                if len(self._progress_metric) < 2:
+                    self.output_no_progress(process)
+                else:
+                    self.output_progress(process)
                 process.stdout.close()
                 return_code = process.wait()
                 if self._expected_return_codes is not None and return_code not in self._expected_return_codes:
@@ -105,10 +114,28 @@ class RunProcess:
                 print(f"Process failed with return code {ex.returncode} (expected {self._expected_return_codes}) "
                       f"and no output.")
 
-            raise ErrorInRun(f"Command failed with return code {ex.returncode} (expected {self._expected_return_codes})")
+            raise ErrorInRun(
+                f"Command failed with return code {ex.returncode} (expected {self._expected_return_codes})")
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun(f"Command '{self._bat_file}' not found in '{self._working_dir}'")
             elif ex.errno == 22:
-                raise ErrorInRun(f"Directory not found to run command '{self._bat_file}', command is in :  '{self._working_dir}'")
+                raise ErrorInRun(
+                    f"Directory not found to run command '{self._bat_file}', command is in :  '{self._working_dir}'")
             raise ex
+
+    def output_no_progress(self, process):
+        for stdout_line in iter(process.stdout.readline, ""):
+            print(f"    > {stdout_line}")
+            if self._capture_last_output:
+                self.captured_output = stdout_line
+
+    def output_progress(self, process):
+        count = 0
+        label = ""
+        if len(self._progress_metric) > 2:
+            label = self._progress_metric[2]
+        for stdout_line in iter(process.stdout.readline, ""):
+            if self._progress_metric[1] in stdout_line:
+                count = count + 1
+                print(f"{label}{count}/{self._progress_metric[0]}")
