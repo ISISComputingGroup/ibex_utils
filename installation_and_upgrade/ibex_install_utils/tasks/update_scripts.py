@@ -17,7 +17,7 @@ class UpdateScripts(BaseTasks):
             print(f"Error checking out to instrument branch: {e}")
 
         try:
-            subprocess.check_call(f"cd {SCRIPTS_BASE_DIR} && git fetch --all  && git merge master", shell=True)
+            subprocess.check_call(f"cd {SCRIPTS_BASE_DIR} && git fetch --all  && git merge origin/master", shell=True)
             print("Fetching all changes and merging")
         except subprocess.CalledProcessError as e:
             print(f"Error Fetching all changes and merging: {e}")
