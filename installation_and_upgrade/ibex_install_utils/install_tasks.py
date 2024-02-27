@@ -149,6 +149,9 @@ class UpgradeInstrument:
         self._system_tasks.put_autostart_script_in_startup_area()
         self._python_tasks.update_script_definitions()
 
+    def save_motor_params(self):
+        self._server_tasks.save_motor_parameters_to_file()
+
     def run_instrument_deploy(self):
         """
         Deploy a full IBEX upgrade on an existing instrument.
@@ -356,4 +359,8 @@ UPGRADE_TYPES = {
     'run_vhd_post_install' : (
         UpgradeInstrument.run_vhd_post_install,
         "Run final task on system after VHD has been mounted locally"),
+    'save_motor_params' : (
+        UpgradeInstrument.save_motor_params,
+        "Save motor parameters to csv file"
+    )
 }
