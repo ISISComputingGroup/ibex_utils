@@ -2,6 +2,7 @@ import os
 import shutil
 import shutil
 
+from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.progress_bar import ProgressBar
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.task import task
@@ -127,12 +128,14 @@ class BackupTasks(BaseTasks):
         """
         try:
             # Optimistic start
+            print(f"\nPreparing to back up {src} ...")
+
             _, number_of_files = self._check_backup_space(src, ignore=ignore)
             self.progress_bar.total = number_of_files
 
             dst = self._path_to_backup(src)
 
-            print(("Copying" if copy else "Moving") + f" {src} to {dst}")
+            print("Attempting to " + ("copy" if copy else "move") + f" {src} to {dst}")
 
             def copy_function(src, dst):
                 """Just a copy or move operation that also updates the progress bar."""
@@ -181,6 +184,11 @@ class BackupTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Something went wrong while backing up {src}. Please backup this app manually.")
 
+        else:
+            # Finished successfully
+            print(f"Successfully backed up to {dst}.")
+
+    #? Moving other backups to stage deleted could be a task on its own
     def _move_old_backups_to_share(self):
         """
         Move all but the newest backup to the shares.
@@ -198,3 +206,21 @@ class BackupTasks(BaseTasks):
             backup = STAGE_DELETED + '\\' + self._get_machine_name() + '\\' + os.path.basename(d)
             print(f"Moving backup {d} to {backup}")
             self._file_utils.move_dir(d, backup, self.prompt)
+
+if __name__ == "__main__":
+    """For running task standalone
+    Must be called with pythonpath set to `<exact path on your pc>/installation_and_upgrade`
+    as that is the root of this module and all our imports work that way.
+
+    This effectively means to call `set PYTHONPATH=. && python ibex_install_utils/tasks/backup_tasks.py`
+    from the installation_and_upgrade directory in terminal.
+    """
+    print("Running backup task standalone.")
+
+    #! Copying older backups to share will likely fail on developer machines
+    prompt = UserPrompt(False, True)
+    task = BackupTasks(prompt, '', '', '', '')
+
+    task.backup_old_directories()
+    task.backup_checker()
+    task.remove_old_ibex()
