@@ -1,14 +1,22 @@
 import sys
 
 class ProgressBar:
+    """
+    A simple progress bar that can be used to print/update progress in the terminal.
 
+    To use first set the total value. To show progress bar call print()
+    and to change progress modify the value of progress accordingly.
+    Progress value should be <= total value.
+
+    """
     def __init__(self):
-      self.total = 0
-      self.width = 20
-      self.progress = 0
+        self.total = 0
+        self.width = 20
+        self.progress = 0
     
     def print(self):
-       if self.total !=0:
+        """Print/Update progress line on standard output"""
+        if self.total !=0:
             percent = (self.progress / self.total) 
             arrow = '=' * int(round(self.width * percent))
             spaces = ' ' * (self.width - len(arrow))
