@@ -513,6 +513,7 @@ class ServerTasks(BaseTasks):
         with self.timestamped_pv_backups_file(
             name="motors", directory="motors", extension="csv"
         ) as f:
+            print(f"saving motor params to {f.name}")
             get_params_and_save_to_file(f)
 
     def save_blocks_to_file(self):
