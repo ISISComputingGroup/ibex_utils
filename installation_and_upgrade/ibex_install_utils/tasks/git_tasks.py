@@ -2,9 +2,12 @@ import subprocess
 
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import EPICS_PATH
+from ibex_install_utils.tasks.common_paths import EPICS_PATH, SETTINGS_CONFIG_PATH
+from ibex_install_utils.exceptions import ErrorInRun, ErrorInTask
 from genie_python import genie as g
 import re
+import git
+import os
 
 class GitTasks(BaseTasks):
 
@@ -62,3 +65,54 @@ class GitTasks(BaseTasks):
 #                print("Switched to existing release branch")
 #            except subprocess.CalledProcessError as e:
 #                print(f"Error switching to existing release branch and push: {e}")
+    
+    #decorator class to check that the machine name matches a git branch
+    def inst_name_matches_branch():
+        repo = git.Repo(
+            os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name())
+        )
+        if repo.active_branch.name != BaseTasks._get_machine_name():
+            print(
+                f"Git branch, '{repo.active_branch}', is not the same as machine name ,'{BaseTasks._get_machine_name()}' "
+            )
+            raise ErrorInTask("Git branch is not the same as machine name")
+
+    def automatic_merge_of_git_remote(self, branch_to_merge_from, branch_to_merge_to, repo):
+        f"""
+        Attempt an automatic merge of one branch {branch_to_merge_from} to another, {branch_to_merge_to} in {repo}
+        """
+        manual_prompt = (
+            "Merge the master configurations branch into the instrument configuration. "
+            "From C:\Instrument\Settings\config\[machine name] run:\n"
+            "    0. Clean up any in progress merge (e.g. git merge --abort)\n"
+            "    1. git checkout master\n"
+            "    2. git pull\n"
+            "    3. git checkout [machine name]\n"
+            "    4. git merge master\n"
+            "    5. Resolve any merge conflicts\n"
+            "    6. git push\n"
+        )
+            
+        automatic_prompt = "Attempt automatic merge?"
+        
+        if self.prompt.confirm_step(automatic_prompt):     
+            try:
+                try:
+                    print(f"     fetch: {repo.git.fetch()}")
+                    print(f"     merge: {repo.git.merge(f'{branch_to_merge_from}')}")
+                except git.GitCommandError as e:
+                    # do gc and prune to remove issues with stale references
+                    # this does a pack that takes a while, hence not do every time
+                    print(f"Retrying git operations after a prune due to {e}")
+                    print(f"        gc: {repo.git.gc(prune='now')}")
+                    print(f"     prune: {repo.git.remote('prune', 'origin')}")
+                    print(f"     fetch: {repo.git.fetch()}")
+                    print(f"     merge: {repo.git.merge(f'{branch_to_merge_from}')}")
+                    # no longer push let the instrument do that on start up if needed
+            except git.GitCommandError as e:
+                print(
+                    f"Error doing automatic merge, please perform the merge manually: {e}"
+                )
+            self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
+        else:
+            self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
