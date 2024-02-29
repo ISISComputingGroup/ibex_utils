@@ -343,16 +343,25 @@ class MysqlTasks(BaseTasks):
         """
         Backup the database
         """
+        mysql_bin_dir = self._get_mysql_dir()
         result_file = os.path.join(self._get_mysql_backup_dir(),
                                    SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()))
 
-        mysql_bin_dir = self._get_mysql_dir()
+        # Get the number of tables to be backed up
+        sql_command = "show databases; use information_schema; show tables; SELECT FOUND_ROWS();"
+        count_tables = RunProcess(MYSQL_FILES_DIR, "mysql.exe", executable_directory=mysql_bin_dir,
+                   prog_args=["-u", "root", "-p",
+                              "--execute", sql_command],
+                   capture_pipes=True, capture_last_output=True)
+        count_tables.run()
+        tables = int(count_tables.captured_output) - 1  # it seems to end up with an extra table when counting this.
 
-        dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction",
+        dump_command = ["-u", "root", "-p", "--all-databases", "--single-transaction", "--verbose",
                         f"--result-file={result_file}"]
         RunProcess(MYSQL_FILES_DIR, "mysqldump.exe", executable_directory=mysql_bin_dir,
                    prog_args=dump_command,
-                   capture_pipes=False).run()
+                   capture_pipes=True,
+                   progress_metric=[tables, "Retrieving table structure", "Backing up table "]).run()
 
         if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
             self.prompt.prompt_and_raise_if_not_yes(
