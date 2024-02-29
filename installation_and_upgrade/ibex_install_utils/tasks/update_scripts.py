@@ -10,9 +10,12 @@ class UpdateScripts(BaseTasks):
     
     @task(f"Update scripts repo by merging master branch into instrument branch?")
     def update_scripts(self):
-        subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR}")
-        git_instance = GitTasks()
-        git_instance.automatic_merge_of_git_remote("origin/master", "%COMPUTERNAME%", {SCRIPTS_BASE_DIR})
+        try:
+            subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR}")
+            git_instance = GitTasks()
+            git_instance.automatic_merge_of_git_remote("origin/master", "%COMPUTERNAME%", {SCRIPTS_BASE_DIR})
+        except subprocess.CalledProcessError as e:
+            print(f"{e}")
         
         #try:
         #    subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR} && git checkout %COMPUTERNAME% || git checkout -b %COMPUTERNAME%", shell=True)
