@@ -5,17 +5,6 @@ from ibex_install_utils.tasks.backup_tasks import BackupTasks
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.user_prompt import UserPrompt
 
-EPICS_PATH_BACKUP = os.path.join(BaseTasks._get_backup_dir(),'EPICS', 'VERSION.txt')
-PYTHON3_PATH_BACKUP = os.path.join(BaseTasks._get_backup_dir(),'Python3', 'VERSION.txt')
-GUI_PATH_BACKUP = os.path.join(BaseTasks._get_backup_dir(),'Client_E4', 'VERSION.txt') 
-SETTINGS_PATH = os.path.join(BaseTasks._get_backup_dir(), "Settings")
-AUTOSAVE_PATH = os.path.join(BaseTasks._get_backup_dir(), "Autosave")
-UTILS_PATH = os.path.join(BaseTasks._get_backup_dir(), 'EPICS_UTILS')
-
-BACKUP_DIRECTORIES = [
-    EPICS_PATH_BACKUP, PYTHON3_PATH_BACKUP, GUI_PATH_BACKUP, SETTINGS_PATH, AUTOSAVE_PATH, UTILS_PATH
-]
-
 class TestBackupTasks:
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_WHEN_updating_THEN_progress_bar_works(self, mockstdout):
@@ -25,9 +14,25 @@ class TestBackupTasks:
         assert mockstdout.getvalue() == expected_output
     
     def test_WHEN_verifying_backup_THEN_all_directories_checked(self):
+        backup_path = 'C:\\Data\\old\\today\\'
+
+        def mock_get_backup_dir():
+            return backup_path
+        
+        BaseTasks._get_backup_dir = Mock(side_effect=mock_get_backup_dir)
         os.path.exists = Mock()
         prompter = UserPrompt(True, False)
+
+        # For the purpose of testing, we don't need to properly set up the BackupTasks() constructor 
+        # method, so '' is an empty argument to placehold
         BackupTasks(prompter,'','','','').backup_checker()
 
-        for dir in BACKUP_DIRECTORIES:
+        for dir in [
+            f'{backup_path}EPICS\\VERSION.txt',
+            f'{backup_path}Python3\\VERSION.txt',
+            f'{backup_path}Client_E4\\VERSION.txt',
+            f'{backup_path}Settings',
+            f'{backup_path}Autosave',
+            f'{backup_path}EPICS_UTILS'
+        ]:
             os.path.exists.assert_any_call(dir)
