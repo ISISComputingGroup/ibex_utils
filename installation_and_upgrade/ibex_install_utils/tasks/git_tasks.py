@@ -78,7 +78,6 @@ class GitTasks(BaseTasks):
             )
             raise ErrorInTask("Git branch is not the same as machine name")
 
-    @task(f"Attempt automatic merge of one branch into another")
     def automatic_merge_of_git_remote(self, branch_to_merge_from, branch_to_merge_to, repo):
         f"""
         Attempt an automatic merge of one branch {branch_to_merge_from} to another, {branch_to_merge_to} in {repo}
@@ -97,7 +96,7 @@ class GitTasks(BaseTasks):
             
         automatic_prompt = "Attempt automatic merge?"
         
-        if self.prompt.confirm_steps(automatic_prompt):     
+        if self.prompt.confirm_step(automatic_prompt):     
             try:
                 try:
                     print(f"     fetch: {repo.git.fetch()}")

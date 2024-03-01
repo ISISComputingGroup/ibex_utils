@@ -41,7 +41,7 @@ def task(task_name, attribute_name="prompt"):
     def _task_with_name_decorator(func):
         def _wrapper(self_of_decorated_method, *args, **kwargs):
             prompt = getattr(self_of_decorated_method, attribute_name)
-            if prompt.confirm_steps(task_name):
+            if prompt.confirm_step(task_name):
                 print(f"{task_name} ...")
                 while True:
                     if _run_task_to_completion(task_name, prompt, self_of_decorated_method, func, args, kwargs):
