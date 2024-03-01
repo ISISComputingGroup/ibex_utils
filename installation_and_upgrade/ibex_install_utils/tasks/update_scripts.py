@@ -19,6 +19,7 @@ class UpdateScripts(BaseTasks):
 
 if __name__ == "__main__":
     prompt = UserPrompt(True,False)
+    print(f"%COMPUTERNAME%")
     UpdateScripts(prompt, "", "", "", "", "").update_scripts()
 
 
