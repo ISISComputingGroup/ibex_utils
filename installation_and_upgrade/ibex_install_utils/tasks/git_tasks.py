@@ -100,6 +100,9 @@ class GitTasks(BaseTasks):
         if self.prompt.confirm_step(automatic_prompt):     
             try:
                 try:
+                    subprocess.check_call(f"cd /d {dir}", shell=True)
+                    print(f"     cd: {dir}")
+                    print(f"     checkout: {repo.git.checkout(f'{branch_to_merge_to}')}")
                     print(f"     fetch: {repo.git.fetch()}")
                     print(f"     merge: {repo.git.merge(f'{branch_to_merge_from}')}")
                 except git.GitCommandError as e:
