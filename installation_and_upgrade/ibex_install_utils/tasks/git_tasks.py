@@ -78,9 +78,10 @@ class GitTasks(BaseTasks):
             )
             raise ErrorInTask("Git branch is not the same as machine name")
 
-    def automatic_merge_of_git_remote(self, branch_to_merge_from, branch_to_merge_to, repo):
+    @task(f"Attempt automatic merge of one branch into another")
+    def automatic_merge_of_git_remote(self, branch_to_merge_from, branch_to_merge_to, dir):
         f"""
-        Attempt an automatic merge of one branch {branch_to_merge_from} to another, {branch_to_merge_to} in {repo}
+        Attempt an automatic merge of one branch {branch_to_merge_from} to another, {branch_to_merge_to} in {dir}
         """
         manual_prompt = (
             "Merge the master configurations branch into the instrument configuration. "
@@ -95,7 +96,7 @@ class GitTasks(BaseTasks):
         )
             
         automatic_prompt = "Attempt automatic merge?"
-        
+        repo = git.Repo(dir)
         if self.prompt.confirm_step(automatic_prompt):     
             try:
                 try:
@@ -117,3 +118,19 @@ class GitTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
+
+if __name__ == "__main__":
+    """For running task standalone
+    Must be called with pythonpath set to `<exact path on your pc>/installation_and_upgrade`
+    as that is the root of this module and all our imports work that way.
+
+    This effectively means to call `set PYTHONPATH=. && python ibex_install_utils/tasks/backup_tasks.py`
+    from the installation_and_upgrade directory in terminal.
+    """
+    print("")
+
+    #! Copying older backups to share will likely fail on developer machines
+    prompt = UserPrompt(False, True)
+    
+    git_instance = GitTasks(prompt,'','','','')
+    git_instance.automatic_merge_of_git_remote("branch1", "branch2", "C:/test")
