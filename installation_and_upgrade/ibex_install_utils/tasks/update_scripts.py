@@ -13,7 +13,7 @@ class UpdateScripts(BaseTasks):
         try:
             subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR}", shell=True)
             git_instance = GitTasks(self.prompt,'','','','')
-            git_instance.automatic_merge_of_git_remote("origin/master", "%COMPUTERNAME%", {SCRIPTS_BASE_DIR})
+            git_instance.automatic_merge_of_git_remote("origin/master", "%COMPUTERNAME%", SCRIPTS_BASE_DIR)
         except subprocess.CalledProcessError as e:
             print(f"{e}")
         
