@@ -90,7 +90,7 @@ class GitTasks(BaseTasks):
             f"    1. git checkout {branch_to_merge_from}\n"
             "    2. git pull\n"
             f"    3. git checkout {branch_to_merge_to}\n"
-            f"    4. git merge {branch_to_merge_from})\n"
+            f"    4. git merge {branch_to_merge_from}\n"
             "    5. Resolve any merge conflicts\n"
             "    6. git push\n"
         )
