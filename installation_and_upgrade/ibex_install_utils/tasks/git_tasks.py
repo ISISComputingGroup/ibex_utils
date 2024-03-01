@@ -115,7 +115,7 @@ class GitTasks(BaseTasks):
                 print(
                     f"Error doing automatic merge, please perform the merge manually: {e}"
                 )
-            self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
+                self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
         else:
             self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
 
