@@ -84,13 +84,13 @@ class GitTasks(BaseTasks):
         Attempt an automatic merge of one branch {branch_to_merge_from} to another, {branch_to_merge_to} in {dir}
         """
         manual_prompt = (
-            "Merge the master configurations branch into the instrument configuration. "
-            "From C:\Instrument\Settings\config\[machine name] run:\n"
+            f"Merge the {branch_to_merge_from} branch into the {branch_to_merge_to} branch. "
+            f"From {dir} run:\n"
             "    0. Clean up any in progress merge (e.g. git merge --abort)\n"
-            "    1. git checkout master\n"
+            f"    1. git checkout {branch_to_merge_from}\n"
             "    2. git pull\n"
-            "    3. git checkout [machine name]\n"
-            "    4. git merge master\n"
+            f"    3. git checkout {branch_to_merge_to}\n"
+            f"    4. git merge {branch_to_merge_from})\n"
             "    5. Resolve any merge conflicts\n"
             "    6. git push\n"
         )

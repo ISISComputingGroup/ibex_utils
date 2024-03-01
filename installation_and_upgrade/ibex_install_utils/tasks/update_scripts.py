@@ -16,30 +16,6 @@ class UpdateScripts(BaseTasks):
             git_instance.automatic_merge_of_git_remote("origin/master", "%COMPUTERNAME%", SCRIPTS_BASE_DIR)
         except subprocess.CalledProcessError as e:
             print(f"{e}")
-        
-        #try:
-        #    subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR} && git checkout %COMPUTERNAME% || git checkout -b %COMPUTERNAME%", shell=True)
-        #    print("Checked out to the instrument branch")
-        #except subprocess.CalledProcessError as e:
-        #    print(f"Error checking out to instrument branch: {e}")
-#
-        #try:
-        #    subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR} && git fetch --all  && git merge origin/master", shell=True)
-        #    print("Fetching all changes and merging")
-        #except subprocess.CalledProcessError as e:
-        #    print(f"Error Fetching all changes and merging: {e}")
-        #
-        #try:
-        #    subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR} && git push --set-upstream origin %COMPUTERNAME%", shell=True)
-        #    print("Pushing to branch")
-        #except subprocess.CalledProcessError as e:
-        #    print(f"Error pushing to branch: {e}")
-        #       
-        #try:
-        #    subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR} && git push", shell=True)
-        #    print("Pushing to branch")
-        #except subprocess.CalledProcessError as e:
-        #print(f"Error pushing to branch: {e}")
 
 if __name__ == "__main__":
     prompt = UserPrompt(True,False)
