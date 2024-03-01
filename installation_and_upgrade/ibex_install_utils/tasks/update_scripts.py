@@ -10,7 +10,7 @@ COMPUTERNAME = BaseTasks._get_machine_name()
 
 class UpdateScripts(BaseTasks):
     
-    @task(f"Update scripts repo by merging master branch into instrument branch?")
+    @task(f"Update Instrument/Scripts repo by merging 'origin/master' branch into {COMPUTERNAME} branch?")
     def update_scripts(self):
         try:
             subprocess.check_call(f"cd /d {SCRIPTS_BASE_DIR}", shell=True)
