@@ -1,8 +1,5 @@
 import os
 
-from genie_python.utilities import dehex_and_decompress
-
-
 class CaWrapper:
     """
     Wrapper around genie python's channel access class providing some useful abstractions.
@@ -52,6 +49,7 @@ class CaWrapper:
         if data is None:
             return None
         else:
+            from genie_python.utilities import dehex_and_decompress
             return dehex_and_decompress(data)
 
     def get_blocks(self):

@@ -108,11 +108,9 @@ class BackupTasks(BaseTasks):
             if copy:
                 print(f"Copying {src} to {backup_dir}")
                 self.backup_files(src, backup_dir, copy=True, ignore=ignore, number_of_files=number_of_files)
-                # self.zip_file(src, backup_dir)
             else:
                 print(f"Moving {src} to {backup_dir}")
                 self.backup_files(src, backup_dir, ignore=ignore, number_of_files=number_of_files)
-                # self.zip_file(src, backup_dir)
                 
         else: # if src can't be found on the machine
             if src.lower() in self.FAILED_BACKUP_DIRS_TO_IGNORE:

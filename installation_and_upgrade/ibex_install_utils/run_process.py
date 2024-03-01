@@ -4,7 +4,6 @@ Running processes infrastructure.
 
 import os
 import subprocess
-from types import NoneType
 from typing import Union, List
 from ibex_install_utils.exceptions import ErrorInRun
 

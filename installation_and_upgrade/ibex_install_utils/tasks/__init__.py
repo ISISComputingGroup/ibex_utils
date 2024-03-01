@@ -72,11 +72,11 @@ class BaseTasks:
         new_backup_dir = os.path.join(BACKUP_DIR, BaseTasks._generate_backup_dir_name())
 
         if not os.path.exists(BACKUP_DATA_DIR):
+            # data dir is a linked directory on real instrument machines so can't just simply be created with mkdir
             raise IOError(f"Base directory does not exist {BACKUP_DATA_DIR} should be a provided linked dir")
-        if not os.path.exists(BACKUP_DIR):
-            os.mkdir(BACKUP_DIR)
-        if not os.path.exists(new_backup_dir):
-            os.mkdir(new_backup_dir)
+        
+        os.makedirs(new_backup_dir, exist_ok=True)
+
         # cache backup dir name (useful when backup happens over multiple days)
         # it will always refer to the date when backup was started
         BaseTasks._backup_dir = new_backup_dir
