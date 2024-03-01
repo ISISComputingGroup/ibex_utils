@@ -97,7 +97,7 @@ class GitTasks(BaseTasks):
             
         automatic_prompt = "Attempt automatic merge?"
         
-        if self.prompt.confirm_step(automatic_prompt):     
+        if self.prompt.confirm_steps(automatic_prompt):     
             try:
                 try:
                     print(f"     fetch: {repo.git.fetch()}")
