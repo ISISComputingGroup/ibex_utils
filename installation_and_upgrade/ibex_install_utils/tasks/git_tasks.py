@@ -4,6 +4,7 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import EPICS_PATH, SETTINGS_CONFIG_PATH
 from ibex_install_utils.exceptions import ErrorInRun, ErrorInTask
+from ibex_install_utils.user_prompt import UserPrompt
 from genie_python import genie as g
 import re
 import git
@@ -66,7 +67,7 @@ class GitTasks(BaseTasks):
 #            except subprocess.CalledProcessError as e:
 #                print(f"Error switching to existing release branch and push: {e}")
     
-    #decorator class to check that the machine name matches a git branch
+    #Method to check that the machine name matches a git branch
     def inst_name_matches_branch():
         repo = git.Repo(
             os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name())
@@ -77,6 +78,7 @@ class GitTasks(BaseTasks):
             )
             raise ErrorInTask("Git branch is not the same as machine name")
 
+    @task(f"Attempt automatic merge of one branch into another")
     def automatic_merge_of_git_remote(self, branch_to_merge_from, branch_to_merge_to, repo):
         f"""
         Attempt an automatic merge of one branch {branch_to_merge_from} to another, {branch_to_merge_to} in {repo}
