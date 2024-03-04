@@ -13,6 +13,8 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, THIRD_PARTY_INSTALLERS_DIR
 from ibex_install_utils.version_check import version_check
+from ibex_install_utils.software_dependency.java import Java
+from ibex_install_utils.software_dependency.git import Git
 
 GIGABYTE = 1024 ** 3
 
@@ -29,11 +31,6 @@ SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility
 SECI_AUTOSTART_LOCATIONS = [os.path.join(USER_STARTUP, SECI), os.path.join(ALLUSERS_STARTUP, SECI)]
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(os.environ["userprofile"], "desktop", "Mantid+IBEX training")
-
-JAVA_LATEST_VERSION = "17.0.9"
-JAVA_INSTALLER = os.path.join(THIRD_PARTY_INSTALLERS_DIR, "latest_versions", "OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.msi")
-
-GIT_LATEST_VERSION = "2.42.0"
 
 class SystemTasks(BaseTasks):
     """
@@ -105,16 +102,17 @@ class SystemTasks(BaseTasks):
                                                         f"because '{e}'. Please remove it manually and type 'Y'"
                                                         f" to confirm")
 
-    @version_check("java", JAVA_LATEST_VERSION)
+    @version_check(Java())
     @task("Install java")
     def check_java_installation(self):
         """
         Checks Java installation
         """
+        installer, _ = Java().find_latest()
 
-        if os.path.exists(JAVA_INSTALLER):
-            print(f"Running installer at ({JAVA_INSTALLER})...")
-            subprocess.call(f"msiexec /i {JAVA_INSTALLER}")
+        if os.path.exists(installer):
+            print(f"Running installer at ({installer})...")
+            subprocess.call(f"msiexec /i {installer}")
             self.prompt.prompt_and_raise_if_not_yes(
                 "Make sure java installed correctly.\r\n"
                 "After following the installer, ensure you close and then re-open your remote desktop session (This "
@@ -311,7 +309,7 @@ class SystemTasks(BaseTasks):
             "- Check 'Use Automatic configuration script' and enter http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
             "- Click 'Ok' on all dialogs.")
 
-    @version_check("git", GIT_LATEST_VERSION)
+    @version_check(Git())
     @task("Update Git")
     def install_or_upgrade_git(self):
         """
