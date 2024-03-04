@@ -1,21 +1,21 @@
 name: Push Event Workflow
 
-on: push 
-
+on: push
+ 
 jobs:
   unit-testing:
-    runs-on: windows-latest 
-    
+    runs-on: windows-latest
+   
     steps:
     - name : Checkout code
       uses : actions/checkout@v4
-      
+     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r ./installation_and_upgrade/requirements.txt
-      
-    - name : Run tests 
+     
+    - name : Run tests
       working-directory: ./installation_and_upgrade
       run: |
         pip install pytest

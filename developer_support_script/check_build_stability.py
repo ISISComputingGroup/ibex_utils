@@ -49,7 +49,7 @@ class JobData:
     Calculates and prints common test failures and number of aborted builds in a Jenkins job.
     """
     def __init__(self, name: str) -> None:
-        print(f"INFO: ****** Evaluating job '{name}' ******")
+        print(f"****** Evaluating job '{name}' ******")
 
         self.name = name
         self.job_json = request_json(f"https://epics-jenkins.isis.rl.ac.uk/job/{name}/api/json")
@@ -204,7 +204,7 @@ def process_jobs(jobs, summary_name):
             job_summary.add_job(job_data)
         job_data.print_results()
 
-    print(f"INFO: ****** Summary across {summary_name} jobs ******")
+    print(f"****** Summary across {summary_name} jobs ******")
     job_summary.print_results()
 
 if __name__ == "__main__":

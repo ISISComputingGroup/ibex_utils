@@ -132,6 +132,7 @@ class UpgradeInstrument:
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
         self._client_tasks.install_ibex_client()
+        self._git_tasks.checkout_to_release_branch()
         self._server_tasks.setup_config_repository()
         self._server_tasks.upgrade_instrument_configuration()
         self._system_tasks.configure_com_ports()
@@ -147,6 +148,9 @@ class UpgradeInstrument:
         self._system_tasks.update_kafka_topics()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._python_tasks.update_script_definitions()
+
+    def save_motor_params(self):
+        self._server_tasks.save_motor_parameters_to_file()
 
     def run_instrument_deploy(self):
         """
@@ -355,4 +359,8 @@ UPGRADE_TYPES = {
     'run_vhd_post_install' : (
         UpgradeInstrument.run_vhd_post_install,
         "Run final task on system after VHD has been mounted locally"),
+    'save_motor_params' : (
+        UpgradeInstrument.save_motor_params,
+        "Save motor parameters to csv file"
+    )
 }
