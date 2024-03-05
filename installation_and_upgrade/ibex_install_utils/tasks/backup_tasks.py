@@ -131,7 +131,7 @@ class BackupTasks(BaseTasks):
             print(f"\nPreparing to back up {src} ...")
 
             _, number_of_files = self._check_backup_space(src, ignore=ignore)
-            self.progress_bar.total = number_of_files
+            self.progress_bar.reset(total=number_of_files)
 
             dst = self._path_to_backup(src)
 

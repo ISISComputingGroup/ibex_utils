@@ -14,6 +14,11 @@ class ProgressBar:
         self.width = 20
         self.progress = 0
     
+    def reset(self, total=None):
+        if total is not None:
+            self.total = total
+        self.progress = 0
+
     def print(self):
         """Print/Update progress line on standard output"""
         if self.total !=0:
