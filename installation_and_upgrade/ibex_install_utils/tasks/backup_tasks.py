@@ -112,6 +112,7 @@ class BackupTasks(BaseTasks):
         return backup_size, number_of_files
 
     def _backup_dir(self, src, copy=True, ignore=None):
+
         """Move a directory to the backup area.
 
         If the optional copy flag is true, the directory in `src` will be kept;
