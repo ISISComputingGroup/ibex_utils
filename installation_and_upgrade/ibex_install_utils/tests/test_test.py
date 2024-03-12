@@ -10,7 +10,7 @@ class TestStringMethods:
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_update_progress_bar(self, mockstdout):
    
-          progress_bar = ProgressBar()
+        progress_bar = ProgressBar()
         progress_bar.progress = 10
         progress_bar.total = 20
         progress_bar.print()
