@@ -4,14 +4,16 @@
 
 import io
 from unittest.mock import patch
-from ibex_install_utils.tasks.backup_tasks import BackupTasks
+from ibex_install_utils.progress_bar import ProgressBar
 
 class TestStringMethods:
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_update_progress_bar(self, mockstdout):
-   
-        BackupTasks('','','','','').update_progress_bar(10, 20)
-        expected_output = '\rProgress: [==========          ] 50% (10/20)'
+        progress_bar = ProgressBar()
+        progress_bar.progress = 10
+        progress_bar.total = 20
+        progress_bar.print()
+        expected_output = '\rProgress: [==========          ] 50% (10 / 20)'
         assert mockstdout.getvalue() == expected_output
 
     #def test_zip_file(self):
