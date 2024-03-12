@@ -13,7 +13,7 @@ class TestBackupTasks:
         progress_bar.progress = 10
         progress_bar.total = 20
         progress_bar.print()
-        expected_output = '\rProgress: [==========          ] 50% (10/20)'
+        expected_output = '\rProgress: [==========          ] 50% (10 / 20)'
         assert mockstdout.getvalue() == expected_output
     
     def test_WHEN_verifying_backup_THEN_all_directories_checked(self):

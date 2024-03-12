@@ -11,7 +11,7 @@ class TestStringMethods:
     def test_update_progress_bar(self, mockstdout):
    
         BackupTasks('','','','','').update_progress_bar(10, 20)
-        expected_output = '\rProgress: [==========          ] 50% (10/20)'
+        expected_output = '\rProgress: [==========          ] 50% (10 / 20)'
         assert mockstdout.getvalue() == expected_output
 
     #def test_zip_file(self):
