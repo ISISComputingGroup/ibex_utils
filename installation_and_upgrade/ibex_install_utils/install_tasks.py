@@ -215,9 +215,12 @@ class UpgradeInstrument:
         self._system_tasks.user_confirm_upgrade_type_on_machine('Client/Server Machine')
 
         # Check whether inst is SECI or not
-        central_inst_info = g.get_pv("CS:INSTLIST")
-        central_inst_info = FileUtils.dehex_and_decompress(bytes(central_inst_info, encoding="utf8")).decode("utf-8")
-        central_inst_info = json.loads(central_inst_info)
+        try:
+            central_inst_info = g.get_pv("CS:INSTLIST")
+            central_inst_info = FileUtils.dehex_and_decompress(bytes(central_inst_info, encoding="utf8")).decode("utf-8")
+            central_inst_info = json.loads(central_inst_info)
+        except:
+            central_inst_info = {}
 
         central_specific_inst_info = None
         for inst in central_inst_info:
