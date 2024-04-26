@@ -18,9 +18,9 @@ def get_arguments() -> Tuple[str, str]:
     parser = argparse.ArgumentParser(description='Get the input and output folder')
     parser.add_argument('-i', "--input", dest="input_folder", type=str, help='The input folder', required=True)
     parser.add_argument('-o', "--output", dest="output_folder", type=str, help='The output folder', required=True)
-    parser.add_argument('-hl', "--header_lines", dest="num_of_header_lines", type=int, help='The number of header lines to strip', required=False, default=1)
+    parser.add_argument('-thl', "--temp_header_lines", dest="num_of_temp_header_lines", type=int, help='The number of header lines to strip from temp files', required=False, default=1)
     args = parser.parse_args()
-    return os.path.join(dir_path, args.input_folder), os.path.join(dir_path, args.output_folder), args.num_of_header_lines
+    return os.path.join(dir_path, args.input_folder), os.path.join(dir_path, args.output_folder), args.num_of_temp_header_lines
 
 
 class FileConverter:
@@ -110,7 +110,7 @@ class FileConverter:
             convert_curve_files.convert(original_file_name, output_folder, root)
         # If the file is in .dat format
         if original_file_name.endswith(FileTypes.ORIGINAL_DAT_FILE_EXTENSION):
-            convert_temp_calib_files.convert(original_file_name, output_folder, root, num_of_header_lines)
+            convert_temp_calib_files.convert(original_file_name, output_folder, root, num_of_temp_header_lines)
 
     def convert_all_files(self) -> None:
         """
@@ -124,7 +124,7 @@ class FileConverter:
 
 if __name__ == "__main__":
     # Get the input and output folders from the command line
-    input_folder, output_folder, num_of_header_lines = get_arguments()
+    input_folder, output_folder, num_of_temp_header_lines = get_arguments()
     # Create Instance of FileConverter
     file_converter = FileConverter(input_folder, output_folder)
     # Check input folder exists
