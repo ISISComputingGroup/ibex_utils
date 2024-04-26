@@ -10,7 +10,7 @@ import convert_temp_calib_files
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
-def get_arguments() -> Tuple[str, str]:
+def get_arguments() -> Tuple[str, str, int]:
     """
     Get the input and output folders from the command line
     :return: input_folder, output_folder
