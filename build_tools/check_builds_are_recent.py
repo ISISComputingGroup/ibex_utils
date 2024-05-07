@@ -2,17 +2,15 @@ import os
 from typing import Union
 from datetime import datetime
 import sys
+import json
+
+kits_root = r"\\isis\inst$\kits$\CompGroup\ICP"
 
 def format_build_num_without_dash(build_num):
     return f"BUILD{build_num}"
 
 def format_build_num_with_dash(build_num):
     return f"BUILD-{build_num}"
-
-kits_root = r"\\isis\inst$\kits$\CompGroup\ICP"
-epics_builds = ["EPICS_CLEAN_win10_x64", "EPICS_CLEAN_win7_x64", "EPICS_win7_x64", "EPICS_CLEAN_win10_x86", "EPICS_STATIC_CLEAN_win7_x64"]
-epics_build_dirs = [(f"EPICS\\{build}", format_build_num_with_dash) for build in epics_builds] 
-build_dirs = [("Client_E4", format_build_num_without_dash), ("genie_python_3", format_build_num_with_dash)] + epics_build_dirs
 
 def get_latest_build(dir, directory_formatter) -> Union[None, str]:
     latest_build = None
@@ -36,37 +34,53 @@ def modified_in_last_x_days(dir, x_days):
     timedelta_since_last_modification = datetime_now - datetime_of_last_modification
     return timedelta_since_last_modification.days < x_days
 
-def was_modified_recently(latest_build):
-    x_days = 5
+def was_modified_recently(latest_build, num_days):
     last_modified_datetime = get_formatted_last_modified_datetime(latest_build)
-    modified_recently = modified_in_last_x_days(latest_build, x_days)
+    modified_recently = modified_in_last_x_days(latest_build, num_days)
     if modified_recently:
-        print(f"SUCCESS: {latest_build} has been modified in the last {x_days} days. Last modified: {last_modified_datetime}")
+        print(f"SUCCESS: {latest_build} has been modified in the last {num_days} days. Last modified: {last_modified_datetime}")
     else:
-        print(f"WARNING: {latest_build} modified longer than {x_days} ago. Last modified: {last_modified_datetime}")
+        print(f"WARNING: {latest_build} modified longer than {num_days} ago. Last modified: {last_modified_datetime}")
     return modified_recently
 
-def check_build_dir(build_dir, directory_formatter):
+def check_build_dir(build_dir, num_days, directory_formatter):
     latest_build = get_latest_build(build_dir, directory_formatter)
     modified_recently = False
     if latest_build is None:
         print(f"WARNING: Could not get latest build dir from {build_dir}")
     else:
-        modified_recently = was_modified_recently(latest_build)
+        modified_recently = was_modified_recently(latest_build, num_days)
     return modified_recently
 
 def check_build_dirs(build_dirs):
     build_dirs_not_modified_recently = []
     for build_dir in build_dirs:
         directory = build_dir[0]
-        directory_formatter = build_dir[1]
+        stale_days_limit = int(build_dir[1])
+        directory_formatter = build_dir[2]
         build_dir_full_path = os.path.join(kits_root, directory)
-        modified_recently = check_build_dir(build_dir_full_path, directory_formatter)
+        modified_recently = check_build_dir(build_dir_full_path, stale_days_limit, directory_formatter)
         if not modified_recently:
             build_dirs_not_modified_recently.append(build_dir_full_path)
     return build_dirs_not_modified_recently
 
 if __name__ == "__main__":
+    builds_to_check = os.getenv("BUILDS_TO_CHECK")
+    if builds_to_check is None:
+        print (f"ERROR: BUILDS_TO_CHECK enviroment variable not set")
+        sys.exit(1)
+    try:
+        builds_by_stale_times = json.loads(builds_to_check)
+    except ValueError as e:
+        print(f"ERROR: parameter is not valid JSON.\nParameter:{builds_to_check}\nSpecific Error: {e.args}")
+        sys.exit(1)
+    build_dirs = []
+    for time, builds_by_stale_time in builds_by_stale_times.items():
+        for build in builds_by_stale_time:
+            directory_formatter = format_build_num_with_dash
+            if build == "Client_E4":
+                directory_formatter = format_build_num_without_dash
+            build_dirs.append((build,time,directory_formatter))    
     build_dirs_not_modified_recently = check_build_dirs(build_dirs)
     if build_dirs_not_modified_recently:
         sys.exit(1)
