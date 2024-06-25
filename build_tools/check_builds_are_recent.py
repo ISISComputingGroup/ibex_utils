@@ -6,9 +6,6 @@ import json
 
 kits_root = r"\\isis\inst$\kits$\CompGroup\ICP"
 
-#def format_build_num_without_dash(build_num):
-#    return f"BUILD{build_num}"
-
 def format_build_num_with_dash(build_num):
     return f"BUILD-{build_num}"
 
@@ -78,8 +75,6 @@ if __name__ == "__main__":
     for time, builds_by_stale_time in builds_by_stale_times.items():
         for build in builds_by_stale_time:
             directory_formatter = format_build_num_with_dash
-#            if build == "Client_E4":
-#                directory_formatter = format_build_num_without_dash
             build_dirs.append((build,time,directory_formatter))    
     build_dirs_not_modified_recently = check_build_dirs(build_dirs)
     if build_dirs_not_modified_recently:
