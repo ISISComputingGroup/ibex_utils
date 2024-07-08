@@ -221,7 +221,9 @@ class MysqlTasks(BaseTasks):
                                    .format(os.path.join(MYSQL_FILES_DIR, "data")))
 
         admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
-        admin_commands.add_command("sc", "config MYSQL80 start= auto")
+        # we use "delayed-auto" for start= as we have some ibex installations where a required disk volume
+        # doesn't get mounted in time if just "auto" is used  
+        admin_commands.add_command("sc", "config MYSQL80 start= delayed-auto")
         admin_commands.add_command("sc",
                                    "failure MYSQL80 reset= 900 actions= restart/10000/restart/30000/restart/60000")
         admin_commands.add_command("sc", "failureflag MYSQL80 1")
