@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import subprocess
@@ -159,45 +160,18 @@ class MysqlTasks(BaseTasks):
             ]
         ).run()
 
-    def _setup_database_users_and_tables(self, vhd_install=True):
+    @contextlib.contextmanager
+    def temporarily_run_mysql(self, sql_password: str):
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
-        sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
-                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"),
-                                          show_automatic_answer=False)
+        # spawn service in background
+        subprocess.Popen(mysqld, creationflags=DETACHED_PROCESS)
 
-        if vhd_install:  # Service won't have been started yet
-            # spawn service in background
-            subprocess.Popen(mysqld, creationflags=DETACHED_PROCESS)
+        sleep(5)  # Chance for the service to spawn
 
-            sleep(5)  # Chance for the service to spawn
-
-        RunProcess(
-            executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-            working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-            executable_file="mysql.exe",
-            prog_args=[
-                '-u',
-                'root',
-                '-e',
-                f'ALTER USER \'root\'@\'localhost\' IDENTIFIED WITH mysql_native_password BY \'{sql_password}\';FLUSH '
-                f'privileges; '
-                    ,
-
-            ],
-            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
-        ).run()
-
-        RunProcess(
-            working_dir=SYSTEM_SETUP_PATH,
-            executable_directory=SYSTEM_SETUP_PATH,
-            executable_file="config_mysql.bat",
-            prog_args=[sql_password],
-            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
-        ).run()
-
-        if vhd_install:
-            # For VHD install only, stop mysql when done
+        try:
+            yield
+        finally:
             RunProcess(
                 executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
                 working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
@@ -208,6 +182,43 @@ class MysqlTasks(BaseTasks):
                     f"--password={sql_password}",
                     "shutdown",
                 ],
+                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+            ).run()
+
+    def _setup_database_users_and_tables(self, vhd_install=True):
+        sql_password = self.prompt.prompt("Enter the MySQL root password:", UserPrompt.ANY,
+                                          os.getenv("MYSQL_PASSWORD", "environment variable not set"),
+                                          show_automatic_answer=False)
+
+        if vhd_install:
+            # In the VHD install, need to explicitly temporarily run MySQL.
+            cm = self.temporarily_run_mysql(sql_password)
+        else:
+            # In normal installs, MySQL is already running as a service so do nothing
+            cm = contextlib.nullcontext()
+
+        with cm:
+            RunProcess(
+                executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+                working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+                executable_file="mysql.exe",
+                prog_args=[
+                    '-u',
+                    'root',
+                    '-e',
+                    f'ALTER USER \'root\'@\'localhost\' IDENTIFIED WITH mysql_native_password BY \'{sql_password}\';FLUSH '
+                    f'privileges; '
+                        ,
+
+                ],
+                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+            ).run()
+
+            RunProcess(
+                working_dir=SYSTEM_SETUP_PATH,
+                executable_directory=SYSTEM_SETUP_PATH,
+                executable_file="config_mysql.bat",
+                prog_args=[sql_password],
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
 
