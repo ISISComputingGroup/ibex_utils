@@ -276,7 +276,12 @@ class UpgradeInstrument:
             self._mysql_tasks.install_mysql_for_vhd()
             self._client_tasks.install_ibex_client()
             self._server_tasks.setup_config_repository()
-            self._server_tasks.upgrade_instrument_configuration()
+
+            # Some config upgrade steps require MySQL to be running
+            # For the VHD build, we can always assume we have a MYSQL_PASSWORD env variable
+            with self._mysql_tasks.temporarily_run_mysql(os.getenv("MYSQL_PASSWORD")):
+                self._server_tasks.upgrade_instrument_configuration()
+
             self._server_tasks.setup_calibrations_repository()
             self._server_tasks.update_calibrations_repository()
             self._vhd_tasks.initialize_var_dir()
