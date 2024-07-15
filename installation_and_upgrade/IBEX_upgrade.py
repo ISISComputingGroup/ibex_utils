@@ -134,7 +134,7 @@ if __name__ == "__main__":
             DIRECTORIES["EPICS"] = FileUtils.get_latest_directory_path(epics_build_dir, "BUILD-", "EPICS" + server_suffix)
 
             client_build_dir = os.path.join(args.kits_icp_dir, "Client_E4")
-            DIRECTORIES["Client"] = FileUtils.get_latest_directory_path(client_build_dir, "BUILD")
+            DIRECTORIES["Client"] = FileUtils.get_latest_directory_path(client_build_dir, "BUILD-")
 
             genie_python3_build_dir = os.path.join(args.kits_icp_dir, "genie_python_3")
             DIRECTORIES["genie_python_3"] = FileUtils.get_latest_directory_path(genie_python3_build_dir, "BUILD-")

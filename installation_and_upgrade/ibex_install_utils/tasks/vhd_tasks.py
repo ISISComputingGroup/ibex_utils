@@ -192,7 +192,7 @@ class VHDTasks(BaseTasks):
         if self._ibex_version is not None:
             build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Releases", "{}".format(self._ibex_version))
         else:
-            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Builds", "Build{}".format(os.environ["BUILD_NUMBER"]))
+            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Builds", "Build-{}".format(os.environ["BUILD_NUMBER"]))
         os.makedirs(build_folder)
 
         for vhd in VHDS:
