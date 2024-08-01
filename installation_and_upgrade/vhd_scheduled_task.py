@@ -1,6 +1,7 @@
 """
 Script to install IBEX to various machines
 """
+
 import sys
 import traceback
 

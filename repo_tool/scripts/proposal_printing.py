@@ -1,13 +1,12 @@
 """
- A Utility to check and provide a printable list of proposed and ready tickets ready for prioritisation.
- To use this the python-docx package needs to be installed.
- There is limited error checking, and there are plenty of adaptations to make to this to improve it.
- This is fairly nasty code - but it is a first iteration to get some of the job done.
- This code is currently tailored to printing proposals.
- The final Prioritise.docx, which will be in the same folder as this script, can be opened and printed two to a page.
- Print it by going in print printer propeties  -> Priniting Shortcuts -> Pages per sheet = 2 pages per sheet
+A Utility to check and provide a printable list of proposed and ready tickets ready for prioritisation.
+To use this the python-docx package needs to be installed.
+There is limited error checking, and there are plenty of adaptations to make to this to improve it.
+This is fairly nasty code - but it is a first iteration to get some of the job done.
+This code is currently tailored to printing proposals.
+The final Prioritise.docx, which will be in the same folder as this script, can be opened and printed two to a page.
+Print it by going in print printer propeties  -> Priniting Shortcuts -> Pages per sheet = 2 pages per sheet
 """
-
 
 import docx
 import requests
@@ -17,8 +16,10 @@ from six import moves
 
 
 BASE_URL_FOR_ISSUE = r"https://api.github.com/repos/ISISComputingGroup/IBEX/issues"
-BASE_URL_PROPOSALS = r"https://api.github.com/search/issues?q=repo:ISISComputingGroup/" \
-                     r"IBEX+type:issue+state:open+label:{label}&page={page_number}&per_page={num_per_page}"
+BASE_URL_PROPOSALS = (
+    r"https://api.github.com/search/issues?q=repo:ISISComputingGroup/"
+    r"IBEX+type:issue+state:open+label:{label}&page={page_number}&per_page={num_per_page}"
+)
 
 
 def get_web_content_as_json(url, auth):
@@ -116,7 +117,13 @@ class IbexTicket:
 
     def file_line(self):
         # Print the bare minimum to the file so that development on the data can continue
-        return "#%d;%s;%s;%s;%s\r" % (self.Number, self.Title, self.Author, self.Labels, self.Proposer)
+        return "#%d;%s;%s;%s;%s\r" % (
+            self.Number,
+            self.Title,
+            self.Author,
+            self.Labels,
+            self.Proposer,
+        )
 
     def priority_decision(self, from_file=False):
         # Decide if this should be prioritised
@@ -171,14 +178,16 @@ def get_open_tickets(auth, label):
     # Only need to open enough pages to view the open ones, rather than check for an empty page,
     # calculate the number of pages needed.
     # An error check should be considered for the next iteration.
-    number_of_pages = (total_open/100) + 1
+    number_of_pages = (total_open / 100) + 1
 
     # Open the file for writing during paignation.
     with open("out.txt", "w") as f:
         # Open each page, looking at 100 open issues
         for page_number in range(number_of_pages):
             print(f"Looking at page {page_number + 1}")
-            url = BASE_URL_PROPOSALS.format(page_number=page_number + 1, num_per_page=100, label=label)
+            url = BASE_URL_PROPOSALS.format(
+                page_number=page_number + 1, num_per_page=100, label=label
+            )
             contents = get_web_content_as_json(url, auth)["items"]
             for entry in contents:
                 # Use a local variable as using in two places at this point
@@ -225,8 +234,14 @@ def is_number(number):
         return False
 
 
-def add_info(document, printable, alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.LEFT, point=40, bold=False,
-                 italic=False):
+def add_info(
+    document,
+    printable,
+    alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.LEFT,
+    point=40,
+    bold=False,
+    italic=False,
+):
     # Add the details to the document for easy printing
     Paragraph = document.add_paragraph()
     Paragraph.alignment = alignment
@@ -244,6 +259,7 @@ def add_info(document, printable, alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.LE
 #########
 ##########
 ###########
+
 
 def get_tickets_generate_doc(auth, from_file, label):
     """
@@ -277,7 +293,12 @@ def get_tickets_generate_doc(auth, from_file, label):
     # Should consider adding the other labels as well...
     for Ticket in tickets:
         if Ticket.PrioritiseMe:
-            add_info(document, str(Ticket.Estimate), alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.RIGHT, point=36)
+            add_info(
+                document,
+                str(Ticket.Estimate),
+                alignment=docx.enum.text.WD_ALIGN_PARAGRAPH.RIGHT,
+                point=36,
+            )
             num_size = 96
             title_size = 48
             if len(Ticket.Title) > 35:

@@ -20,35 +20,49 @@ SCRIPT_GEN_DIR = "SCRIPT_GEN"
 GENIE_PYTHON_DIR = "genie_python"
 JSON_BOURNE_DIR = "JSON_bourne"
 
-INSTETC_TEMPLATE_LOCAL_PATH = os.path.join("INSTETC", "INSTETC-IOC-01App", "Db", "svn-revision.db.tmpl")
-INSTETC_TEMPLATE_ABSOLUTE_PATH = os.path.join(EPICS_DIR, "ioc", "master", INSTETC_TEMPLATE_LOCAL_PATH)
+INSTETC_TEMPLATE_LOCAL_PATH = os.path.join(
+    "INSTETC", "INSTETC-IOC-01App", "Db", "svn-revision.db.tmpl"
+)
+INSTETC_TEMPLATE_ABSOLUTE_PATH = os.path.join(
+    EPICS_DIR, "ioc", "master", INSTETC_TEMPLATE_LOCAL_PATH
+)
 
-IBEX_MANIFEST_LOCAL_PATH = os.path.join("base", "uk.ac.stfc.isis.ibex.e4.client", "META-INF", "MANIFEST.MF")
+IBEX_MANIFEST_LOCAL_PATH = os.path.join(
+    "base", "uk.ac.stfc.isis.ibex.e4.client", "META-INF", "MANIFEST.MF"
+)
 IBEX_MANIFEST_ABSOLUTE_PATH = os.path.join(IBEX_DIR, IBEX_MANIFEST_LOCAL_PATH)
 IBEX_POM_LOCAL_PATH = os.path.join("base", "uk.ac.stfc.isis.ibex.e4.client", "pom.xml")
 IBEX_POM_ABSOLUTE_PATH = os.path.join(IBEX_DIR, IBEX_POM_LOCAL_PATH)
 
-SCRIPT_GENERATOR_MANIFEST_LOCAL_PATH = os.path.join("base", "uk.ac.stfc.isis.scriptgenerator.client", "META-INF", "MANIFEST.MF")
-SCRIPT_GENERATOR_MANIFEST_ABSOLUTE_PATH = os.path.join(SCRIPT_GEN_DIR, SCRIPT_GENERATOR_MANIFEST_LOCAL_PATH)
-SCRIPT_GENERATOR_POM_LOCAL_PATH = os.path.join("base", "uk.ac.stfc.isis.scriptgenerator.client", "pom.xml")
+SCRIPT_GENERATOR_MANIFEST_LOCAL_PATH = os.path.join(
+    "base", "uk.ac.stfc.isis.scriptgenerator.client", "META-INF", "MANIFEST.MF"
+)
+SCRIPT_GENERATOR_MANIFEST_ABSOLUTE_PATH = os.path.join(
+    SCRIPT_GEN_DIR, SCRIPT_GENERATOR_MANIFEST_LOCAL_PATH
+)
+SCRIPT_GENERATOR_POM_LOCAL_PATH = os.path.join(
+    "base", "uk.ac.stfc.isis.scriptgenerator.client", "pom.xml"
+)
 SCRIPT_GENERATOR_POM_ABSOLUTE_PATH = os.path.join(SCRIPT_GEN_DIR, SCRIPT_GENERATOR_POM_LOCAL_PATH)
 
 GENIE_PYTHON_VERSION_LOCAL_PATH = os.path.join("Lib", "site-packages", "genie_python", "version.py")
 GENIE_PYTHON_VERSION_ABSOLUTE_PATH = os.path.join(GENIE_PYTHON_DIR, GENIE_PYTHON_VERSION_LOCAL_PATH)
 
 
-
 def write_instetc_version(version: str):
     logging.info(f"Writing version '{version}' to '{INSTETC_TEMPLATE_ABSOLUTE_PATH}'.")
 
     with open(INSTETC_TEMPLATE_ABSOLUTE_PATH, "r") as file:
-        data, n = re.subn(r"(field\(VAL, \").*(\.\$WCREV\$\"\))", rf"\g<1>{version}\g<2>", file.read(), count=1)
+        data, n = re.subn(
+            r"(field\(VAL, \").*(\.\$WCREV\$\"\))", rf"\g<1>{version}\g<2>", file.read(), count=1
+        )
         if n != 1:
             logging.error(f"Failed to write version. There were '{n}' replacements.")
             sys.exit(1)
 
     with open(INSTETC_TEMPLATE_ABSOLUTE_PATH, "w") as file:
         file.write(data)
+
 
 def write_gui_version(manifest_path: str, pom_path: str, version: str):
     # In Manifest file.
@@ -82,11 +96,12 @@ def write_gui_version(manifest_path: str, pom_path: str, version: str):
 
     tree.write(pom_path)
 
+
 def write_genie_python_version(version: str):
     logging.info(f"Writing version '{version}' to '{GENIE_PYTHON_VERSION_ABSOLUTE_PATH}'.")
-    
+
     with open(GENIE_PYTHON_VERSION_ABSOLUTE_PATH, "w") as file:
-        file.write(f"VERSION = \"{version}\"\n")
+        file.write(f'VERSION = "{version}"\n')
 
 
 class ReleaseBranch:
@@ -94,7 +109,7 @@ class ReleaseBranch:
 
     def __init__(self, repo: Repo = None):
         self.repo = repo
-    
+
     def create(self, url: str, dir: str, branch_name: str, submodules: bool = False):
         """
         Initializes a repository by using 'git clone'.
@@ -120,17 +135,21 @@ class ReleaseBranch:
         if branch_name in self.repo.references:
             logging.error(f"Branch name '{branch_name}' already exists for repo '{url}'.")
             sys.exit(1)
-        
+
         source = os.getenv("TAG")
         # if we specify a top level tag other then HEAD then this is
         # inconsistent with asking that all submodules be
         # on their latest version as we would only give a TAG if we
         # specifically didn't want them to be the latest
         if source != "HEAD" and os.getenv("REMOTE") == "true":
-            logging.error(f"Specifying a branch source '{source}' is not consistent with REMOTE == true.")
+            logging.error(
+                f"Specifying a branch source '{source}' is not consistent with REMOTE == true."
+            )
             sys.exit(1)
 
-        logging.info(f"Creating branch '{branch_name}' for '{self.repo.remote().url}' from '{source}'.")
+        logging.info(
+            f"Creating branch '{branch_name}' for '{self.repo.remote().url}' from '{source}'."
+        )
         self.repo.create_head(branch_name, commit=source).checkout()
 
         if submodules:
@@ -140,11 +159,15 @@ class ReleaseBranch:
 
                 new_commits = False
                 for i in self.repo.index.diff(None).iter_change_type("M"):
-                    logging.warning(f"Submodule '{i.a_path}' in repo '{self.repo.remotes.origin.url}' has new commits.")
+                    logging.warning(
+                        f"Submodule '{i.a_path}' in repo '{self.repo.remotes.origin.url}' has new commits."
+                    )
                     new_commits = True
 
                 if new_commits:
-                    logging.error("Submodules updated from remote have new commits. Stopping script.")
+                    logging.error(
+                        "Submodules updated from remote have new commits. Stopping script."
+                    )
                     sys.exit(1)
             else:
                 logging.info(f"Updating submodules for '{self.repo.remote().url}'.")
@@ -154,11 +177,15 @@ class ReleaseBranch:
             # if we have made a mistake there is less to remove afterwards
             for submodule in self.repo.submodules:
                 if branch_name in submodule.module().references:
-                    logging.error(f"Branch name '{branch_name}' already exists for repo '{submodule.module().remote().url}'.")
+                    logging.error(
+                        f"Branch name '{branch_name}' already exists for repo '{submodule.module().remote().url}'."
+                    )
                     sys.exit(1)
 
             for submodule in self.repo.submodules:
-                logging.info(f"Creating branch '{branch_name}' for: '{submodule.module().remote().url}'.")
+                logging.info(
+                    f"Creating branch '{branch_name}' for: '{submodule.module().remote().url}'."
+                )
                 submodule.module().create_head(branch_name).checkout()
 
     def commit(self, items: List[Any], msg: str):
@@ -192,14 +219,16 @@ class ReleaseBranch:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG,
-                        format="[%(asctime)s][%(levelname)s][%(filename)s:%(funcName)s:%(lineno)s]: %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="[%(asctime)s][%(levelname)s][%(filename)s:%(funcName)s:%(lineno)s]: %(message)s",
+    )
 
-
-    parser = argparse.ArgumentParser(description="Create release branches.", formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="Create release branches.", formatter_class=argparse.RawTextHelpFormatter
+    )
     parser.add_argument("--version", default=None, help="Release version.", required=True)
     args = parser.parse_args()
-
 
     if os.getenv("EPICS") == "true":
         epics = ReleaseBranch()
@@ -215,22 +244,28 @@ if __name__ == "__main__":
         epics.commit([ioc_submodule], "Update submodule ioc.")
         epics.push(True)
 
-
     if os.getenv("IBEX_GUI") == "true":
         ibex = ReleaseBranch()
         ibex.create(IBEX_REPO_URL, IBEX_DIR, f"Release_{args.version}")
         write_gui_version(IBEX_MANIFEST_ABSOLUTE_PATH, IBEX_POM_ABSOLUTE_PATH, args.version)
-        ibex.commit([IBEX_MANIFEST_LOCAL_PATH, IBEX_POM_LOCAL_PATH], f"Update version to {args.version}.")
+        ibex.commit(
+            [IBEX_MANIFEST_LOCAL_PATH, IBEX_POM_LOCAL_PATH], f"Update version to {args.version}."
+        )
         ibex.push()
-
 
     if os.getenv("SCRIPT_GENERATOR") == "true":
         script_gen = ReleaseBranch()
         script_gen.create(IBEX_REPO_URL, SCRIPT_GEN_DIR, f"Release_Script_Gen_{args.version}")
-        write_gui_version(SCRIPT_GENERATOR_MANIFEST_ABSOLUTE_PATH, SCRIPT_GENERATOR_POM_ABSOLUTE_PATH, args.version)
-        script_gen.commit([SCRIPT_GENERATOR_MANIFEST_LOCAL_PATH, SCRIPT_GENERATOR_POM_LOCAL_PATH], f"Update version to {args.version}.")
+        write_gui_version(
+            SCRIPT_GENERATOR_MANIFEST_ABSOLUTE_PATH,
+            SCRIPT_GENERATOR_POM_ABSOLUTE_PATH,
+            args.version,
+        )
+        script_gen.commit(
+            [SCRIPT_GENERATOR_MANIFEST_LOCAL_PATH, SCRIPT_GENERATOR_POM_LOCAL_PATH],
+            f"Update version to {args.version}.",
+        )
         script_gen.push()
-
 
     if os.getenv("GENIE_PYTHON") == "true":
         genie_python = ReleaseBranch()
@@ -238,7 +273,6 @@ if __name__ == "__main__":
         write_genie_python_version(args.version)
         genie_python.commit([GENIE_PYTHON_VERSION_LOCAL_PATH], f"Update version to {args.version}.")
         genie_python.push()
-
 
     if os.getenv("JSON_BOURNE") == "true":
         json_bourne = ReleaseBranch()

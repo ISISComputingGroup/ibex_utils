@@ -10,8 +10,14 @@ from galil_ini_parser import (
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input_file", help="Input file location", action="store", required=True)
-parser.add_argument("-o", "--output_file", help="Output file location", action="store", required=True)
-parser.add_argument("--reference_file", help="Location of a file to compare output of this script to", action="store")
+parser.add_argument(
+    "-o", "--output_file", help="Output file location", action="store", required=True
+)
+parser.add_argument(
+    "--reference_file",
+    help="Location of a file to compare output of this script to",
+    action="store",
+)
 args = parser.parse_args()
 
 input_file = pathlib.Path(args.input_file)
@@ -33,36 +39,46 @@ for galil in galil_crates.values():
         axis_negated = axis.get_value(common_setting_names["NEGATED"], strtobool)
 
         old_offset = axis.get_value(common_setting_names["OFFSET"], float, default_value=0.0)
-        old_user_offset = axis.get_value(common_setting_names["USER_OFFSET"], float, default_value=0.0)
+        old_user_offset = axis.get_value(
+            common_setting_names["USER_OFFSET"], float, default_value=0.0
+        )
         old_homeval = axis.get_value(common_setting_names["HOMEVAL"], float)
 
         old_hlim = axis.get_value(common_setting_names["HLIM"], float)
         old_llim = axis.get_value(common_setting_names["LLIM"], float)
 
         if axis_negated:
-            warnings.append("Warning! Script untested on axes with NEGATED set to True. Manually verify distances from home position to limits are unchanged for axis {}/{}.".format(galil.crate_index, axis.axis_index))
+            warnings.append(
+                "Warning! Script untested on axes with NEGATED set to True. Manually verify distances from home position to limits are unchanged for axis {}/{}.".format(
+                    galil.crate_index, axis.axis_index
+                )
+            )
 
-        new_settings = apply_home_shift(old_homeval, old_offset, old_user_offset, old_hlim, old_llim)
+        new_settings = apply_home_shift(
+            old_homeval, old_offset, old_user_offset, old_hlim, old_llim
+        )
         for setting, value in new_settings.items():
             if value is not None:
-                print("Setting Galil {galil} Axis {axis} {setting} to {value}".format(
-                    galil=galil.crate_index,
-                    axis=axis.axis_index,
-                    setting=setting,
-                    value="{:8.6f}".format(value)
-                ))
+                print(
+                    "Setting Galil {galil} Axis {axis} {setting} to {value}".format(
+                        galil=galil.crate_index,
+                        axis=axis.axis_index,
+                        setting=setting,
+                        value="{:8.6f}".format(value),
+                    )
+                )
                 axis.set_value(setting, "{:8.6f}".format(value))
 
     output_contents.extend(galil.get_save_strings())
 
-with open(output_file, 'w') as f:
+with open(output_file, "w") as f:
     f.write("\n".join(output_contents))
     f.write("\n")
 
 if args.reference_file is not None:
     # Compare the new galil settings to a reference file (hand-migrated)
     reference_file = pathlib.Path(args.reference_file)
-    with open(reference_file, 'r') as f:
+    with open(reference_file, "r") as f:
         reference_contents = f.readlines()
     reference_galils = extract_galil_settings_from_file(reference_contents)
 

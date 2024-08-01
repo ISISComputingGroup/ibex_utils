@@ -12,7 +12,8 @@ RELEASE_LINES_TO_IGNORE = [
     "# top level master release and local private options",
     "-include $(TOP)/../../../configure/MASTER_RELEASE.$(EPICS_HOST_ARCH)",
     "-include $(TOP)/../../../configure/MASTER_RELEASE.private",
-    "-include $(TOP)/../../../configure/MASTER_RELEASE.private.$(EPICS_HOST_ARCH)"]
+    "-include $(TOP)/../../../configure/MASTER_RELEASE.private.$(EPICS_HOST_ARCH)",
+]
 FIRST_NEW_LINE = "# START OF AUTO GENERATED DEPENDENCIES"
 LAST_NEW_LINE = "# END OF AUTO GENERATED DEPENDENCIES"
 
@@ -166,7 +167,7 @@ KNOWN_DEPENDENCIES = {
     "swscale": "AREA_DETECTOR=$(SUPPORT)/areaDetector/master",
     "webget": "WEBGET=$(SUPPORT)/webget/master",
     "webget.dbd": "WEBGET=$(SUPPORT)/webget/master",
-    "xxx.dbd": ""
+    "xxx.dbd": "",
 }
 
 KNOWN_MACROS_LIST = [
@@ -281,7 +282,6 @@ KNOWN_MACROS_LIST = [
     "VISADRV=$(SUPPORT)/VISAdrv/master",
     "WEBGET=$(SUPPORT)/webget/master",
     "ZLIB=$(SUPPORT)/zlib/master",
-
     # EPICS v4
     "EV4_BASE=$(SUPPORT)/EPICS_V4/master",
     "PVDATABASE=$(EV4_BASE)/pvDatabaseCPP",
@@ -290,7 +290,8 @@ KNOWN_MACROS_LIST = [
     "PVACCESS=$(EV4_BASE)/pvAccessCPP",
     "NORMATIVETYPES=$(EV4_BASE)/normativeTypesCPP",
     "PVDATA=$(EV4_BASE)/pvDataCPP",
-    "PVCOMMON=$(EV4_BASE)/pvCommonCPP"]
+    "PVCOMMON=$(EV4_BASE)/pvCommonCPP",
+]
 
 KNOWN_MACROS = {}
 for macro in KNOWN_MACROS_LIST:
@@ -403,8 +404,14 @@ def get_entries(dependencies, macros):
         except KeyError:
             missing.add(dependency)
     if len(missing) != 0:
-        print("\nERROR: There are unknown dependencies:\n    {}".format("    \n".join(sorted(missing))))
-        print("\n(Fix this by adding the dependency to the KNOWN_DEPENDENCIES dictionary in this script. ")
+        print(
+            "\nERROR: There are unknown dependencies:\n    {}".format(
+                "    \n".join(sorted(missing))
+            )
+        )
+        print(
+            "\n(Fix this by adding the dependency to the KNOWN_DEPENDENCIES dictionary in this script. "
+        )
         print("A list of possible dependencies can be found in EPICS\\configure\\MASTER_RELEASE)")
         exit(1)
     sorted_lines = sorted([line for line in lines if line != ""])
@@ -475,12 +482,15 @@ def replace_dependencies_in_release_file(base_dir):
     print("Done")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Edit the configure\RELEASE file to add dependencies needed')
-    parser.add_argument('base_dir',
-                        nargs='?',
-                        help="base directory relative to current working directory; default current working dir")
+        description="Edit the configure\RELEASE file to add dependencies needed"
+    )
+    parser.add_argument(
+        "base_dir",
+        nargs="?",
+        help="base directory relative to current working directory; default current working dir",
+    )
 
     args = parser.parse_args()
 

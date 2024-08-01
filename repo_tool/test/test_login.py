@@ -19,8 +19,9 @@ class GitHubMock:
 
     @staticmethod
     def login(user, token):
-        if (GitHubMock.username is None and GitHubMock.token is None) or \
-                (user == GitHubMock.username and token == GitHubMock.token):
+        if (GitHubMock.username is None and GitHubMock.token is None) or (
+            user == GitHubMock.username and token == GitHubMock.token
+        ):
             if GitHubMock.git_hub_mock is None:
                 return GitHubMock()
             else:
@@ -37,7 +38,6 @@ class GitHubMock:
 
 
 class TestLogin(unittest.TestCase):
-
     def setUp(self):
         self.github = GitHubMock
 
@@ -45,24 +45,30 @@ class TestLogin(unittest.TestCase):
         GitHubMock.setUsernameAndPassword("user", "token")
 
         assert_that(
-            calling(RepositoryManipulator).with_args(username="", token="", login_method=self.github.login),
-            raises(UserError))
+            calling(RepositoryManipulator).with_args(
+                username="", token="", login_method=self.github.login
+            ),
+            raises(UserError),
+        )
 
     def test_with_valid_credential_does_not_throw_excpetion(self):
         username = "user"
         token = "token"
         GitHubMock.setUsernameAndPassword(username, token)
 
-        isis_repos = RepositoryManipulator(username=username, token=token, login_method=self.github.login)
+        isis_repos = RepositoryManipulator(
+            username=username, token=token, login_method=self.github.login
+        )
 
 
 class TestCheckedDate(unittest.TestCase):
-
     def test_GIVEN_blank_WHN_get_checked_date_THEN_error(self):
         date_string = ""
 
-        assert_that(calling(RepositoryManipulator.get_checked_date).with_args(date_string),
-                    raises(UserError))
+        assert_that(
+            calling(RepositoryManipulator.get_checked_date).with_args(date_string),
+            raises(UserError),
+        )
 
     def test_GIVEN_valid_WHN_get_checked_date_THEN_date_tuple_retuned(self):
         date_string = "2010-02-01"
@@ -75,9 +81,11 @@ class TestCheckedDate(unittest.TestCase):
     def test_GIVEN_invalid_WHN_get_checked_date_THEN_error(self):
         date_string = "2010-13-20"
 
-        assert_that(calling(RepositoryManipulator.get_checked_date).with_args(date_string),
-                    raises(UserError))
+        assert_that(
+            calling(RepositoryManipulator.get_checked_date).with_args(date_string),
+            raises(UserError),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -40,7 +40,5 @@ def format_output_file_name(original_file_name, original_file_type, output_file_
     :return: output_file_name
     """
     print(f"Found original file {original_file_name}")
-    output_file_name = "{}{}".format(
-        original_file_name.strip(original_file_type), output_file_type
-    )
+    output_file_name = "{}{}".format(original_file_name.strip(original_file_type), output_file_type)
     return output_file_name

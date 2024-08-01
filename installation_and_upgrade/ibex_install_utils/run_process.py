@@ -14,10 +14,20 @@ class RunProcess:
     Create a process runner to run a process.
     """
 
-    def __init__(self, working_dir, executable_file, executable_directory=None, press_any_key=False, prog_args=None,
-                 capture_pipes=True, std_in=None, log_command_args=True,
-                 expected_return_codes: Union[int, List[int], None] = [0], capture_last_output=False,
-                 progress_metric=[]):
+    def __init__(
+        self,
+        working_dir,
+        executable_file,
+        executable_directory=None,
+        press_any_key=False,
+        prog_args=None,
+        capture_pipes=True,
+        std_in=None,
+        log_command_args=True,
+        expected_return_codes: Union[int, List[int], None] = [0],
+        capture_last_output=False,
+        progress_metric=[],
+    ):
         """
         Create a process that needs running
 
@@ -75,53 +85,78 @@ class RunProcess:
 
             if not self._capture_pipes:
                 if self._stdin:
-                    error_code = subprocess.call(command_line, cwd=self._working_dir, stdin=self._stdin)
+                    error_code = subprocess.call(
+                        command_line, cwd=self._working_dir, stdin=self._stdin
+                    )
                 else:
                     error_code = subprocess.call(command_line, cwd=self._working_dir)
-                if self._expected_return_codes is not None and error_code not in self._expected_return_codes:
+                if (
+                    self._expected_return_codes is not None
+                    and error_code not in self._expected_return_codes
+                ):
                     raise ErrorInRun(f"Command failed with error code: {error_code}")
             elif self._press_any_key:
-                output = subprocess.Popen(command_line, cwd=self._working_dir,
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
+                output = subprocess.Popen(
+                    command_line,
+                    cwd=self._working_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    stdin=subprocess.PIPE,
+                )
                 output_lines, err = output.communicate(b" ")
                 for line in output_lines.splitlines():
                     print(f"    > {line}")
-                if self._expected_return_codes is not None and output.returncode not in self._expected_return_codes:
+                if (
+                    self._expected_return_codes is not None
+                    and output.returncode not in self._expected_return_codes
+                ):
                     raise subprocess.CalledProcessError(output.returncode, command_line)
             else:
-                process = subprocess.Popen(command_line, cwd=self._working_dir,
-                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                           universal_newlines=True)
+                process = subprocess.Popen(
+                    command_line,
+                    cwd=self._working_dir,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True,
+                )
                 if len(self._progress_metric) < 2:
                     self.output_no_progress(process)
                 else:
                     self.output_progress(process)
                 process.stdout.close()
                 return_code = process.wait()
-                if self._expected_return_codes is not None and return_code not in self._expected_return_codes:
+                if (
+                    self._expected_return_codes is not None
+                    and return_code not in self._expected_return_codes
+                ):
                     raise subprocess.CalledProcessError(return_code, command_line)
 
             print("    ... finished")
         except subprocess.CalledProcessError as ex:
             if ex.output:
-                print(f"Process failed with return code {ex.returncode} (expected {self._expected_return_codes}). "
-                      f"Output was: ")
+                print(
+                    f"Process failed with return code {ex.returncode} (expected {self._expected_return_codes}). "
+                    f"Output was: "
+                )
                 for line in ex.output.splitlines():
                     print(f"    > {line}")
                 print(" --- ")
             else:
-                print(f"Process failed with return code {ex.returncode} (expected {self._expected_return_codes}) "
-                      f"and no output.")
+                print(
+                    f"Process failed with return code {ex.returncode} (expected {self._expected_return_codes}) "
+                    f"and no output."
+                )
 
             raise ErrorInRun(
-                f"Command failed with return code {ex.returncode} (expected {self._expected_return_codes})")
+                f"Command failed with return code {ex.returncode} (expected {self._expected_return_codes})"
+            )
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun(f"Command '{self._bat_file}' not found in '{self._working_dir}'")
             elif ex.errno == 22:
                 raise ErrorInRun(
-                    f"Directory not found to run command '{self._bat_file}', command is in :  '{self._working_dir}'")
+                    f"Directory not found to run command '{self._bat_file}', command is in :  '{self._working_dir}'"
+                )
             raise ex
 
     def output_no_progress(self, process):

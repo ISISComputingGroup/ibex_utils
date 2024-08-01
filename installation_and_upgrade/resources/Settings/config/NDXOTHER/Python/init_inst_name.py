@@ -1,3 +1,2 @@
-
 def init(inst):
-	pass
+    pass

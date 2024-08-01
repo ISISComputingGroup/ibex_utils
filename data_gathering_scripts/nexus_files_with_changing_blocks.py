@@ -8,17 +8,19 @@ from datetime import datetime, timedelta
 import h5py
 
 # List of machines to perform analysis for
-machines = ("NDXALF",
-            "NDXENGINX",
-            "NDXHRPD",
-            "NDXIMAT",
-            "NDXIRIS",
-            "NDXLARMOR",
-            "NDXMERLIN",
-            "NDXMUONFE",
-            "NDXPOLARIS",
-            "NDXVESUVIO",
-            "NDXZOOM")
+machines = (
+    "NDXALF",
+    "NDXENGINX",
+    "NDXHRPD",
+    "NDXIMAT",
+    "NDXIRIS",
+    "NDXLARMOR",
+    "NDXMERLIN",
+    "NDXMUONFE",
+    "NDXPOLARIS",
+    "NDXVESUVIO",
+    "NDXZOOM",
+)
 
 IGNORE_LIST = ("EPICS_PUTLOG", "ICP_DAE_TD", "ICP_SYS_TD", "Status")
 
@@ -51,14 +53,13 @@ def check(machine, cycle, outf):
 
     for file_name in listdir:
         if file_name.endswith(".nxs"):
-
             try:
                 with h5py.File(os.path.join(path, file_name)) as f:
                     data_file = {
                         "start_time": f["raw_data_1"]["start_time"][0],
                         "end_time": f["raw_data_1"]["end_time"][0],
                         "run_number": f["raw_data_1"]["run_number"][0],
-                        "blocks": f["raw_data_1"]["selog"].keys()
+                        "blocks": f["raw_data_1"]["selog"].keys(),
                     }
 
                 if last_data_file is not None:
@@ -68,11 +69,15 @@ def check(machine, cycle, outf):
                     removals = current_blocks - last_blocks
                     same = len(additions) + len(removals) == 0
                     end_of_last = datetime.strptime(last_data_file["end_time"], "%Y-%m-%dT%H:%M:%S")
-                    start_of_current = datetime.strptime(data_file["start_time"], "%Y-%m-%dT%H:%M:%S")
+                    start_of_current = datetime.strptime(
+                        data_file["start_time"], "%Y-%m-%dT%H:%M:%S"
+                    )
                     gap = start_of_current - end_of_last
                     if not same and gap < timedelta(seconds=100):
                         run_number = data_file["run_number"]
-                        outf.write(f"{run_number}, {gap.total_seconds()}, {start_of_current}: added {additions} removed {removals}\n")
+                        outf.write(
+                            f"{run_number}, {gap.total_seconds()}, {start_of_current}: added {additions} removed {removals}\n"
+                        )
 
                 last_data_file = data_file
             except IOError:

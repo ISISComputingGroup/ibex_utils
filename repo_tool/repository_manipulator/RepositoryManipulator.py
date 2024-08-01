@@ -155,9 +155,10 @@ class RepositoryManipulator:
         if date_from is not None:
             from_date = RepositoryManipulator.get_checked_date(date_from)
             new_milestone_title = SPRINT_MILESTONE_TEMPLATE.format(
-                year=from_date.year, month=from_date.month, day=from_date.day)
+                year=from_date.year, month=from_date.month, day=from_date.day
+            )
             due_on_date = RepositoryManipulator.get_checked_date(date_to)
-            due_on = due_on_date.isoformat()+"Z"
+            due_on = due_on_date.isoformat() + "Z"
         else:
             due_on = None
             new_milestone_title = None
@@ -167,7 +168,9 @@ class RepositoryManipulator:
             if not repo.has_issues:
                 print("    no issues milestone not updates")
             else:
-                self._update_milestones_on_rep(due_on, new_milestone_title, repo, close_old_milestones)
+                self._update_milestones_on_rep(
+                    due_on, new_milestone_title, repo, close_old_milestones
+                )
 
     def _update_milestones_on_rep(self, due_on, new_milestone_title, repo, close_old_milestones):
         """
@@ -177,7 +180,7 @@ class RepositoryManipulator:
         :param repo: repository to which it should be added
         :return:
         """
-        for milestone in repo.iter_milestones(state='open'):
+        for milestone in repo.iter_milestones(state="open"):
             if close_old_milestones:
                 self._close_milestone_if_old(milestone, repo.name)
             if new_milestone_title is not None and milestone.title == new_milestone_title:
@@ -189,9 +192,8 @@ class RepositoryManipulator:
         print(f"    milestone add {new_milestone_title}")
         if not self.dry_run:
             milestone = repo.create_milestone(
-                title=new_milestone_title,
-                description="Milestone for sprint.",
-                due_on=due_on)
+                title=new_milestone_title, description="Milestone for sprint.", due_on=due_on
+            )
             if milestone is None:
                 raise UserError("Unknown error creating milestone on repository.")
 
@@ -216,12 +218,16 @@ class RepositoryManipulator:
                 close_issue = True
 
             if close_issue and milestone.open_issues > 0:
-                print(f"Milestone '{milestone.title}' is past its due date but has open issues so can not be closed")
+                print(
+                    f"Milestone '{milestone.title}' is past its due date but has open issues so can not be closed"
+                )
             elif close_issue:
                 print(f"Close {milestone.title}")
                 if not self.dry_run:
                     if not milestone.update(state="closed"):
-                        raise UserError(f"Can not close milestone '{milestone.title}' in repo '{repo_name}'")
+                        raise UserError(
+                            f"Can not close milestone '{milestone.title}' in repo '{repo_name}'"
+                        )
 
     def update_labels(self, ensure_labels):
         """

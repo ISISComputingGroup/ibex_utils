@@ -14,12 +14,12 @@ class CaWrapper:
         self.g = None
 
     def _get_genie(self):
-
         # Do import locally (late) as otherwise it writes logs to c:\instrument\var which interferes with VHD deploy.
         if self.g is not None:
             return self.g
 
         from genie_python import genie as g
+
         self.g = g
         self.g.set_instrument(os.getenv("MYPVPREFIX"), import_instrument_init=False)
         return g
@@ -51,6 +51,7 @@ class CaWrapper:
             return None
         else:
             from genie_python.utilities import dehex_and_decompress
+
             return dehex_and_decompress(data)
 
     def get_blocks(self):
