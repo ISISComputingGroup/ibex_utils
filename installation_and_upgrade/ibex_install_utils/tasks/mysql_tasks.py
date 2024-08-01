@@ -8,12 +8,18 @@ from time import sleep
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInRun
 from ibex_install_utils.run_process import RunProcess
+from ibex_install_utils.software_dependency.mysql import MySQL
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA, VAR_DIR, STAGE_DELETED, EPICS_PATH
+from ibex_install_utils.tasks.common_paths import (
+    APPS_BASE_DIR,
+    EPICS_PATH,
+    INST_SHARE_AREA,
+    STAGE_DELETED,
+    VAR_DIR,
+)
 from ibex_install_utils.user_prompt import UserPrompt
 from ibex_install_utils.version_check import version_check
-from ibex_install_utils.software_dependency.mysql import MySQL
 
 try:
     from subprocess import DETACHED_PROCESS

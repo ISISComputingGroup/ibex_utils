@@ -1,10 +1,10 @@
+import re
 import subprocess
 
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import EPICS_PATH
-from genie_python import genie as g
-import re
+
 
 class GitTasks(BaseTasks):
 
@@ -12,7 +12,7 @@ class GitTasks(BaseTasks):
     def show_git_status(self):
         subprocess.call(f"cd {EPICS_PATH} && git status", shell=True)
 
-    @task(f"Swap instrument git branch to release on CONTROL-SVCS")
+    @task("Swap instrument git branch to release on CONTROL-SVCS")
     def checkout_to_release_branch(self):
         version_pattern = r'^\d+\.\d+\.\d+$'
         if self._server_source_dir.endswith('32'):
@@ -54,7 +54,7 @@ class GitTasks(BaseTasks):
             print("Pushed to the remote")
         except subprocess.CalledProcessError as e:
             print(f"Error checking out to new release branch and push: {e}")
-            print(f"Branch may previously exist either locally or remotely - intervention required")
+            print("Branch may previously exist either locally or remotely - intervention required")
 
 # something for the future in case creting new beranch fails - maybe one exists we want to use?
 #            try:

@@ -1,11 +1,16 @@
 import unittest
-
-from galil_ini_parser import Galil, Axis
-from galil_ini_parser import apply_home_shift, common_setting_names, extract_galil_settings_from_file
-
-from mock import patch, call
-from parameterized import parameterized
 from typing import Dict
+
+from mock import patch
+from parameterized import parameterized
+
+from galil_ini_parser import (
+    Axis,
+    Galil,
+    apply_home_shift,
+    common_setting_names,
+    extract_galil_settings_from_file,
+)
 
 GALIL_CRATE_INDEX = "G1"
 AXIS_INDEX = "A"

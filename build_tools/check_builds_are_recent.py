@@ -1,8 +1,8 @@
-import os
-from typing import Union
-from datetime import datetime
-import sys
 import json
+import os
+import sys
+from datetime import datetime
+from typing import Union
 
 kits_root = r"\\isis\inst$\kits$\CompGroup\ICP"
 
@@ -64,7 +64,7 @@ def check_build_dirs(build_dirs):
 if __name__ == "__main__":
     builds_to_check = os.getenv("BUILDS_TO_CHECK")
     if builds_to_check is None:
-        print (f"ERROR: BUILDS_TO_CHECK enviroment variable not set")
+        print ("ERROR: BUILDS_TO_CHECK enviroment variable not set")
         sys.exit(1)
     try:
         builds_by_stale_times = json.loads(builds_to_check)

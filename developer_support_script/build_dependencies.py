@@ -3,7 +3,6 @@ Utility to help create build dependencies
 """
 
 import argparse
-
 import os
 import re
 
@@ -408,7 +407,7 @@ def get_entries(dependencies, macros):
         print("\n(Fix this by adding the dependency to the KNOWN_DEPENDENCIES dictionary in this script. ")
         print("A list of possible dependencies can be found in EPICS\\configure\\MASTER_RELEASE)")
         exit(1)
-    sorted_lines = sorted([line for line in lines if line is not ""])
+    sorted_lines = sorted([line for line in lines if line != ""])
     to_print = "\n".join(sorted_lines)
     print("    - Adding lines:\n        {}".format(to_print.replace("\n", "\n        ")))
     return sorted_lines

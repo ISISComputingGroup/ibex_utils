@@ -1,5 +1,6 @@
 import sys
 
+
 class ProgressBar:
     """
     A simple progress bar that can be used to print/update progress in the terminal.

@@ -7,8 +7,14 @@ from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, INST_SHARE_AREA, EPICS_PATH, APPS_BASE_DIR, \
-    SETTINGS_DIR, VAR_DIR
+from ibex_install_utils.tasks.common_paths import (
+    APPS_BASE_DIR,
+    EPICS_PATH,
+    INST_SHARE_AREA,
+    INSTRUMENT_BASE_DIR,
+    SETTINGS_DIR,
+    VAR_DIR,
+)
 
 
 class Vhd:
@@ -113,8 +119,7 @@ class VHDTasks(BaseTasks):
             admin_commands.add_command(
                 "powershell",
                 r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'
-                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename), name=vhd.name,
-                            driveletter_file=driveletter_file))
+                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename), driveletter_file=driveletter_file))
 
             # Append :\\ to drive letter, e.g. E -> E:\\ (this is necessary so that directory junctions work correctly)
             admin_commands.add_command(
@@ -134,7 +139,7 @@ class VHDTasks(BaseTasks):
             admin_commands.add_command(
                 "powershell",
                 r'-command "&cmd /c mklink /J /D {mount_point} @(cat {driveletter_file})"'
-                    .format(mount_point=vhd.mount_point, name=vhd.name, driveletter_file=driveletter_file))
+                    .format(mount_point=vhd.mount_point, driveletter_file=driveletter_file))
 
         admin_commands.run_all()
 

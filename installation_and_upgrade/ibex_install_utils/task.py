@@ -3,7 +3,7 @@ Task infrastructure.
 """
 import traceback
 
-from ibex_install_utils.exceptions import UserStop, ErrorInTask
+from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.user_prompt import UserPrompt
 
 

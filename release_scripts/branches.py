@@ -1,14 +1,13 @@
 import argparse
-import git
 import logging
 import os
-import sys
 import re
+import sys
 import xml.etree.ElementTree as ET
 from typing import Any, List
+
+import git
 from git.repo import Repo
-
-
 
 EPICS_REPO_URL = "https://github.com/ISISComputingGroup/EPICS.git"
 IBEX_REPO_URL = "https://github.com/ISISComputingGroup/ibex_gui.git"

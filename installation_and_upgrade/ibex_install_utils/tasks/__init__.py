@@ -4,7 +4,7 @@ from datetime import date
 
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.file_utils import FileUtils
-from ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
+from ibex_install_utils.tasks.common_paths import BACKUP_DATA_DIR, BACKUP_DIR
 
 
 class BaseTasks:

@@ -2,12 +2,13 @@
 Script to update calibration files on instruments
 """
 
-import git
-import subprocess
+import getpass
 import json
 import logging
 import os
-import getpass
+import subprocess
+
+import git
 from genie_python import genie as g
 from genie_python.utilities import dehex_and_decompress
 from six.moves import input

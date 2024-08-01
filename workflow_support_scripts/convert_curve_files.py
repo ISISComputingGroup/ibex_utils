@@ -3,11 +3,10 @@ Convert .curve files into the correct format for ISIS
 """
 
 import os
-
 from io import open
-from configs import FileTypes, ISISCalibration
 
 import utility
+from configs import FileTypes, ISISCalibration
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

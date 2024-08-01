@@ -1,20 +1,23 @@
+import glob
 import os
 import shutil
-import psutil
-import glob
 import subprocess
-from win32com.client import Dispatch
 
+import psutil
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import UserStop
 from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
+from ibex_install_utils.software_dependency.git import Git
+from ibex_install_utils.software_dependency.java import Java
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, THIRD_PARTY_INSTALLERS_DIR
+from ibex_install_utils.tasks.common_paths import (
+    APPS_BASE_DIR,
+    EPICS_PATH,
+)
 from ibex_install_utils.version_check import version_check
-from ibex_install_utils.software_dependency.java import Java
-from ibex_install_utils.software_dependency.git import Git
+from win32com.client import Dispatch
 
 GIGABYTE = 1024 ** 3
 

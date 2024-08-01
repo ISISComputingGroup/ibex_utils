@@ -3,10 +3,10 @@ A utility script to retrieve tests data from Jenkins jobs.
 Checks for common failures as Jenkins only tracks continuous failures.
 """
 
-import requests
 from collections import Counter, defaultdict
 from typing import Any
 
+import requests
 
 WARNING_THRESHOLD_PERCENTAGE = 10
 ERROR_THRESHOLD_PERCENTAGE = 50

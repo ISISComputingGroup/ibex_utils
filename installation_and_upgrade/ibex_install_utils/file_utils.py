@@ -3,18 +3,19 @@ Filesystem utility classes
 """
 
 import binascii
+import logging
+import msilib
 import os
 import shutil
 import tempfile
 import time
-import zlib
 import zipfile
-import logging
+import zlib
+from contextlib import contextmanager
+
 import win32api
-import msilib
 from ibex_install_utils.exceptions import UserStop
 from ibex_install_utils.run_process import RunProcess
-from contextlib import contextmanager
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
 

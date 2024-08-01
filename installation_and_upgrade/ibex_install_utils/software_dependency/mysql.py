@@ -2,10 +2,10 @@ import os
 import re
 import subprocess
 
+from ibex_install_utils.file_utils import file_in_zip, get_version
 from ibex_install_utils.software_dependency import SoftwareDependency
-from ibex_install_utils.version_check import VERSION_REGEX, get_major_minor_patch
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, INST_SHARE_AREA
-from ibex_install_utils.file_utils import get_version, file_in_zip
+from ibex_install_utils.version_check import VERSION_REGEX, get_major_minor_patch
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 

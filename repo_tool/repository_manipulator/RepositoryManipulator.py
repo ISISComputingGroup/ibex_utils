@@ -13,8 +13,9 @@ OR CONDITIONS OF ANY KIND.  See the Eclipse Public License v1.0 for more details
 
 import re
 from datetime import datetime, timedelta
+
 import pytz as pytz
-from github3 import login, GitHubError
+from github3 import GitHubError, login
 
 # template for the sprint milestones title
 SPRINT_MILESTONE_REGEX = "SPRINT_(\d+)_(\d+)_(\d+)"

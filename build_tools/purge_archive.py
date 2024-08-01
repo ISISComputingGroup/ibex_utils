@@ -1,7 +1,7 @@
+import glob
 import os
 import shutil
 import stat
-import glob
 from datetime import datetime, timedelta
 
 max_build_age_in_days = 30

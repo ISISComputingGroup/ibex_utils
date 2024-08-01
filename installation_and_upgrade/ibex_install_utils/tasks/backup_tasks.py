@@ -1,14 +1,23 @@
 import os
 import shutil
-import shutil
 
-from ibex_install_utils.user_prompt import UserPrompt
-from ibex_install_utils.progress_bar import ProgressBar
 from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.progress_bar import ProgressBar
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import BACKUP_DATA_DIR, BACKUP_DIR, EPICS_PATH, \
-    PYTHON_PATH, PYTHON_3_PATH, EPICS_UTILS_PATH, GUI_PATH, STAGE_DELETED, SETTINGS_DIR, AUTOSAVE
+from ibex_install_utils.tasks.common_paths import (
+    AUTOSAVE,
+    BACKUP_DATA_DIR,
+    BACKUP_DIR,
+    EPICS_PATH,
+    EPICS_UTILS_PATH,
+    GUI_PATH,
+    PYTHON_3_PATH,
+    PYTHON_PATH,
+    SETTINGS_DIR,
+    STAGE_DELETED,
+)
+from ibex_install_utils.user_prompt import UserPrompt
 
 COMMON_IGNORE_PATTERNS = ['*.*dmp', '*.stackdump',]
 

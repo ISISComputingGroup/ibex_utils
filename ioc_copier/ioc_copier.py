@@ -2,10 +2,11 @@
 Script to handle duplicating IOCs
 """
 
-from shutil import copytree, ignore_patterns
-import sys
 import os
 import re
+import sys
+from shutil import copytree, ignore_patterns
+
 global START_COPY
 global current_copy
 global padded_start_copy

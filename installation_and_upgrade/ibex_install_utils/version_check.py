@@ -2,6 +2,7 @@
 Third party program version checker infrastructure.
 """
 import re
+
 from ibex_install_utils.software_dependency import SoftwareDependency
 
 VERSION_REGEX = r"\s([0-9]+\.[0-9]+(\.[0-9]+)+)"

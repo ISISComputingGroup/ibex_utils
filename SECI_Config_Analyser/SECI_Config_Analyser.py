@@ -2,9 +2,10 @@
 Script to analyse SECI configurations and components and output results to file
 """
 
-from Directory_Operations import ReadConfigFiles
 import argparse
 from os import system
+
+from Directory_Operations import ReadConfigFiles
 
 if __name__ == '__main__':
 

@@ -1,5 +1,6 @@
 import os
 
+
 class CaWrapper:
     """
     Wrapper around genie python's channel access class providing some useful abstractions.

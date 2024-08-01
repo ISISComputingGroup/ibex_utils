@@ -1,7 +1,6 @@
 import re
-
 from collections import OrderedDict
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 AXIS_NUMBER_REGEX = r"(?<=Axis )\S+"
 

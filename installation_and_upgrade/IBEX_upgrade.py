@@ -6,13 +6,14 @@ import argparse
 import os
 import re
 import sys
-import semantic_version
 
-from ibex_install_utils.install_tasks import UpgradeInstrument, UPGRADE_TYPES
-from ibex_install_utils.exceptions import UserStop, ErrorInTask
-from ibex_install_utils.user_prompt import UserPrompt
+import semantic_version
+from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.file_utils import FileUtils
+from ibex_install_utils.install_tasks import UPGRADE_TYPES, UpgradeInstrument
 from ibex_install_utils.logger import Logger
+from ibex_install_utils.user_prompt import UserPrompt
+
 
 def _get_latest_release_path(release_dir):
     regex = re.compile(r'^\d+\.\d+\.\d+$')

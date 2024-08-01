@@ -1,10 +1,11 @@
 import unittest
-
 from datetime import datetime
-from hamcrest import *
+
 from github3 import GitHubError
-from repo_tool.repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
+from hamcrest import *
 from mock import Mock
+
+from repo_tool.repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
 
 
 class GitHubMock:

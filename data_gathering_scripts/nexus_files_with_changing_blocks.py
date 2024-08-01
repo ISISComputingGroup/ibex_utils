@@ -2,10 +2,10 @@
 Utility
 """
 
+import os
 from datetime import datetime, timedelta
 
 import h5py
-import os
 
 # List of machines to perform analysis for
 machines = ("NDXALF",

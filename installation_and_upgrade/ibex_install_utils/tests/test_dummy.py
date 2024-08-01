@@ -3,7 +3,8 @@
 #to run the file as a temp fix
 
 import io
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 
 class TestDummyTest:
     @patch("sys.stdout", new_callable=io.StringIO) #for patching mocked methods into tests

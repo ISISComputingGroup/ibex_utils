@@ -5,15 +5,17 @@ that the control software has logged when values changed.
 """
 
 # std imports
-from argparse import ArgumentParser
-from collections import OrderedDict
-from datetime import datetime, timedelta
 import logging
 import os.path as osp
 import sys
-# third party imports
-from h5py import (File as HDF5File)
+from argparse import ArgumentParser
+from collections import OrderedDict
+from datetime import datetime, timedelta
+
 import numpy as np
+
+# third party imports
+from h5py import File as HDF5File
 from six import iteritems
 
 # Logger for this module

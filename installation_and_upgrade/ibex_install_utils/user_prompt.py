@@ -1,8 +1,9 @@
 """
 Classes to interact with the user
 """
-from .exceptions import UserStop
 import six.moves
+
+from .exceptions import UserStop
 
 
 class UserPrompt:

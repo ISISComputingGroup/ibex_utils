@@ -1,11 +1,10 @@
-import os
 import argparse
-
-from configs import FileTypes
+import os
 from typing import Tuple
 
 import convert_curve_files
 import convert_temp_calib_files
+from configs import FileTypes
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

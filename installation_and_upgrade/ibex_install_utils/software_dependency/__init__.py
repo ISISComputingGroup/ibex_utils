@@ -1,8 +1,9 @@
 import os
 import re
-
 from abc import ABC, abstractmethod
+
 from ibex_install_utils.tasks.common_paths import THIRD_PARTY_INSTALLERS_LATEST_DIR
+
 
 class SoftwareDependency(ABC):
     """

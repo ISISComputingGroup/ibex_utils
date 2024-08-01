@@ -14,9 +14,8 @@ OR CONDITIONS OF ANY KIND.  See the Eclipse Public License v1.0 for more details
 """
 
 import argparse
-from getpass import getpass
-
 import sys
+from getpass import getpass
 
 from repo_tool.repository_manipulator.RepositoryManipulator import RepositoryManipulator, UserError
 

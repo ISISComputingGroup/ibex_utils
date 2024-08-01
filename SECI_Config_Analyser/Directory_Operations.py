@@ -3,9 +3,9 @@
 # 3. for each file, parse XML for required tag and add value to list
 # 4. remove duplicates from list
 
-from os import listdir
-from fnmatch import fnmatch
 import xml.etree.ElementTree as ET
+from fnmatch import fnmatch
+from os import listdir
 
 
 class ReadConfigFiles:

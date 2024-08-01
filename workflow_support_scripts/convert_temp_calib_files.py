@@ -3,11 +3,10 @@ Convert .dat files into the correct format for ISIS
 """
 
 import os
-
 from io import open
-from configs import FileTypes
 
 import utility
+from configs import FileTypes
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 

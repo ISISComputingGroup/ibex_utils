@@ -9,9 +9,8 @@
 """
 
 
-import requests
-
 import docx
+import requests
 from six import moves
 
 # Globals - used in a couple of locations

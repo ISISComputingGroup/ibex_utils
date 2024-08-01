@@ -4,7 +4,9 @@
 
 import io
 from unittest.mock import patch
+
 from ibex_install_utils.progress_bar import ProgressBar
+
 
 class TestStringMethods:
     @patch('sys.stdout', new_callable=io.StringIO)

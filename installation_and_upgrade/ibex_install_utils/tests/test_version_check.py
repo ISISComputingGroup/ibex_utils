@@ -1,11 +1,12 @@
-import pytest
 import os
 from unittest.mock import Mock
-from ibex_install_utils.version_check import *
-from ibex_install_utils.software_dependency.java import Java
-from ibex_install_utils.software_dependency.git import Git
-from ibex_install_utils.software_dependency.mysql import MySQL
+
+import pytest
 from ibex_install_utils.software_dependency import is_higher
+from ibex_install_utils.software_dependency.git import Git
+from ibex_install_utils.software_dependency.java import Java
+from ibex_install_utils.version_check import *
+
 
 def get_version_from_name(name):
     """

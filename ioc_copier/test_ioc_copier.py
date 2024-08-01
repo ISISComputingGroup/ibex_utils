@@ -1,8 +1,10 @@
-import ioc_copier
-import unittest
 import os
-from parameterized import parameterized
+import unittest
 from unittest import mock
+
+from parameterized import parameterized
+
+import ioc_copier
 
 
 class TestIocCopier(unittest.TestCase):

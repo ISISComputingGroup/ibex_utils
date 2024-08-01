@@ -1,9 +1,12 @@
 import argparse
 import pathlib
-
 from distutils.util import strtobool
 
-from galil_ini_parser import apply_home_shift, common_setting_names, extract_galil_settings_from_file
+from galil_ini_parser import (
+    apply_home_shift,
+    common_setting_names,
+    extract_galil_settings_from_file,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input_file", help="Input file location", action="store", required=True)

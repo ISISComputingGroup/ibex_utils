@@ -5,6 +5,7 @@ from ibex_install_utils.file_utils import get_version
 from ibex_install_utils.software_dependency import SoftwareDependency
 from ibex_install_utils.version_check import VERSION_REGEX, get_major_minor_patch
 
+
 class Git(SoftwareDependency):
     def get_name(self) -> str:
         return "Git"

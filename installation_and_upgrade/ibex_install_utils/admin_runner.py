@@ -1,19 +1,19 @@
 import contextlib
+import os
 import tempfile
 from time import sleep
-import os
 
 
 class AdminRunner:
     @staticmethod
     def run_command(command, parameters, expected_return_val=0):
         try:
-            from win32com.shell.shell import ShellExecuteEx
-            from win32com.shell import shellcon
-            import win32event
-            import win32process
             import win32api
             import win32con
+            import win32event
+            import win32process
+            from win32com.shell import shellcon
+            from win32com.shell.shell import ShellExecuteEx
         except ImportError:
             raise OSError("Can only elevate privileges on windows")
 
