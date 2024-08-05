@@ -3,9 +3,9 @@
 # 3. for each file, parse XML for required tag and add value to list
 # 4. remove duplicates from list
 
-from os import listdir
-from fnmatch import fnmatch
 import xml.etree.ElementTree as ET
+from fnmatch import fnmatch
+from os import listdir
 
 
 class ReadConfigFiles:
@@ -17,7 +17,7 @@ class ReadConfigFiles:
         """
         create lists for filenames and initialise to empty lists
         call methods for reading directory contents and searching for config filenames
-        :param search_path: the search path for files 
+        :param search_path: the search path for files
         """
 
         self.full_path = search_path
@@ -34,19 +34,16 @@ class ReadConfigFiles:
         """
 
         for filename in self.directory_contents:
-
-            if fnmatch(filename, '*.conf'):
-
+            if fnmatch(filename, "*.conf"):
                 self.config_filenames.append(filename)
 
-            elif fnmatch(filename, '*.comp'):
-
+            elif fnmatch(filename, "*.comp"):
                 self.comp_filenames.append(filename)
 
     def _parse_vis_from_files(self, filenames):
         """
         extracts VI names and paths from config files
-        :param filenames: list of filenames to process 
+        :param filenames: list of filenames to process
         :return: vis_in_files: list of VIs with fullpaths
         """
 
@@ -70,7 +67,7 @@ class ReadConfigFiles:
         vis_in_file = []
         tree = ET.parse(filename_and_path)
         root = tree.getroot()
-        for child in root.iter('FilePath'):
+        for child in root.iter("FilePath"):
             vi_path = ET.tostring(child, encoding=None, method="text")
             vis_in_file.append(vi_path.strip())
 
@@ -91,8 +88,7 @@ class ReadConfigFiles:
         encountered = set()
 
         for item in input_list:
-
-            item = str(item, 'UTF-8')
+            item = str(item, "UTF-8")
             if item not in encountered:
                 output_list.append(item)
                 encountered.add(item)

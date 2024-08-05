@@ -1,11 +1,10 @@
-import os
 import argparse
-
-from configs import FileTypes
+import os
 from typing import Tuple
 
 import convert_curve_files
 import convert_temp_calib_files
+from configs import FileTypes
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -15,12 +14,28 @@ def get_arguments() -> Tuple[str, str, int]:
     Get the input and output folders from the command line
     :return: input_folder, output_folder
     """
-    parser = argparse.ArgumentParser(description='Get the input and output folder')
-    parser.add_argument('-i', "--input", dest="input_folder", type=str, help='The input folder', required=True)
-    parser.add_argument('-o', "--output", dest="output_folder", type=str, help='The output folder', required=True)
-    parser.add_argument('-thl', "--temp_header_lines", dest="num_of_temp_header_lines", type=int, help='The number of header lines to strip from temp files', required=False, default=1)
+    parser = argparse.ArgumentParser(description="Get the input and output folder")
+    parser.add_argument(
+        "-i", "--input", dest="input_folder", type=str, help="The input folder", required=True
+    )
+    parser.add_argument(
+        "-o", "--output", dest="output_folder", type=str, help="The output folder", required=True
+    )
+    parser.add_argument(
+        "-thl",
+        "--temp_header_lines",
+        dest="num_of_temp_header_lines",
+        type=int,
+        help="The number of header lines to strip from temp files",
+        required=False,
+        default=1,
+    )
     args = parser.parse_args()
-    return os.path.join(dir_path, args.input_folder), os.path.join(dir_path, args.output_folder), args.num_of_temp_header_lines
+    return (
+        os.path.join(dir_path, args.input_folder),
+        os.path.join(dir_path, args.output_folder),
+        args.num_of_temp_header_lines,
+    )
 
 
 class FileConverter:
@@ -110,7 +125,9 @@ class FileConverter:
             convert_curve_files.convert(original_file_name, output_folder, root)
         # If the file is in .dat format
         if original_file_name.endswith(FileTypes.ORIGINAL_DAT_FILE_EXTENSION):
-            convert_temp_calib_files.convert(original_file_name, output_folder, root, num_of_temp_header_lines)
+            convert_temp_calib_files.convert(
+                original_file_name, output_folder, root, num_of_temp_header_lines
+            )
 
     def convert_all_files(self) -> None:
         """

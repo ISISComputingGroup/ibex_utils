@@ -1,8 +1,9 @@
 import os
 import re
-
 from abc import ABC, abstractmethod
+
 from ibex_install_utils.tasks.common_paths import THIRD_PARTY_INSTALLERS_LATEST_DIR
+
 
 class SoftwareDependency(ABC):
     """
@@ -39,13 +40,13 @@ class SoftwareDependency(ABC):
             path: The path to the dir/file.
         """
         ...
-    
+
     def get_search_dir(self) -> str:
         """
         Return the path to the directory containing the available versions of the software.
         """
         return THIRD_PARTY_INSTALLERS_LATEST_DIR
-    
+
     def find_available(self) -> list[str]:
         """
         Return a list of paths pointing to the available versions of this software on the system.
@@ -70,7 +71,7 @@ class SoftwareDependency(ABC):
         latest_version = self.get_version_of(latest_installer)
         for installer in installer_paths:
             v = self.get_version_of(installer)
-            #TODO do some logging
+            # TODO do some logging
 
             if is_higher(latest_version, v):
                 latest_installer = installer
@@ -78,6 +79,7 @@ class SoftwareDependency(ABC):
         # The following did not always work, because it only takes major minor patch into consideration.
         # latest = max(installer_paths, key=lambda path : int(get_major_minor_patch(self.get_installer_version(path)).replace(".", "")))
         return (latest_installer, latest_version)
+
 
 def is_higher(v1, v2):
     """
@@ -98,7 +100,7 @@ def is_higher(v1, v2):
             s2 = int(segments2[i])
         except:
             s2 = 0
-        
+
         if s1 < s2:
             return True
         elif s1 > s2:

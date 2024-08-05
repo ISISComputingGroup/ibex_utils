@@ -2,10 +2,11 @@
 Script to handle duplicating IOCs
 """
 
-from shutil import copytree, ignore_patterns
-import sys
 import os
 import re
+import sys
+from shutil import copytree, ignore_patterns
+
 global START_COPY
 global current_copy
 global padded_start_copy
@@ -23,17 +24,29 @@ def rename_files(root_folder, rename, ioc):
         padded_current_copy - the padded version of the current ioc number.
     """
     if f"IOC_{padded_start_copy}" in rename:
-        os.rename(os.path.join(root_folder, rename),
-                  os.path.join(root_folder, rename.replace(f"IOC_{padded_start_copy}",
-                                                           f"IOC_{padded_current_copy}")))
+        os.rename(
+            os.path.join(root_folder, rename),
+            os.path.join(
+                root_folder,
+                rename.replace(f"IOC_{padded_start_copy}", f"IOC_{padded_current_copy}"),
+            ),
+        )
     if f"IOC-{padded_start_copy}" in rename:
-        os.rename(os.path.join(root_folder, rename),
-                  os.path.join(root_folder, rename.replace(f"IOC-{padded_start_copy}",
-                                                           f"IOC-{padded_current_copy}")))
+        os.rename(
+            os.path.join(root_folder, rename),
+            os.path.join(
+                root_folder,
+                rename.replace(f"IOC-{padded_start_copy}", f"IOC-{padded_current_copy}"),
+            ),
+        )
     if f"{ioc}_{padded_start_copy}" in rename:
-        os.rename(os.path.join(root_folder, rename),
-                  os.path.join(root_folder, rename.replace(f"{ioc}_{padded_start_copy}",
-                                                           f"{ioc}_{padded_current_copy}")))
+        os.rename(
+            os.path.join(root_folder, rename),
+            os.path.join(
+                root_folder,
+                rename.replace(f"{ioc}_{padded_start_copy}", f"{ioc}_{padded_current_copy}"),
+            ),
+        )
 
 
 def replace_text(text_lines, ioc, skip=None):
@@ -48,7 +61,10 @@ def replace_text(text_lines, ioc, skip=None):
     """
     if skip is None:
         skip = []
-    return [replace_line(ioc, line) if index not in skip else line for index, line in enumerate(text_lines)]
+    return [
+        replace_line(ioc, line) if index not in skip else line
+        for index, line in enumerate(text_lines)
+    ]
 
 
 def replace_line(ioc, line):
@@ -61,7 +77,9 @@ def replace_line(ioc, line):
     """
     global asub_record
     if "record(aSub" in line and not asub_record:
-        print("DB contains aSubRecord, this has been duplicated, but may need a more thorough check.")
+        print(
+            "DB contains aSubRecord, this has been duplicated, but may need a more thorough check."
+        )
         asub_record = True
     temp_text = re.sub(f"IOC_{START_COPY}", f"IOC_{current_copy}", line)
     line = temp_text
@@ -77,8 +95,7 @@ def replace_line(ioc, line):
     line = temp_text
     temp_text = re.sub(f"{ioc}_0{START_COPY}", f"{ioc}_{padded_current_copy}", line)
     line = temp_text
-    temp_text = re.sub(f"RAMPFILELIST0{START_COPY}", f"RAMPFILELIST{padded_current_copy}",
-                       line)
+    temp_text = re.sub(f"RAMPFILELIST0{START_COPY}", f"RAMPFILELIST{padded_current_copy}", line)
     line = temp_text
     return line
 
@@ -89,15 +106,21 @@ def help_check():
     """
     if "-h" in sys.argv:
         print("First Argument: <ioc-to-duplicate>")
-        print("This should be the name of the ioc folder, the folders to "
-              "actual duplicate will all contain this in their names.\n")
+        print(
+            "This should be the name of the ioc folder, the folders to "
+            "actual duplicate will all contain this in their names.\n"
+        )
         print("Second Argument: <number-ioc-to-copy")
-        print("This should be the last currently existing ioc number, "
-              "e.g. 2. If copying IOC-01 please test extremely thoroughly as there may be edge cases the script"
-              "cannot account for.\n")
+        print(
+            "This should be the last currently existing ioc number, "
+            "e.g. 2. If copying IOC-01 please test extremely thoroughly as there may be edge cases the script"
+            "cannot account for.\n"
+        )
         print("Third Argument: <first-copy>")
-        print("This should be the number of the first copy, i.e."
-              " the first IOC made will be IOC-<first-copy>.\n")
+        print(
+            "This should be the number of the first copy, i.e."
+            " the first IOC made will be IOC-<first-copy>.\n"
+        )
         print("Fourth Argument: <max-number-ioc>")
         print("This should be the maximum number copied to.\n")
         print("Make sure to run this file from an epics terminal so that make clean can run.\n")
@@ -117,15 +140,19 @@ def handle_arguments():
     """
     if len(sys.argv) < 5:
         print("Not enough arguments")
-        print("Arguments should be <ioc-to-duplicate> <number-ioc-to-copy> "
-              "<first-copy> <max-number-ioc>")
-        print("use argument \"-h\" for more details.")
+        print(
+            "Arguments should be <ioc-to-duplicate> <number-ioc-to-copy> "
+            "<first-copy> <max-number-ioc>"
+        )
+        print('use argument "-h" for more details.')
         sys.exit()
     elif len(sys.argv) > 5:
         print("Too many arguments")
-        print("Arguments should be <ioc-to-duplicate> <number-ioc-to-copy> "
-              "<first-copy> <max-number-ioc>")
-        print("use argument \"-h\" for more details.")
+        print(
+            "Arguments should be <ioc-to-duplicate> <number-ioc-to-copy> "
+            "<first-copy> <max-number-ioc>"
+        )
+        print('use argument "-h" for more details.')
         sys.exit()
     else:
         ioc = sys.argv[1]
@@ -149,14 +176,16 @@ def copy_folder(file_format, ioc_name):
     start_path = file_format.format(f"{ioc_name}-{padded_start_copy}")
     path = os.path.join(os.getcwd(), file_format.format(f"{ioc_name}-{padded_current_copy}"))
     try:
-        copytree(os.path.join(os.getcwd(), start_path), os.path.join(path), ignore=ignore_patterns("st-*.cmd",
-                                                                                                   "build.mak",
-                                                                                                   "*.db",
-                                                                                                   "*.substitutions",
-                                                                                                   "*.req"))
+        copytree(
+            os.path.join(os.getcwd(), start_path),
+            os.path.join(path),
+            ignore=ignore_patterns("st-*.cmd", "build.mak", "*.db", "*.substitutions", "*.req"),
+        )
     except FileExistsError:
-        raise FileExistsError(f"Copy {padded_current_copy} already exists, please ensure that the initial copy "
-                              f"argument is greater than the highest number IOC.") from None
+        raise FileExistsError(
+            f"Copy {padded_current_copy} already exists, please ensure that the initial copy "
+            f"argument is greater than the highest number IOC."
+        ) from None
     return path
 
 
@@ -166,12 +195,14 @@ def generate_config(ioc):
     :param ioc: the ioc name
     :return: the text lines of the config.
     """
-    return ["<?xml version=\"1.0\" ?>\n",
-            "<ioc_config xmlns=\"http://epics.isis.rl.ac.uk/schema/ioc_config/1.0\" ",
-            "xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n",
-            f"<xi:include href=\"../ioc{ioc}-IOC-01/config.xml\"  />\n",
-            "\n",
-            "</ioc_config>"]
+    return [
+        '<?xml version="1.0" ?>\n',
+        '<ioc_config xmlns="http://epics.isis.rl.ac.uk/schema/ioc_config/1.0" ',
+        'xmlns:xi="http://www.w3.org/2001/XInclude">\n',
+        f'<xi:include href="../ioc{ioc}-IOC-01/config.xml"  />\n',
+        "\n",
+        "</ioc_config>",
+    ]
 
 
 def remove_db_plus(text):
@@ -199,7 +230,9 @@ def get_file_text(file, ioc, root):
     skip = []
     if START_COPY == 1:
         if file == "st.cmd":
-            skip = [x for x, val in enumerate(text) if f"< iocBoot/ioc{ioc}-IOC-01/st-common.cmd" in val]
+            skip = [
+                x for x, val in enumerate(text) if f"< iocBoot/ioc{ioc}-IOC-01/st-common.cmd" in val
+            ]
         elif file == "config.xml":
             return generate_config(ioc)
         elif path.endswith(r"App\Db\Makefile"):
@@ -295,13 +328,17 @@ def check_valid_ioc_to_copy(ioc):
     :param ioc: The ioc name.
     """
     if not os.path.exists(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")):
-        print("No valid st-common.cmd found, this IOC does not appear to be designed in a way that allows duplicates.")
+        print(
+            "No valid st-common.cmd found, this IOC does not appear to be designed in a way that allows duplicates."
+        )
         sys.exit()
     else:
         with open(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")) as file_pointer:
             text = file_pointer.read()
             if "seq " in text:
-                print("IOC Appears to contain sequencer commands, duplication should be done manually.")
+                print(
+                    "IOC Appears to contain sequencer commands, duplication should be done manually."
+                )
                 sys.exit()
 
 
@@ -318,12 +355,14 @@ def main():
     copy_loop(initial_copy, max_copy, "{}App", ioc)
     os.chdir(os.path.join(os.getcwd(), "iocBoot"))
     copy_loop(initial_copy, max_copy, "ioc{}", ioc)
-    print(f"Please run a grep for {START_COPY}. "
-          f"There may be some things missed by ths such as axes on a motor, "
-          f"as this file cannot just replace all iterations of {START_COPY} "
-          f"as doing so could break functionality.")
+    print(
+        f"Please run a grep for {START_COPY}. "
+        f"There may be some things missed by ths such as axes on a motor, "
+        f"as this file cannot just replace all iterations of {START_COPY} "
+        f"as doing so could break functionality."
+    )
     print("Once you are satisfied with duplication remember to run make.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

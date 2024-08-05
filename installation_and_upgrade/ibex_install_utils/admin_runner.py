@@ -1,19 +1,19 @@
 import contextlib
+import os
 import tempfile
 from time import sleep
-import os
 
 
 class AdminRunner:
     @staticmethod
     def run_command(command, parameters, expected_return_val=0):
         try:
-            from win32com.shell.shell import ShellExecuteEx
-            from win32com.shell import shellcon
-            import win32event
-            import win32process
             import win32api
             import win32con
+            import win32event
+            import win32process
+            from win32com.shell import shellcon
+            from win32com.shell.shell import ShellExecuteEx
         except ImportError:
             raise OSError("Can only elevate privileges on windows")
 
@@ -24,12 +24,12 @@ class AdminRunner:
             fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
             lpVerb="runas",
             lpFile=command,
-            lpParameters=parameters
+            lpParameters=parameters,
         )
 
-        win32event.WaitForSingleObject(process_info['hProcess'], 600000)
-        ret = win32process.GetExitCodeProcess(process_info['hProcess'])
-        win32api.CloseHandle(process_info['hProcess'])
+        win32event.WaitForSingleObject(process_info["hProcess"], 600000)
+        ret = win32process.GetExitCodeProcess(process_info["hProcess"])
+        win32api.CloseHandle(process_info["hProcess"])
 
         if ret != expected_return_val:
             raise IOError(f"Process returned {ret} (expected {expected_return_val})")
@@ -39,6 +39,7 @@ class AdminCommandBuilder:
     """
     Builder for running multiple commands sequentially as admin.
     """
+
     def __init__(self):
         self._commands = []
 
@@ -52,7 +53,6 @@ class AdminCommandBuilder:
         log_file.close()
 
         for cmd, parameters, expected_return_val in self._commands:
-
             bat_file += f"echo ### COMMAND: {cmd} {parameters} >> {log_file.name} 2>&1\r\n"
             bat_file += f"{cmd} {parameters} >> {log_file.name} 2>&1\r\n"
 
@@ -62,7 +62,9 @@ class AdminCommandBuilder:
         bat_file += "exit /B 0\r\n"
 
         with temp_bat_file(bat_file) as f:
-            print(f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. Log at {log_file.name}.")
+            print(
+                f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. Log at {log_file.name}."
+            )
             sleep(1)  # Wait for file handle to be closed etc
             try:
                 AdminRunner.run_command("cmd", f"/c {f}", expected_return_val=0)

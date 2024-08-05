@@ -7,6 +7,7 @@ class Logger:
     """
     Logger class used to capture output and input to a log file.
     """
+
     def __init__(self):
         CURRENT_DATE = time.strftime("%Y%m%d")
         LOG_FILE = f"DEPLOY-{CURRENT_DATE}.log"
@@ -18,11 +19,11 @@ class Logger:
         self.input = sys.stdin
         self.log = open(LOG_PATH, "a")
         print(f"Log file is {LOG_PATH}")
-        
+
     def write(self, message):
         self.log.write(message)
         return self.console.write(message)
-        
+
     def flush(self):
         self.console.flush()
         self.log.flush()
@@ -31,7 +32,7 @@ class Logger:
         text = self.input.readline()
         self.log.write(text)
         return text
-        
+
     @staticmethod
     def set_up():
         logger = Logger()

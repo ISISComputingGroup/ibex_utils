@@ -4,14 +4,21 @@ from datetime import date
 
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.file_utils import FileUtils
-from ibex_install_utils.tasks.common_paths import BACKUP_DIR, BACKUP_DATA_DIR
+from ibex_install_utils.tasks.common_paths import BACKUP_DATA_DIR, BACKUP_DIR
 
 
 class BaseTasks:
     _backup_dir = None
 
-    def __init__(self, user_prompt, server_source_dir, client_source_dir, genie_python3_dir,
-                 ibex_version, file_utils=FileUtils()):
+    def __init__(
+        self,
+        user_prompt,
+        server_source_dir,
+        client_source_dir,
+        genie_python3_dir,
+        ibex_version,
+        file_utils=FileUtils(),
+    ):
         """
         Initializer.
         Args:
@@ -52,7 +59,7 @@ class BaseTasks:
     def _today_date_for_filenames():
         return date.today().strftime("%Y_%m_%d")
 
-    @staticmethod 
+    @staticmethod
     def _generate_backup_dir_name():
         return f"ibex_backup_{BaseTasks._today_date_for_filenames()}"
 
@@ -61,24 +68,25 @@ class BaseTasks:
         """
         The backup directory contains the date of backup, if this script is
         running over multiple days this will return the date this method was first called.
-        
+
         Returns: The backup dir, will create it if needed (both old and dir).
         Raises: IOError if the base dir doesn't exist
         """
         # Return cached backup directory if there is one
         if BaseTasks._backup_dir is not None:
             return BaseTasks._backup_dir
-        
+
         new_backup_dir = os.path.join(BACKUP_DIR, BaseTasks._generate_backup_dir_name())
 
         if not os.path.exists(BACKUP_DATA_DIR):
             # data dir is a linked directory on real instrument machines so can't just simply be created with mkdir
-            raise IOError(f"Base directory does not exist {BACKUP_DATA_DIR} should be a provided linked dir")
-        
+            raise IOError(
+                f"Base directory does not exist {BACKUP_DATA_DIR} should be a provided linked dir"
+            )
+
         os.makedirs(new_backup_dir, exist_ok=True)
 
         # cache backup dir name (useful when backup happens over multiple days)
         # it will always refer to the date when backup was started
         BaseTasks._backup_dir = new_backup_dir
         return new_backup_dir
-

@@ -1,8 +1,10 @@
 """
 Classes to interact with the user
 """
-from .exceptions import UserStop
+
 import six.moves
+
+from .exceptions import UserStop
 
 
 class UserPrompt:
@@ -23,7 +25,9 @@ class UserPrompt:
         self._automatic = automatic
         self._confirm_steps = confirm_steps
 
-    def prompt(self, prompt_text, possibles, default, case_sensitive=False, show_automatic_answer=True):
+    def prompt(
+        self, prompt_text, possibles, default, case_sensitive=False, show_automatic_answer=True
+    ):
         """
         Prompt the user for an answer and check that answer. If in auto mode just answer the default
         Args:
@@ -49,7 +53,9 @@ class UserPrompt:
         while True:
             answer = six.moves.input(prompt_text).strip()
             for possible in possibles:
-                if answer == possible or (not case_sensitive and possible.lower() == answer.lower()):
+                if answer == possible or (
+                    not case_sensitive and possible.lower() == answer.lower()
+                ):
                     return possible
             print(f"Answer is not allowed can be one of ({possibles})")
 
@@ -75,5 +81,8 @@ class UserPrompt:
             default: default answer if in automatic mode
         Raises UserStop: if the user does not answer Y
         """
-        if self.prompt(f"{message}\nType Y when done.", possibles=["Y", "N"], default=default) != "Y":
+        if (
+            self.prompt(f"{message}\nType Y when done.", possibles=["Y", "N"], default=default)
+            != "Y"
+        ):
             raise UserStop

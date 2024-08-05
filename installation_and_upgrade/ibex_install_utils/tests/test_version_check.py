@@ -1,11 +1,12 @@
-import pytest
 import os
 from unittest.mock import Mock
-from ibex_install_utils.version_check import *
-from ibex_install_utils.software_dependency.java import Java
-from ibex_install_utils.software_dependency.git import Git
-from ibex_install_utils.software_dependency.mysql import MySQL
+
+import pytest
 from ibex_install_utils.software_dependency import is_higher
+from ibex_install_utils.software_dependency.git import Git
+from ibex_install_utils.software_dependency.java import Java
+from ibex_install_utils.version_check import *
+
 
 def get_version_from_name(name):
     """
@@ -17,20 +18,20 @@ def get_version_from_name(name):
 
 
 MOCK_JAVA_INSTALLERS = [
-    "OpenJDK_17.0.4.3_1.msi", # latest
+    "OpenJDK_17.0.4.3_1.msi",  # latest
     "OpenJDK_17.0.1_1.msi",
     "OpenJDK_17.0.4_1.msi",
-    "OpenJDK_16.0.4.6_1.msi"
+    "OpenJDK_16.0.4.6_1.msi",
 ]
 
 MOCK_GIT_INSTALLERS = [
     "Git-2.3.0-1.exe",
     "Git-2.3.2-1-bit.exe",  # latest
-    "Git-1.2.3-1-bit.exe"
+    "Git-1.2.3-1-bit.exe",
 ]
 
-class TestVersionCheck:
 
+class TestVersionCheck:
     def test_is_higher(self):
         assert is_higher("17.0", "17.0.1") == True
         assert is_higher("17.0.6", "17.0.1") == False
@@ -49,7 +50,7 @@ class TestVersionCheck:
 
         with pytest.raises(AttributeError):
             get_major_minor_patch("17.")
-        
+
         with pytest.raises(AttributeError):
             get_major_minor_patch("java 17.2.4")
 
