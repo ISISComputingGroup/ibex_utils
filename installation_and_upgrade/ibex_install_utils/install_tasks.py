@@ -296,9 +296,11 @@ class UpgradeInstrument:
         self._mysql_tasks.install_mysql(force=True)
 
     def run_update_calibrations_repository(self):
+        """update_calibrations_repository"""
         self._server_tasks.update_calibrations_repository()
 
     def run_setup_log_rotation(self):
+        """setup_log_rotation"""
         self._server_tasks.setup_log_rotation()
 
     def run_developer_update(self):
