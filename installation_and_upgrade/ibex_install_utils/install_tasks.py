@@ -295,6 +295,12 @@ class UpgradeInstrument:
         """
         self._mysql_tasks.install_mysql(force=True)
 
+    def run_update_calibrations_repository(self):
+        self._server_tasks.update_calibrations_repository()
+
+    def run_setup_log_rotation(self):
+        self._server_tasks.setup_log_rotation()
+
     def run_developer_update(self):
         """Update all the developer tools to latest version"""
         self._mysql_tasks.install_mysql(force=False)
@@ -389,6 +395,14 @@ UPGRADE_TYPES = {
     "force_upgrade_mysql": (
         UpgradeInstrument.run_force_upgrade_mysql,
         "upgrade mysql version to latest",
+    ),
+    "update_calibrations_repository": (
+        UpgradeInstrument.run_update_calibrations_repository,
+        "update calibrations repository",
+    ),
+    "setup_log_rotation": (
+        UpgradeInstrument.run_setup_log_rotation,
+        "setup log rotation",
     ),
     "developer_update": (UpgradeInstrument.run_developer_update, "install latest developer tools"),
     "create_vhds": (
