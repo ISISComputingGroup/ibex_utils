@@ -14,7 +14,7 @@ IF %errorlevel% neq 0 (
 xcopy /y  %SOURCE%\15.0.0\EPICS\utils\logrotate.py c:\instrument\apps\epics\utils
 IF %errorlevel% neq 0 goto ERROR
 
-for %%t in ( truncate_database force_upgrade_mysql update_calibrations_repository setup_log_rotation ) do (
+for %%t in ( truncate_database upgrade_mysql update_calibrations_repository setup_log_rotation ) do (
     call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step %%t
     IF !errorlevel! neq 0 goto ERROR
 )

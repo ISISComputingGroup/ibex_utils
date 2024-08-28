@@ -295,6 +295,12 @@ class UpgradeInstrument:
         """
         self._mysql_tasks.install_mysql(force=True)
 
+    def run_upgrade_mysql(self):
+        """:key
+        Do upgrade of mysql with no table recreate.
+        """
+        self._mysql_tasks.install_mysql(force=False)
+
     def run_update_calibrations_repository(self):
         """update_calibrations_repository"""
         self._server_tasks.update_calibrations_repository()
@@ -396,7 +402,11 @@ UPGRADE_TYPES = {
     ),
     "force_upgrade_mysql": (
         UpgradeInstrument.run_force_upgrade_mysql,
-        "upgrade mysql version to latest",
+        "upgrade mysql version to latest and recreate tables",
+    ),
+    "upgrade_mysql": (
+        UpgradeInstrument.run_upgrade_mysql,
+        "upgrade mysql version to latest but do not recreate tables",
     ),
     "update_calibrations_repository": (
         UpgradeInstrument.run_update_calibrations_repository,
