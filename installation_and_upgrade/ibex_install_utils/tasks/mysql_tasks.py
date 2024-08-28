@@ -94,7 +94,7 @@ class MysqlTasks(BaseTasks):
         try:
             mysql_bin_dir = self._get_mysql_dir()
 
-            sql_command = "truncate table msg_log.message;" +
+            sql_command = "truncate table msg_log.message;"\
                           "truncate table archive.sample;truncate table alarm.pv"
 
             RunProcess(
@@ -132,7 +132,7 @@ class MysqlTasks(BaseTasks):
         admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
         admin_commands.run_all()
 
-    def _remove_old_versions_of_mysql8(self, clean_install) -> None:
+    def _remove_old_versions_of_mysql8(self, clean_install: bool) -> None:
         if clean_install:
             self.prompt.prompt_and_raise_if_not_yes(
                 "Warning: this will erase all data held in the MySQL database. "

@@ -271,7 +271,7 @@ class UpgradeInstrument:
                 bytes(central_inst_info, encoding="utf8")
             ).decode("utf-8")
             central_inst_info = json.loads(central_inst_info)
-        except:
+        except Exception:
             central_inst_info = {}
 
         central_specific_inst_info = None
@@ -305,7 +305,7 @@ class UpgradeInstrument:
         """
         self._mysql_tasks.install_mysql(force=False)
 
-    def run_update_calibrations_repository(self):
+    def run_update_calibrations_repository(self) -> None:
         """update_calibrations_repository"""
         self._server_tasks.update_calibrations_repository()
 
