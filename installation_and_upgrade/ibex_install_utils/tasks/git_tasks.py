@@ -8,11 +8,11 @@ from ibex_install_utils.tasks.common_paths import EPICS_PATH
 
 class GitTasks(BaseTasks):
     @task(f"Show Git status in {EPICS_PATH}")
-    def show_git_status(self):
-        subprocess.call(f"cd {EPICS_PATH} && git status", shell=True)
+    def show_git_status(self) -> None:
+        subprocess.call(f"cd /d {EPICS_PATH} && git status", shell=True)
 
     @task("Swap instrument git branch to release on CONTROL-SVCS")
-    def checkout_to_release_branch(self):
+    def checkout_to_release_branch(self) -> None:
         version_pattern = r"^\d+\.\d+\.\d+$"
         if self._server_source_dir.endswith("32"):
             remote_repo = "EPICS32.git"
@@ -61,11 +61,3 @@ class GitTasks(BaseTasks):
         except subprocess.CalledProcessError as e:
             print(f"Error checking out to new release branch and push: {e}")
             print("Branch may previously exist either locally or remotely - intervention required")
-
-
-# something for the future in case creting new beranch fails - maybe one exists we want to use?
-#            try:
-#                subprocess.check_call(f"cd {EPICS_PATH} && git checkout %COMPUTERNAME%", shell=True)
-#                print("Switched to existing release branch")
-#            except subprocess.CalledProcessError as e:
-#                print(f"Error switching to existing release branch and push: {e}")
