@@ -64,7 +64,7 @@ class MysqlTasks(BaseTasks):
     Tasks relating to installing or maintaining an installation of MySQL on a machine.
     """
 
-    def _get_mysql_dir(self):
+    def _get_mysql_dir(self) -> str:
         """
         Returns the mysql 8 default install directory if it exists, else 5.7.
 
@@ -76,7 +76,7 @@ class MysqlTasks(BaseTasks):
 
         return mysql_bin_dir
 
-    def _get_mysql_backup_dir(self):
+    def _get_mysql_backup_dir(self) -> str:
         mysql_backup_dir = os.path.join(
             STAGE_DELETED,
             self._get_machine_name(),
@@ -87,14 +87,15 @@ class MysqlTasks(BaseTasks):
         return mysql_backup_dir
 
     @task("Truncate database")
-    def truncate_database(self):
+    def truncate_database(self) -> None:
         """
         Truncate the message log, sample and alarms tables
         """
         try:
             mysql_bin_dir = self._get_mysql_dir()
 
-            sql_command = "truncate table msg_log.message;truncate table archive.sample;truncate table alarm.pv"
+            sql_command = "truncate table msg_log.message;" +
+                          "truncate table archive.sample;truncate table alarm.pv"
 
             RunProcess(
                 MYSQL_FILES_DIR,
@@ -110,7 +111,7 @@ class MysqlTasks(BaseTasks):
                 f"Error is {ex}"
             )
 
-    def _configure_mysql(self):
+    def _configure_mysql(self) -> None:
         """
         Copy mysql settings and run the MySQL configuration script
         """
@@ -131,7 +132,7 @@ class MysqlTasks(BaseTasks):
         admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
         admin_commands.run_all()
 
-    def _remove_old_versions_of_mysql8(self, clean_install):
+    def _remove_old_versions_of_mysql8(self, clean_install) -> None:
         if clean_install:
             self.prompt.prompt_and_raise_if_not_yes(
                 "Warning: this will erase all data held in the MySQL database. "
@@ -151,11 +152,11 @@ class MysqlTasks(BaseTasks):
         if clean_install:
             self._remove_old_mysql_data_dir()
 
-    def _remove_old_mysql_data_dir(self):
+    def _remove_old_mysql_data_dir(self) -> None:
         if os.path.exists(MYSQL_FILES_DIR):
             shutil.rmtree(MYSQL_FILES_DIR)
 
-    def _create_mysql_binaries(self):
+    def _create_mysql_binaries(self) -> None:
         os.makedirs(MYSQL8_INSTALL_DIR)
 
         mysql_unzip_temp = os.path.join(APPS_BASE_DIR, "temp-mysql-unzip")
@@ -171,7 +172,7 @@ class MysqlTasks(BaseTasks):
 
         shutil.rmtree(mysql_unzip_temp)
 
-    def _initialize_mysql_data_area_for_vhd(self):
+    def _initialize_mysql_data_area_for_vhd(self) -> None:
         os.makedirs(os.path.join(MYSQL_FILES_DIR, "data"))
 
         RunProcess(
@@ -187,7 +188,7 @@ class MysqlTasks(BaseTasks):
         ).run()
 
     @contextlib.contextmanager
-    def temporarily_run_mysql(self, sql_password: str):
+    def temporarily_run_mysql(self, sql_password: str) -> None:
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         # spawn service in background
@@ -211,7 +212,7 @@ class MysqlTasks(BaseTasks):
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
 
-    def _setup_database_users_and_tables(self, vhd_install=True):
+    def _setup_database_users_and_tables(self, vhd_install:bool = True) -> None:
         sql_password = self.prompt.prompt(
             "Enter the MySQL root password:",
             UserPrompt.ANY,
@@ -235,8 +236,9 @@ class MysqlTasks(BaseTasks):
                     "-u",
                     "root",
                     "-e",
-                    f"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{sql_password}';FLUSH "
-                    f"privileges; ",
+                    "ALTER USER 'root'@'localhost' "
+                    f"IDENTIFIED WITH mysql_native_password BY '{sql_password}';FLUSH "
+                    "privileges; ",
                 ],
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
@@ -249,19 +251,20 @@ class MysqlTasks(BaseTasks):
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
 
-    def _setup_mysql8_service(self):
+    def _setup_mysql8_service(self) -> None:
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
         admin_commands = AdminCommandBuilder()
 
         # Wait for initialize since admin runner can't wait for completion.
         # Maybe we can detect completion another way?
         admin_commands.add_command(
-            mysqld, '--install MYSQL80 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data"))
+            mysqld, '--install MYSQL80 --datadir="{}"'.format(
+                           os.path.join(MYSQL_FILES_DIR, "data"))
         )
 
         admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
-        # we use "delayed-auto" for start= as we have some ibex installations where a required disk volume
-        # doesn't get mounted in time if just "auto" is used
+        # we use "delayed-auto" for start= as we have some ibex installations
+        # where a required disk volume doesn't get mounted in time if just "auto" is used
         admin_commands.add_command("sc", "config MYSQL80 start= delayed-auto")
         admin_commands.add_command(
             "sc", "failure MYSQL80 reset= 900 actions= restart/10000/restart/30000/restart/60000"
@@ -281,10 +284,10 @@ class MysqlTasks(BaseTasks):
 
         admin_commands.run_all()
 
-    def _install_latest_mysql8(self, clean_install):
+    def _install_latest_mysql8(self, clean_install: bool) -> None:
         """
-        Install the latest mysql. If this is a clean install remove old data directories first and create a new
-        database
+        Install the latest mysql. If this is a clean install remove old data
+        directories first and create a new database
         Args:
             clean_install: True to destroy and recreate data directories
         """
@@ -311,12 +314,14 @@ class MysqlTasks(BaseTasks):
             self._setup_database_users_and_tables(vhd_install=False)
 
     @task("Install latest MySQL for VHD deployment")
-    def install_mysql_for_vhd(self):
+    def install_mysql_for_vhd(self) -> None:
         """
         Installs MySQL for the VHD creation build.
 
-        Ensure we start from a clean slate. We are creating VHDs so we can assume that no files should exist in
-        C:\instrument\apps\mysql or c:\instrument\var\mysql and delete them if they do exist. This facilitates
+        Ensure we start from a clean slate. We are creating VHDs so
+        we can assume that no files should exist in
+        C:\instrument\apps\mysql or c:\instrument\var\mysql and
+        delete them if they do exist. This facilitates
         developer testing/resuming the script if it failed halfway through
         """
         for path in [MYSQL_FILES_DIR, MYSQL8_INSTALL_DIR]:
@@ -338,7 +343,7 @@ class MysqlTasks(BaseTasks):
 
         self._setup_database_users_and_tables(vhd_install=True)
 
-    def _install_vcruntime140(self):
+    def _install_vcruntime140(self) -> None:
         if not os.path.exists(VCRUNTIME140):
             self.prompt.prompt_and_raise_if_not_yes(
                 f"MySQL server 8 requires microsoft visual C++ runtime to be installed.\r\n"
@@ -347,7 +352,7 @@ class MysqlTasks(BaseTasks):
 
     @version_check(MySQL())
     @task("Install latest MySQL")
-    def install_mysql(self, force=False):
+    def install_mysql(self, force: bool = False) -> None:
         """
         Install mysql and the ibex database schemas
         Args:
@@ -390,7 +395,7 @@ class MysqlTasks(BaseTasks):
             self._reload_backup_data()
 
     @task("Configure MySQL for VHD post install")
-    def configure_mysql_for_vhd_post_install(self):
+    def configure_mysql_for_vhd_post_install(self) -> None:
         """
         configure mysql after vhd is deployed to an instrukent/mdt build
         """
@@ -399,7 +404,7 @@ class MysqlTasks(BaseTasks):
         sleep(5)  # Time for service to start
 
     @task("Backup database")
-    def backup_database(self):
+    def backup_database(self) -> None:
         """
         Backup the database
         """
@@ -447,7 +452,7 @@ class MysqlTasks(BaseTasks):
                 f"Dump file '{result_file}' seems to be small is it correct? "
             )
 
-    def _backup_data(self):
+    def _backup_data(self) -> None:
         """
         Backup the data for transfer. This dumps just the data not the schema.
         """
@@ -487,7 +492,7 @@ class MysqlTasks(BaseTasks):
                 f"Dump file '{result_file}' seems to be small is it correct? "
             )
 
-    def _reload_backup_data(self):
+    def _reload_backup_data(self) -> None:
         """
         Reload backup the data
         """
@@ -507,6 +512,7 @@ class MysqlTasks(BaseTasks):
             std_in=open(result_file),
         ).run()
         self.prompt.prompt_and_raise_if_not_yes(
-            "Check that there are only 16 errors from mysql. These are 1062 error fail to insert primary key. "
+            "Check that there are only 16 errors from mysql. "
+            "These are 1062 error fail to insert primary key. "
             "These are for constants added by the creation script, e.g. archive severity."
         )
