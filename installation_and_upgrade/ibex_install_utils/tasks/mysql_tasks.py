@@ -94,8 +94,10 @@ class MysqlTasks(BaseTasks):
         try:
             mysql_bin_dir = self._get_mysql_dir()
 
-            sql_command = "truncate table msg_log.message;"\
-                          "truncate table archive.sample;truncate table alarm.pv"
+            sql_command = (
+                "truncate table msg_log.message;"
+                "truncate table archive.sample;truncate table alarm.pv"
+            )
 
             RunProcess(
                 MYSQL_FILES_DIR,
@@ -212,7 +214,7 @@ class MysqlTasks(BaseTasks):
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
 
-    def _setup_database_users_and_tables(self, vhd_install:bool = True) -> None:
+    def _setup_database_users_and_tables(self, vhd_install: bool = True) -> None:
         sql_password = self.prompt.prompt(
             "Enter the MySQL root password:",
             UserPrompt.ANY,
@@ -258,8 +260,7 @@ class MysqlTasks(BaseTasks):
         # Wait for initialize since admin runner can't wait for completion.
         # Maybe we can detect completion another way?
         admin_commands.add_command(
-            mysqld, '--install MYSQL80 --datadir="{}"'.format(
-                           os.path.join(MYSQL_FILES_DIR, "data"))
+            mysqld, '--install MYSQL80 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data"))
         )
 
         admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)

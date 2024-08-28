@@ -422,8 +422,7 @@ UPGRADE_TYPES = {
         UpgradeInstrument.run_setup_log_rotation,
         "setup log rotation",
     ),
-    "developer_update": (UpgradeInstrument.run_developer_update,
-                         "install latest developer tools"),
+    "developer_update": (UpgradeInstrument.run_developer_update, "install latest developer tools"),
     "create_vhds": (
         UpgradeInstrument.run_vhd_creation,
         "create a set of VHDS containing the latest IBEX release",
@@ -438,6 +437,5 @@ UPGRADE_TYPES = {
         UpgradeInstrument.run_vhd_post_install,
         "Run final task on system after VHD has been mounted locally",
     ),
-    "save_motor_params": (UpgradeInstrument.save_motor_params,
-                         "Save motor parameters to csv file"),
+    "save_motor_params": (UpgradeInstrument.save_motor_params, "Save motor parameters to csv file"),
 }
