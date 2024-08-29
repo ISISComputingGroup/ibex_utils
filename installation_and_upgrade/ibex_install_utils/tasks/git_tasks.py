@@ -52,7 +52,9 @@ class GitTasks(BaseTasks):
             print(f"Error running git status: {e}")
 
         try:
-            subprocess.check_call(f"cd /d {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True)
+            subprocess.check_call(
+                f"cd /d {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True
+            )
             print("Checked out to the new release branch")
             subprocess.check_call(
                 f"cd /d {EPICS_PATH} && git push -u origin %COMPUTERNAME%", shell=True
