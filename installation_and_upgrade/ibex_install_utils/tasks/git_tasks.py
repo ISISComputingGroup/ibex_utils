@@ -32,7 +32,7 @@ class GitTasks(BaseTasks):
         try:
             # assumes the alias 'origin' does not exist yet
             subprocess.check_call(
-                f"cd {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/{remote_repo}",
+                f"cd /d {EPICS_PATH} && git remote add origin http://control-svcs.isis.cclrc.ac.uk/gitroot/releases/{version}/{remote_repo}",
                 shell=True,
             )
             print("Added the remote")
@@ -40,22 +40,24 @@ class GitTasks(BaseTasks):
             print(f"Error creating remote: {e}")
 
         try:
-            subprocess.check_call(f"cd {EPICS_PATH} && git fetch", shell=True)
+            subprocess.check_call(f"cd /d {EPICS_PATH} && git fetch", shell=True)
             print("Fetched remote")
         except subprocess.CalledProcessError as e:
             print(f"Error fetching remote: {e}")
 
         try:
             # run a git status to rebuild index if needed
-            subprocess.check_call(f"cd {EPICS_PATH} && git status", shell=True)
+            subprocess.check_call(f"cd /d {EPICS_PATH} && git status", shell=True)
         except subprocess.CalledProcessError as e:
             print(f"Error running git status: {e}")
 
         try:
-            subprocess.check_call(f"cd {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True)
+            subprocess.check_call(
+                f"cd /d {EPICS_PATH} && git checkout -b %COMPUTERNAME%", shell=True
+            )
             print("Checked out to the new release branch")
             subprocess.check_call(
-                f"cd {EPICS_PATH} && git push -u origin %COMPUTERNAME%", shell=True
+                f"cd /d {EPICS_PATH} && git push -u origin %COMPUTERNAME%", shell=True
             )
             print("Pushed to the remote")
         except subprocess.CalledProcessError as e:
