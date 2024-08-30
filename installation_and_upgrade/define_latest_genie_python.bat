@@ -14,8 +14,13 @@ set "genie_dir=%KITS_ICP_PATH%\genie_python_3"
 if exist "%genie_dir%\LATEST_BUILD.txt" (
 
 	for /f %%i in ( %genie_dir%\LATEST_BUILD.txt ) do (
-	
-		set "LATEST_PYTHON_DIR=%tmp%\Python_Build_%%i" 
+
+		if "%~1" NEQ "" (
+			set "LATEST_PYTHON_DIR=%~1\Python_Build_%%i" 
+		) else (
+			set "LATEST_PYTHON_DIR=%tmp%\Python_Build_%%i"
+		)
+		
 		mkdir !LATEST_PYTHON_DIR!
 	
 		%genie_dir%\BUILD-%%i\genie_python_install.bat !LATEST_PYTHON_DIR!
