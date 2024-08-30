@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 REM Get latest python build and kits icp path
 REM KITS_ICP_PATH is set to ICP directory
 REM LATEST_PYTHON is set to a version on genie_python that can be run
@@ -15,19 +14,8 @@ if exist "%genie_dir%\LATEST_BUILD.txt" (
 
 	for /f %%i in ( %genie_dir%\LATEST_BUILD.txt ) do (
 
-		if "%~1" NEQ "" (
-			set "LATEST_PYTHON_DIR=%~1\Python_Build_%%i" 
-		) else (
-			set "LATEST_PYTHON_DIR=%tmp%\Python_Build_%%i"
-		)
+		set PYTHON_BUILD_NO=%%i
 
-		mkdir !LATEST_PYTHON_DIR!
-	
-		%genie_dir%\BUILD-%%i\genie_python_install.bat !LATEST_PYTHON_DIR!
-		
-	    set "LATEST_PYTHON=!LATEST_PYTHON_DIR!\python.exe"
-	    set "LATEST_PYTHON3=!LATEST_PYTHON_DIR!\python3.exe"
-		
 	)
 	
 ) else (
@@ -36,6 +24,19 @@ if exist "%genie_dir%\LATEST_BUILD.txt" (
 	goto ERROR
 	
 )
+
+if "%~1" NEQ "" (
+	set "LATEST_PYTHON_DIR=%~1\Python_Build_%PYTHON_BUILD_NO%" 
+) else (
+	set "LATEST_PYTHON_DIR=%tmp%\Python_Build_%PYTHON_BUILD_NO%"
+)
+
+mkdir %LATEST_PYTHON_DIR%
+
+%genie_dir%\BUILD-%PYTHON_BUILD_NO%\genie_python_install.bat %LATEST_PYTHON_DIR%
+			
+set "LATEST_PYTHON=%LATEST_PYTHON_DIR%\python.exe"
+set "LATEST_PYTHON3=%LATEST_PYTHON_DIR%\python3.exe"
 
 rem @echo LATEST PYTHON: %LATEST_PYTHON%
 
