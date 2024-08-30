@@ -20,13 +20,13 @@ if exist "%genie_dir%\LATEST_BUILD.txt" (
 		) else (
 			set "LATEST_PYTHON_DIR=%tmp%\Python_Build_%%i"
 		)
-		
+
 		mkdir !LATEST_PYTHON_DIR!
 	
 		%genie_dir%\BUILD-%%i\genie_python_install.bat !LATEST_PYTHON_DIR!
 		
-	    set LATEST_PYTHON=!LATEST_PYTHON_DIR!\python.exe
-	    set LATEST_PYTHON3=!LATEST_PYTHON_DIR!\python3.exe
+	    set "LATEST_PYTHON=!LATEST_PYTHON_DIR!\python.exe"
+	    set "LATEST_PYTHON3=!LATEST_PYTHON_DIR!\python3.exe"
 		
 	)
 	
