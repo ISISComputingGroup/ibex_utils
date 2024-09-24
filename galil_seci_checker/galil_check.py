@@ -8,8 +8,8 @@ import configparser
 import os
 import types
 
-from genie_python import genie as g
-from genie_python.genie import PVBaseValue, PVValue
+from genie_python import genie as g  # pyright: ignore
+from genie_python.genie import PVBaseValue, PVValue  # pyright: ignore
 
 INST = ""
 
@@ -148,6 +148,9 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
         if value is not None and value != '""':
             print(f"WARNING: {mn} {item} in seci {galil} axis {axis} is {value}")
 
+    value = config.get(axis_item(axis, "dual position stage"))
+    if value is not None and value != "FALSE":
+        print(f"INFO: dual position stage is {value} - not sure if this is important")
     # normally like ITA=1\0AKSA=1.313
     init_bits = config.get(axis_item(axis, "initialisation")).replace('"', "").split(r"\0A")
     for init in init_bits:
@@ -412,6 +415,15 @@ def do_controller(config: configparser.SectionProxy, galil: str, skips: dict) ->
             )
         if config.get("program", '"<Not A Path>"') != '"<Not A Path>"':
             print("WARNING: seci program is {} in {}".format(config["program"], galil))
+        if SETFILE is not None:
+            print(
+                f"INFO: Setting LIMIT and HOME switch type to NO (CN-1,-1) on {dmc(galil)}. "
+                f"This is ususal ISIS default"
+            )
+            SETFILE.write(f"caput {PVPREFIX}{dmc(galil)}:HOMETYPE_CMD NO\n")
+            SETFILE.write(f"caput {PVPREFIX}{dmc(galil)}:LIMITTYPE_CMD NO\n")
+            SETFILE.write(f"caput {PVPREFIX}{dmc(galil)}:SEND_CMD_STR CN-1,-1\n")
+            SETFILE.flush()
         for axis_no in range(8):
             axis = chr(ord("a") + axis_no)
             if config.get(f"axis {axis} motor name") is not None:
