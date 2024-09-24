@@ -255,7 +255,7 @@ def doAxis(config: configparser.ConfigParser, galil: str, axis: str, skips: dict
     seci_user_offset = config.getfloat(axisItem(axis, "user offset"), 0.0)
     print(
         f"INFO: {mn} seci home position {seci_home_pos} (apply: {apply_home}) "
-        "home offset {seci_home_offset} offset {seci_offset} user offset {seci_user_offset}"
+        f"home offset {seci_home_offset} offset {seci_offset} user offset {seci_user_offset}"
     )
     if not skips["offset"]:
         if apply_home:
@@ -317,13 +317,13 @@ def doAxis(config: configparser.ConfigParser, galil: str, axis: str, skips: dict
     if umax is not None and umax != float("inf"):
         print(
             f"user max defined as {umax} with soft max as {smax}, "
-            "will use lower value, check that is correct"
+            f"will use lower value, check that is correct"
         )
         smax = min(smax, umax)
     if umin is not None and umin != float("-inf"):
         print(
             f"user min defined as {umin} with soft min as {smin}, "
-            "will use higher value, check that is correct"
+            f"will use higher value, check that is correct"
         )
         smin = max(smin, umin)
     if smin > smax:
