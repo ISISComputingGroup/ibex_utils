@@ -5,6 +5,7 @@
 #
 import configparser
 import argparse
+import os
 from genie_python import genie as g
 
 INST = ""
@@ -15,7 +16,11 @@ CONFIGFILE = ""
 
 SETFILE = None
 
+CHANGEFILE = None
+
 SHOW_VALUE_OK = False
+
+NOCHECK = False
 
 MOTOR_TYPES = { 0 : "Servo", 1 :  "Rev Servo", 2 : "HA Stepper", 3 : "LA Stepper", 4 : "Rev HA Stepper", 5 :  "Rev LA Stepper" }
 
@@ -26,16 +31,25 @@ ENCODER_TYPES = { 0 : "Normal Quadrature", 1 : "Pulse and Dir", 2 : "Reverse Qua
 HOME_METHODS = { 0 : "none", 1 : "signal", 2 : "reverse limit", 3 : "forward limit" }
 
 def main():
-    global INST, PVPREFIX, CONFIGFILE, SHOW_VALUE_OK, SETFILE
+    global INST, PVPREFIX, CONFIGFILE, SHOW_VALUE_OK, SETFILE, CHANGEFILE, NOCHECK
     try:
         parser = argparse.ArgumentParser()
-        parser.add_argument('--inst', help='instrument to check', required=True)
+        parser.add_argument('--inst', help='instrument to check e.g. CRISP (default: local system)', default=None)
         parser.add_argument('--verbose', help='verbose', action='count', default=0)
-        parser.add_argument('--setfile', help='generate command file to correct values', default=None)
+        parser.add_argument('--setfile', help='name of command file to generate with all values to set', default=None)
+        parser.add_argument('--changefile', help='name of command file to generate with changes to values', default=None)
+        parser.add_argument('--nocheck', help='do not try and connect to PVs', action='store_true')
         args = parser.parse_args()
-        INST = args.inst.upper()
-        PVPREFIX = f"IN:{INST}:MOT:"
-        CONFIGFILE = r"\\NDX{}\c$\LABVIEW MODULES\Drivers\Galil DMC2280\Galil.ini".format(INST)
+        if args.inst is not None:
+            INST = args.inst.upper()
+            PVPREFIX = f"IN:{INST}:MOT:"
+            CONFIGFILE = r"\\NDX{}\c$\LABVIEW MODULES\Drivers\Galil DMC2280\Galil.ini".format(INST)
+        else:
+            PVPREFIX = os.getenv("MYPVPREFIX") + "MOT:"
+            CONFIGFILE = r"c:\LABVIEW MODULES\Drivers\Galil DMC2280\Galil.ini"
+
+        if args.nocheck:
+            NOCHECK = args.nocheck
         skips = {}
         skips["velocity"] = False
         skips["direction"] = False
@@ -51,9 +65,11 @@ def main():
         skips["spdb"] = False
         if args.setfile:
             SETFILE = open(args.setfile, 'w')
+        if args.changefile:
+            CHANGEFILE = open(args.changefile, 'w')
         if args.verbose > 0:
             SHOW_VALUE_OK = True
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(interpolation=None)
         config.read(CONFIGFILE)
         for g in config.keys():
             if g == "DEFAULT":
@@ -65,6 +81,8 @@ def main():
         print(ex)
     if SETFILE is not None:
         SETFILE.close()
+    if CHANGEFILE is not None:
+        CHANGEFILE.close()
 
 # note key names are lowercased by the parser e.g. use "motor steps per unit", "kp"
 # however section names and values preserve case
@@ -95,7 +113,7 @@ def doAxis(config, galil, axis, skips):
     # normally like ITA=1\0AKSA=1.313
     init_bits = config.get(axisItem(axis, 'initialisation')).replace('"','').split(r'\0A')
     for init in init_bits:
-        if len(init) > 0:
+        if len(init) > 0 and '=' in init:
             (name, value) = init.split('=')
             init_axis = name[2].lower()            
             init_mn = motorNumber(galil, init_axis)   
@@ -116,10 +134,11 @@ def doAxis(config, galil, axis, skips):
                 doValue(f"{init_mn}_ERRLIMIT_SP", value, f"{init_mn}_ERRLIMIT_MON") 
             else:
                 doValue(f"{init_mn}_{item}_SP", value, f"{init_mn}_{item}_MONITOR")
-    for item in ['PREM', 'POST', 'INIT']:          
-        value = g.get_pv(f"{PVPREFIX}{mn}.{item}")
-        if value is not None and value != "":
-            print(f"INFO: {PVPREFIX}{mn}.{item} is \"{value}\"")
+    if not NOCHECK:
+        for item in ['PREM', 'POST', 'INIT']:          
+            value = g.get_pv(f"{PVPREFIX}{mn}.{item}")
+            if value is not None and value != "":
+                print(f"INFO: {PVPREFIX}{mn}.{item} is \"{value}\"")
                
     doValue(f"{mn}.EGU", config.get(axisItem(axis, 'unit label')))
     doValue(f"{mn}.DESC", config.get(axisItem(axis, 'motor name')))
@@ -228,6 +247,8 @@ def doAxis(config, galil, axis, skips):
         else:
             print(f"ERROR: {mn} seci backlash problem")
 
+    if backlash == 0:
+        print(f"INFO: {mn} no backlash defined in SECI, if this is correct then BVEL or BACC mismatches are not critical")
     if not skips["backlash"]:
         doValue(f"{mn}.BVEL", velo / 10.0)
         doValue(f"{mn}.BACC", epics_accl / 10.0)
@@ -260,16 +281,21 @@ def axisItem(axis, name):
 def doValue(set_pv, value, read_pv=None):
     prefixed_read_pv = "{}{}".format(PVPREFIX, read_pv)
     prefixed_set_pv = "{}{}".format(PVPREFIX, set_pv)
-    current_sp = g.get_pv(prefixed_set_pv)
-    sp_ok = True
     if isinstance(value, str):
         value = value.replace('"', '')
+    if SETFILE is not None:
+        SETFILE.write(f"caput {prefixed_set_pv} {value}\n")
+        SETFILE.flush()
+    if NOCHECK:
+        return
+    current_sp = g.get_pv(prefixed_set_pv)
+    sp_ok = True
     if not compareValues(current_sp, value):
         print("{} SP differs: current \"{}\" != expected \"{}\"".format(prefixed_set_pv, current_sp, value))
         sp_ok = False
-        if SETFILE is not None:
-            SETFILE.write(f"caput {prefixed_set_pv} {value}\n")
-            SETFILE.flush()
+        if CHANGEFILE is not None:
+            CHANGEFILE.write(f"caput {prefixed_set_pv} {value}\n")
+            CHANGEFILE.flush()
     elif SHOW_VALUE_OK:
         print("{} SP OK \"{}\"".format(prefixed_set_pv, current_sp))
     if read_pv is not None:
@@ -286,12 +312,14 @@ def doValue(set_pv, value, read_pv=None):
 def doController(config, galil, skips):
     cn = controllerNumber(galil)
     enable = config.getboolean("enable")
+    address = "<None>"
     if enable:
         print(f"INFO: Seci Controller {galil} -> EPICS DMC{cn} MTR{cn}xx")
         ip = config["ip address"]
         com = config["com port"]
-        address_pv = "{}{}{}".format(PVPREFIX, dmc(galil), ":ADDRESS_MON")
-        address = g.get_pv(address_pv)
+        if not NOCHECK:
+            address_pv = "{}{}{}".format(PVPREFIX, dmc(galil), ":ADDRESS_MON")
+            address = g.get_pv(address_pv)
         print(f"INFO: SECI ip {ip} COM {com} - current EPICS address {address}") 
         if (config.get("galil init", '""') != '""'):
             print("WARNING: seci galil init is {}, inhibit {}, in {}".format(config["galil init"], config["galil init inhibit"], galil))
@@ -307,7 +335,7 @@ def doController(config, galil, skips):
 # G0 -> 01 etc.
 def controllerNumber(galil):
     if galil[0] == 'G':
-        return "{:02d}".format(int(galil[1]) + 1)
+        return "{:02d}".format(int(galil[1]) + 1 + 2)
 
 # construct MTRxxyy, axis 'a' -> 01 
 def motorNumber(galil, axis):
