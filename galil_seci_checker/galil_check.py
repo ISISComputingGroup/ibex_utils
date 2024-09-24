@@ -335,7 +335,7 @@ def doController(config, galil, skips):
 # G0 -> 01 etc.
 def controllerNumber(galil):
     if galil[0] == 'G':
-        return "{:02d}".format(int(galil[1]) + 1 + 2)
+        return "{:02d}".format(int(galil[1]) + 1)
 
 # construct MTRxxyy, axis 'a' -> 01 
 def motorNumber(galil, axis):
