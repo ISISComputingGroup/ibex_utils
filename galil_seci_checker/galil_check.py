@@ -203,8 +203,8 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
         do_value(f"{mn}_ENC_TOLERANCE_SP", edel_multiplier, f"{mn}_ENC_TOLERANCE_MON")  # new galil
     hspeed = config.getfloat(axis_item(axis, "home speed"))
     if not skips["velocity"]:
-        do_value(f"{mn}.VELO", velo)
         do_value(f"{mn}.VMAX", velo)
+        do_value(f"{mn}.VELO", velo)
         do_value(f"{mn}.JVEL", velo)
         do_value(f"{mn}.HVEL", hspeed * mres)
     do_value(f"{mn}.RDBD", config.getfloat(axis_item(axis, "positional accuracy")))
