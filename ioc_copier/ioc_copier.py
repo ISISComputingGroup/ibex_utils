@@ -335,7 +335,7 @@ def check_valid_ioc_to_copy(ioc):
     else:
         with open(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")) as file_pointer:
             text = file_pointer.read()
-            if "seq " in text:
+            if "\nseq " in text:
                 print(
                     "IOC Appears to contain sequencer commands, duplication should be done manually."
                 )
