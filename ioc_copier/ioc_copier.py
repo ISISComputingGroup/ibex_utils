@@ -6,6 +6,7 @@ import os
 import re
 import sys
 from shutil import copytree, ignore_patterns
+from typing import List, Tuple
 
 global START_COPY
 global current_copy
@@ -14,7 +15,7 @@ global padded_current_copy
 global asub_record
 
 
-def rename_files(root_folder, rename, ioc):
+def rename_files(root_folder: str, rename: str, ioc: str) -> None:
     """
     Function to handle renaming of files.
     Parameters:
@@ -28,7 +29,9 @@ def rename_files(root_folder, rename, ioc):
             os.path.join(root_folder, rename),
             os.path.join(
                 root_folder,
-                rename.replace(f"IOC_{padded_start_copy}", f"IOC_{padded_current_copy}"),
+                rename.replace(
+                    f"IOC_{padded_start_copy}", f"IOC_{padded_current_copy}"
+                ),
             ),
         )
     if f"IOC-{padded_start_copy}" in rename:
@@ -36,7 +39,9 @@ def rename_files(root_folder, rename, ioc):
             os.path.join(root_folder, rename),
             os.path.join(
                 root_folder,
-                rename.replace(f"IOC-{padded_start_copy}", f"IOC-{padded_current_copy}"),
+                rename.replace(
+                    f"IOC-{padded_start_copy}", f"IOC-{padded_current_copy}"
+                ),
             ),
         )
     if f"{ioc}_{padded_start_copy}" in rename:
@@ -44,12 +49,14 @@ def rename_files(root_folder, rename, ioc):
             os.path.join(root_folder, rename),
             os.path.join(
                 root_folder,
-                rename.replace(f"{ioc}_{padded_start_copy}", f"{ioc}_{padded_current_copy}"),
+                rename.replace(
+                    f"{ioc}_{padded_start_copy}", f"{ioc}_{padded_current_copy}"
+                ),
             ),
         )
 
 
-def replace_text(text_lines, ioc, skip=None):
+def replace_text(text_lines: List[str], ioc: str, skip: bool = None) -> List[str]:
     """
     Function to handle replacing of text within files.
     Parameters:
@@ -67,7 +74,7 @@ def replace_text(text_lines, ioc, skip=None):
     ]
 
 
-def replace_line(ioc, line):
+def replace_line(ioc: str, line: str) -> str:
     """
     Function to replace a single line in a file.
     param ioc: The name of the ioc.
@@ -95,12 +102,14 @@ def replace_line(ioc, line):
     line = temp_text
     temp_text = re.sub(f"{ioc}_0{START_COPY}", f"{ioc}_{padded_current_copy}", line)
     line = temp_text
-    temp_text = re.sub(f"RAMPFILELIST0{START_COPY}", f"RAMPFILELIST{padded_current_copy}", line)
+    temp_text = re.sub(
+        f"RAMPFILELIST0{START_COPY}", f"RAMPFILELIST{padded_current_copy}", line
+    )
     line = temp_text
     return line
 
 
-def help_check():
+def help_check() -> None:
     """
     Function to handle printing help.
     """
@@ -113,7 +122,8 @@ def help_check():
         print("Second Argument: <number-ioc-to-copy")
         print(
             "This should be the last currently existing ioc number, "
-            "e.g. 2. If copying IOC-01 please test extremely thoroughly as there may be edge cases the script"
+            "e.g. 2. If copying IOC-01 please test extremely thoroughly as there"
+            "may be edge cases the script"
             "cannot account for.\n"
         )
         print("Third Argument: <first-copy>")
@@ -123,11 +133,13 @@ def help_check():
         )
         print("Fourth Argument: <max-number-ioc>")
         print("This should be the maximum number copied to.\n")
-        print("Make sure to run this file from an epics terminal so that make clean can run.\n")
+        print(
+            "Make sure to run this file from an epics terminal so that make clean can run.\n"
+        )
         sys.exit()
 
 
-def handle_arguments():
+def handle_arguments() -> Tuple[int, int, str]:
     """
     Function to handle arguments of ioc_copier.py.
     Returns:
@@ -163,7 +175,7 @@ def handle_arguments():
     return initial_copy, ioc, max_copy
 
 
-def copy_folder(file_format, ioc_name):
+def copy_folder(file_format: str, ioc_name: str) -> str:
     """
     Function to handle copying folder before replacing text and names.
     Parameters:
@@ -174,12 +186,16 @@ def copy_folder(file_format, ioc_name):
         The path of the new folder.
     """
     start_path = file_format.format(f"{ioc_name}-{padded_start_copy}")
-    path = os.path.join(os.getcwd(), file_format.format(f"{ioc_name}-{padded_current_copy}"))
+    path = os.path.join(
+        os.getcwd(), file_format.format(f"{ioc_name}-{padded_current_copy}")
+    )
     try:
         copytree(
             os.path.join(os.getcwd(), start_path),
             os.path.join(path),
-            ignore=ignore_patterns("st-*.cmd", "build.mak", "*.db", "*.substitutions", "*.req"),
+            ignore=ignore_patterns(
+                "st-*.cmd", "build.mak", "*.db", "*.substitutions", "*.req"
+            ),
         )
     except FileExistsError:
         raise FileExistsError(
@@ -189,9 +205,10 @@ def copy_folder(file_format, ioc_name):
     return path
 
 
-def generate_config(ioc):
+def generate_config(ioc: str) -> List[str]:
     """
-    Generate the config if copying ioc 01 as it should just reference ioc 01s config rather than duplicating it.
+    Generate the config if copying ioc 01 as it should just reference ioc 01s config
+    rather than duplicating it.
     :param ioc: the ioc name
     :return: the text lines of the config.
     """
@@ -205,7 +222,7 @@ def generate_config(ioc):
     ]
 
 
-def remove_db_plus(text):
+def remove_db_plus(text: str) -> List[str]:
     """
     delete DB += lines from a makefile
     :param text: the line to check whether to comment
@@ -215,7 +232,7 @@ def remove_db_plus(text):
     return text
 
 
-def get_file_text(file, ioc, root):
+def get_file_text(file: str, ioc: str, root: str) -> List[str]:
     """
     function to get the text to write to a file.
     :param file: The file to get the initial text from.
@@ -231,7 +248,9 @@ def get_file_text(file, ioc, root):
     if START_COPY == 1:
         if file == "st.cmd":
             skip = [
-                x for x, val in enumerate(text) if f"< iocBoot/ioc{ioc}-IOC-01/st-common.cmd" in val
+                x
+                for x, val in enumerate(text)
+                if f"< iocBoot/ioc{ioc}-IOC-01/st-common.cmd" in val
             ]
         elif file == "config.xml":
             return generate_config(ioc)
@@ -240,12 +259,16 @@ def get_file_text(file, ioc, root):
 
     # Last one handled on starts other than 1 to avoid breaking commenting.
     if path.endswith(r"App\src\Makefile"):
-        skip = [x for x, val in enumerate(text) if "build.mak " in val or "/src/build.mak" in val]
+        skip = [
+            x
+            for x, val in enumerate(text)
+            if "build.mak " in val or "/src/build.mak" in val
+        ]
     text = replace_text(text, ioc, skip)
     return text
 
 
-def write_file_text(file, root, text):
+def write_file_text(file: str, root: str, text: List[str]) -> None:
     """
     function to write to a file.
     :param file: The file to write to.
@@ -258,7 +281,7 @@ def write_file_text(file, root, text):
         file_pointer.truncate()
 
 
-def file_walk(files, ioc, root):
+def file_walk(files: List[str], ioc: str, root: str) -> None:
     """
     Function to walk through each file retrieved by os.walk and call necessary functions.
     :param files: The list of files to walk through.
@@ -273,7 +296,7 @@ def file_walk(files, ioc, root):
             rename_files(root, file, ioc)
 
 
-def folder_walk(ioc, root, sub_folder):
+def folder_walk(ioc: str, root: str, sub_folder: str) -> None:
     """
     Function to walk through folders and rename them.
     :param ioc: The ioc name.
@@ -285,7 +308,7 @@ def folder_walk(ioc, root, sub_folder):
         rename_files(root, folder, ioc)
 
 
-def copy_loop(initial_copy, max_copy, file_format, ioc):
+def copy_loop(initial_copy: int, max_copy: int, file_format: str, ioc: str) -> None:
     """
     Main loop to handle copy and renaming of files
     Parameters:
@@ -305,14 +328,16 @@ def copy_loop(initial_copy, max_copy, file_format, ioc):
     for current_copy in range(initial_copy, max_copy + 1):
         padded_start_copy = add_zero_padding(START_COPY)
         padded_current_copy = add_zero_padding(current_copy)
-        padded_current_copy = f"0{current_copy}" if len(f"{current_copy}") < 2 else current_copy
+        padded_current_copy = (
+            f"0{current_copy}" if len(f"{current_copy}") < 2 else current_copy
+        )
         path = copy_folder(file_format, ioc_name)
         for root, sub_folder, files in os.walk(path):
             file_walk(files, ioc, root)
             folder_walk(ioc, root, sub_folder)
 
 
-def add_zero_padding(copy):
+def add_zero_padding(copy: int) -> str | int:
     """
     Function to add zero padding to the copy number if nessecary.
     :param copy: The copy number to add zero padding to.
@@ -322,27 +347,31 @@ def add_zero_padding(copy):
     return f"0{copy}" if len(f"{copy}") < 2 else copy
 
 
-def check_valid_ioc_to_copy(ioc):
+def check_valid_ioc_to_copy(ioc: str) -> None:
     """
     Check that duplicating this IOC is valid
     :param ioc: The ioc name.
     """
     if not os.path.exists(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")):
         print(
-            "No valid st-common.cmd found, this IOC does not appear to be designed in a way that allows duplicates."
+            "No valid st-common.cmd found, this IOC does not appear to be designed in a way that"
+            " allows duplicates."
         )
         sys.exit()
     else:
-        with open(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")) as file_pointer:
+        with open(
+            os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")
+        ) as file_pointer:
             text = file_pointer.read()
             if "seq " in text:
                 print(
-                    "IOC Appears to contain sequencer commands, duplication should be done manually."
+                    "IOC Appears to contain sequencer commands, duplication should be"
+                    "done manually."
                 )
                 sys.exit()
 
 
-def main():
+def main() -> None:
     """Main function, sets ioc-name, calls functions in order, and prints when done."""
     help_check()
     global asub_record
