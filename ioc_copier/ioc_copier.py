@@ -29,9 +29,7 @@ def rename_files(root_folder: str, rename: str, ioc: str) -> None:
             os.path.join(root_folder, rename),
             os.path.join(
                 root_folder,
-                rename.replace(
-                    f"IOC_{padded_start_copy}", f"IOC_{padded_current_copy}"
-                ),
+                rename.replace(f"IOC_{padded_start_copy}", f"IOC_{padded_current_copy}"),
             ),
         )
     if f"IOC-{padded_start_copy}" in rename:
@@ -39,9 +37,7 @@ def rename_files(root_folder: str, rename: str, ioc: str) -> None:
             os.path.join(root_folder, rename),
             os.path.join(
                 root_folder,
-                rename.replace(
-                    f"IOC-{padded_start_copy}", f"IOC-{padded_current_copy}"
-                ),
+                rename.replace(f"IOC-{padded_start_copy}", f"IOC-{padded_current_copy}"),
             ),
         )
     if f"{ioc}_{padded_start_copy}" in rename:
@@ -49,14 +45,12 @@ def rename_files(root_folder: str, rename: str, ioc: str) -> None:
             os.path.join(root_folder, rename),
             os.path.join(
                 root_folder,
-                rename.replace(
-                    f"{ioc}_{padded_start_copy}", f"{ioc}_{padded_current_copy}"
-                ),
+                rename.replace(f"{ioc}_{padded_start_copy}", f"{ioc}_{padded_current_copy}"),
             ),
         )
 
 
-def replace_text(text_lines: List[str], ioc: str, skip: bool = None) -> List[str]:
+def replace_text(text_lines: List[str], ioc: str, skip: List[str] = None) -> List[str]:
     """
     Function to handle replacing of text within files.
     Parameters:
@@ -102,9 +96,7 @@ def replace_line(ioc: str, line: str) -> str:
     line = temp_text
     temp_text = re.sub(f"{ioc}_0{START_COPY}", f"{ioc}_{padded_current_copy}", line)
     line = temp_text
-    temp_text = re.sub(
-        f"RAMPFILELIST0{START_COPY}", f"RAMPFILELIST{padded_current_copy}", line
-    )
+    temp_text = re.sub(f"RAMPFILELIST0{START_COPY}", f"RAMPFILELIST{padded_current_copy}", line)
     line = temp_text
     return line
 
@@ -133,9 +125,7 @@ def help_check() -> None:
         )
         print("Fourth Argument: <max-number-ioc>")
         print("This should be the maximum number copied to.\n")
-        print(
-            "Make sure to run this file from an epics terminal so that make clean can run.\n"
-        )
+        print("Make sure to run this file from an epics terminal so that make clean can run.\n")
         sys.exit()
 
 
@@ -186,16 +176,12 @@ def copy_folder(file_format: str, ioc_name: str) -> str:
         The path of the new folder.
     """
     start_path = file_format.format(f"{ioc_name}-{padded_start_copy}")
-    path = os.path.join(
-        os.getcwd(), file_format.format(f"{ioc_name}-{padded_current_copy}")
-    )
+    path = os.path.join(os.getcwd(), file_format.format(f"{ioc_name}-{padded_current_copy}"))
     try:
         copytree(
             os.path.join(os.getcwd(), start_path),
             os.path.join(path),
-            ignore=ignore_patterns(
-                "st-*.cmd", "build.mak", "*.db", "*.substitutions", "*.req"
-            ),
+            ignore=ignore_patterns("st-*.cmd", "build.mak", "*.db", "*.substitutions", "*.req"),
         )
     except FileExistsError:
         raise FileExistsError(
@@ -248,9 +234,7 @@ def get_file_text(file: str, ioc: str, root: str) -> List[str]:
     if START_COPY == 1:
         if file == "st.cmd":
             skip = [
-                x
-                for x, val in enumerate(text)
-                if f"< iocBoot/ioc{ioc}-IOC-01/st-common.cmd" in val
+                x for x, val in enumerate(text) if f"< iocBoot/ioc{ioc}-IOC-01/st-common.cmd" in val
             ]
         elif file == "config.xml":
             return generate_config(ioc)
@@ -259,11 +243,7 @@ def get_file_text(file: str, ioc: str, root: str) -> List[str]:
 
     # Last one handled on starts other than 1 to avoid breaking commenting.
     if path.endswith(r"App\src\Makefile"):
-        skip = [
-            x
-            for x, val in enumerate(text)
-            if "build.mak " in val or "/src/build.mak" in val
-        ]
+        skip = [x for x, val in enumerate(text) if "build.mak " in val or "/src/build.mak" in val]
     text = replace_text(text, ioc, skip)
     return text
 
@@ -328,9 +308,7 @@ def copy_loop(initial_copy: int, max_copy: int, file_format: str, ioc: str) -> N
     for current_copy in range(initial_copy, max_copy + 1):
         padded_start_copy = add_zero_padding(START_COPY)
         padded_current_copy = add_zero_padding(current_copy)
-        padded_current_copy = (
-            f"0{current_copy}" if len(f"{current_copy}") < 2 else current_copy
-        )
+        padded_current_copy = f"0{current_copy}" if len(f"{current_copy}") < 2 else current_copy
         path = copy_folder(file_format, ioc_name)
         for root, sub_folder, files in os.walk(path):
             file_walk(files, ioc, root)
@@ -359,11 +337,9 @@ def check_valid_ioc_to_copy(ioc: str) -> None:
         )
         sys.exit()
     else:
-        with open(
-            os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")
-        ) as file_pointer:
+        with open(os.path.join("iocBoot", f"ioc{ioc}-IOC-01", "st-common.cmd")) as file_pointer:
             text = file_pointer.read()
-            if "seq " in text:
+            if "\nseq " in text:
                 print(
                     "IOC Appears to contain sequencer commands, duplication should be"
                     "done manually."
