@@ -50,7 +50,7 @@ def rename_files(root_folder: str, rename: str, ioc: str) -> None:
         )
 
 
-def replace_text(text_lines: List[str], ioc: str, skip: bool = None) -> List[str]:
+def replace_text(text_lines: List[str], ioc: str, skip: List[str] = None) -> List[str]:
     """
     Function to handle replacing of text within files.
     Parameters:
