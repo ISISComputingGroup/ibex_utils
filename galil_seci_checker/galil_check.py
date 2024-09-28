@@ -100,12 +100,12 @@ def main() -> None:
             SHOW_VALUE_OK = True
         config = configparser.ConfigParser(interpolation=None)
         config.read(CONFIGFILE)
-        for g in config.keys():
-            if g == "DEFAULT":
-                if len(config[g]) > 0:
+        for k in config.keys():
+            if k == "DEFAULT":
+                if len(config[k]) > 0:
                     raise Exception("error - non empty DEFAULT")
                 continue
-            do_controller(config[g], g, skips)
+            do_controller(config[k], k, skips)
     except Exception as ex:
         print(ex)
     if SETFILE is not None:
@@ -214,7 +214,7 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
     if negate_direction:
         print(f"INFO: {mn} has seci negated direction")
     if not skips["direction"]:
-        do_value(f"{mn}.DIR", "Neg" if negate_direction else "Pos")        
+        do_value(f"{mn}.DIR", "Neg" if negate_direction else "Pos")
     hspeed = config.getfloat(axis_item(axis, "home speed"))
     if not skips["velocity"]:
         do_value(f"{mn}.VMAX", velo)
@@ -236,7 +236,6 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
         do_value(f"{mn}_OFFDELAY_SP", 2)
         do_value(f"{mn}_ONDELAY_SP", 0)
     do_value(f"{mn}_JAH_CMD", "No")
-
 
     de_energise = config.getboolean(axis_item(axis, "de-energise"))
     if not skips["onoff"]:
@@ -436,8 +435,7 @@ def do_controller(config: configparser.SectionProxy, galil: str, skips: dict) ->
 def controller_number(galil: str) -> str:
     if galil[0] == "G":
         return "{:02d}".format(int(galil[1]) + 1)
-    else:
-        return "00"
+    return "00"
 
 
 # construct MTRxxyy, axis 'a' -> 01
@@ -467,8 +465,7 @@ def compare_values(val1: PVValue | str, val2: PVValue | str) -> bool:
     except Exception:
         if val1 == val2:
             return True
-        else:
-            return False
+        return False
 
 
 main()
