@@ -181,11 +181,9 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
             if value is not None and value != "":
                 print(f'INFO: {PVPREFIX}{mn}.{item} is "{value}"')
 
+    do_value(f"{mn}.MRES", mres)
     do_value(f"{mn}.EGU", config.get(axis_item(axis, "unit label")))
     do_value(f"{mn}.DESC", config.get(axis_item(axis, "motor name")))
-    ueip = config.getboolean(axis_item(axis, "encoder present"))
-    if not skips["ueip"]:
-        do_value(f"{mn}.UEIP", "Yes" if ueip else "No")
     for item in ["k1", "k2", "k3", "zp", "zn", "tl", "ct"]:
         uitem = item.upper()
         do_value(
@@ -196,11 +194,27 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
         f"{mn}.ICOF", config.getfloat(axis_item(axis, "ki")) / 2047.875
     )  # note: different scaling would be needed for galil 4000
     do_value(f"{mn}.DCOF", config.getfloat(axis_item(axis, "kd")) / 4095.875)
-    do_value(f"{mn}.MRES", mres)
+    do_value(
+        f"{mn}_MTRTYPE_CMD",
+        MOTOR_TYPES[config.getint(axis_item(axis, "motor type"))],
+        f"{mn}_MTRTYPE_STATUS",
+    )
+    ueip = config.getboolean(axis_item(axis, "encoder present"))
+    if not skips["ueip"]:
+        do_value(f"{mn}.UEIP", "Yes" if ueip else "No")
     do_value(f"{mn}.ERES", eres)
+    do_value(
+        f"{mn}_MENCTYPE_CMD",
+        ENCODER_TYPES[config.getint(axis_item(axis, "encoder type"))],
+        f"{mn}_MENCTYPE_STATUS",
+    )
     if not skips["edel"]:
         do_value(f"{mn}_EDEL_SP", edel_multiplier * eres, f"{mn}_EDEL_MON")  # old galil
         do_value(f"{mn}_ENC_TOLERANCE_SP", edel_multiplier, f"{mn}_ENC_TOLERANCE_MON")  # new galil
+    if negate_direction:
+        print(f"INFO: {mn} has seci negated direction")
+    if not skips["direction"]:
+        do_value(f"{mn}.DIR", "Neg" if negate_direction else "Pos")        
     hspeed = config.getfloat(axis_item(axis, "home speed"))
     if not skips["velocity"]:
         do_value(f"{mn}.VMAX", velo)
@@ -210,10 +224,6 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
     do_value(f"{mn}.RDBD", config.getfloat(axis_item(axis, "positional accuracy")))
     if not skips["spdb"]:
         do_value(f"{mn}.SPDB", config.getfloat(axis_item(axis, "set-point deadband")))
-    if negate_direction:
-        print(f"INFO: {mn} has seci negated direction")
-    if not skips["direction"]:
-        do_value(f"{mn}.DIR", "Neg" if negate_direction else "Pos")
 
     if not skips["acceleration"]:
         do_value(f"{mn}.ACCL", epics_accl)
@@ -227,16 +237,6 @@ def do_axis(config: configparser.SectionProxy, galil: str, axis: str, skips: dic
         do_value(f"{mn}_ONDELAY_SP", 0)
     do_value(f"{mn}_JAH_CMD", "No")
 
-    do_value(
-        f"{mn}_MTRTYPE_CMD",
-        MOTOR_TYPES[config.getint(axis_item(axis, "motor type"))],
-        f"{mn}_MTRTYPE_STATUS",
-    )
-    do_value(
-        f"{mn}_MENCTYPE_CMD",
-        ENCODER_TYPES[config.getint(axis_item(axis, "encoder type"))],
-        f"{mn}_MENCTYPE_STATUS",
-    )
 
     de_energise = config.getboolean(axis_item(axis, "de-energise"))
     if not skips["onoff"]:
