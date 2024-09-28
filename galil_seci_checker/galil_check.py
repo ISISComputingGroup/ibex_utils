@@ -15,6 +15,8 @@ INST = ""
 
 PVPREFIX = ""
 
+CAPUT_FLAGS = "-c"
+
 CONFIGFILE = ""
 
 SETFILE = None
@@ -50,7 +52,7 @@ HOME_METHODS = {0: "none", 1: "signal", 2: "reverse limit", 3: "forward limit"}
 
 
 def main() -> None:
-    global INST, PVPREFIX, CONFIGFILE, SHOW_VALUE_OK, SETFILE, CHANGEFILE, NOCHECK
+    global INST, PVPREFIX, CONFIGFILE, SHOW_VALUE_OK, SETFILE, CHANGEFILE, NOCHECK, CAPUT_FLAGS
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument(
@@ -357,7 +359,7 @@ def do_value(set_pv: str, value: str | float, read_pv: str | types.NoneType = No
     if isinstance(value, str):
         value = value.replace('"', "")
     if SETFILE is not None:
-        SETFILE.write(f"caput {prefixed_set_pv} {value}\n")
+        SETFILE.write(f"caput {CAPUT_FLAGS} {prefixed_set_pv} {value}\n")
         SETFILE.flush()
     if NOCHECK:
         return
@@ -371,7 +373,7 @@ def do_value(set_pv: str, value: str | float, read_pv: str | types.NoneType = No
         )
         sp_ok = False
         if CHANGEFILE is not None:
-            CHANGEFILE.write(f"caput {prefixed_set_pv} {value}\n")
+            CHANGEFILE.write(f"caput {CAPUT_FLAGS} {prefixed_set_pv} {value}\n")
             CHANGEFILE.flush()
     elif SHOW_VALUE_OK:
         print('{} SP OK "{}"'.format(prefixed_set_pv, current_sp))
@@ -419,9 +421,9 @@ def do_controller(config: configparser.SectionProxy, galil: str, skips: dict) ->
                 f"INFO: Setting LIMIT and HOME switch type to NO (CN-1,-1) on {dmc(galil)}. "
                 f"This is ususal ISIS default"
             )
-            SETFILE.write(f"caput {PVPREFIX}{dmc(galil)}:HOMETYPE_CMD NO\n")
-            SETFILE.write(f"caput {PVPREFIX}{dmc(galil)}:LIMITTYPE_CMD NO\n")
-            SETFILE.write(f"caput {PVPREFIX}{dmc(galil)}:SEND_CMD_STR CN-1,-1\n")
+            SETFILE.write(f"caput {CAPUT_FLAGS} {PVPREFIX}{dmc(galil)}:HOMETYPE_CMD NO\n")
+            SETFILE.write(f"caput {CAPUT_FLAGS} {PVPREFIX}{dmc(galil)}:LIMITTYPE_CMD NO\n")
+            SETFILE.write(f"caput {CAPUT_FLAGS} {PVPREFIX}{dmc(galil)}:SEND_CMD_STR CN-1,-1\n")
             SETFILE.flush()
         for axis_no in range(8):
             axis = chr(ord("a") + axis_no)
