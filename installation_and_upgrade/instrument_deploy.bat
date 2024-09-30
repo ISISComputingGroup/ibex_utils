@@ -79,7 +79,7 @@ REM Set python as share just for script call
 call "%~dp0define_latest_genie_python.bat"
 IF %errorlevel% neq 0 exit /b %errorlevel%
 if not exist "%LATEST_PYTHON%" (
-    @echo Cannot find python on network share
+    @echo Cannot install python from network share
     goto ERROR
 )
 
@@ -102,5 +102,10 @@ set "PYTHONHOME=%LATEST_PYTHON_DIR%"
 set "PYTHONPATH=%LATEST_PYTHON_DIR%"
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_post_start
+call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+
+exit /b 0
+
 :ERROR
+call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
 EXIT /b 1
