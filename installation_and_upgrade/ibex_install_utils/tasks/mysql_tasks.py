@@ -35,7 +35,7 @@ except ImportError:
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.39"
+MYSQL_LATEST_VERSION = "8.4.2"
 MYSQL_ZIP = os.path.join(
     INST_SHARE_AREA,
     "kits$",
@@ -239,7 +239,7 @@ class MysqlTasks(BaseTasks):
                     "root",
                     "-e",
                     "ALTER USER 'root'@'localhost' "
-                    f"IDENTIFIED WITH mysql_native_password BY '{sql_password}';FLUSH "
+                    f"IDENTIFIED WITH caching_sha2_password BY '{sql_password}';FLUSH "
                     "privileges; ",
                 ],
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
