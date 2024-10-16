@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import zipfile
 from time import sleep
+from typing import Generator
 
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInRun
@@ -27,11 +28,7 @@ except ImportError:
     # For Py2 compatibility, can be removed once we are on Py3.
     DETACHED_PROCESS = 0x00000008
 
-try:
-    from contextlib import closing
-except ImportError:
-    from contextlib2 import closing
-
+from contextlib import closing
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
@@ -193,7 +190,7 @@ class MysqlTasks(BaseTasks):
         ).run()
 
     @contextlib.contextmanager
-    def temporarily_run_mysql(self, sql_password: str) -> None:
+    def temporarily_run_mysql(self, sql_password: str) -> Generator[None, None, None]:
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         # spawn service in background
@@ -325,7 +322,7 @@ class MysqlTasks(BaseTasks):
 
         Ensure we start from a clean slate. We are creating VHDs so
         we can assume that no files should exist in
-        C:\instrument\apps\mysql or c:\instrument\var\mysql and
+        C:\\instrument\\apps\\mysql or c:\\instrument\\var\\mysql and
         delete them if they do exist. This facilitates
         developer testing/resuming the script if it failed halfway through
         """
