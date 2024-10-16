@@ -2,11 +2,12 @@ import contextlib
 import os
 import tempfile
 from time import sleep
+from typing import Any, Generator
 
 
 class AdminRunner:
     @staticmethod
-    def run_command(command, parameters, expected_return_val=0):
+    def run_command(command: str, parameters: str, expected_return_val: int | None = 0) -> None:
         try:
             import win32api
             import win32con
@@ -40,13 +41,15 @@ class AdminCommandBuilder:
     Builder for running multiple commands sequentially as admin.
     """
 
-    def __init__(self):
-        self._commands = []
+    def __init__(self) -> None:
+        self._commands: list[tuple[str, str, int | None]] = []
 
-    def add_command(self, command, parameters, expected_return_val=0):
+    def add_command(
+        self, command: str, parameters: str, expected_return_val: int | None = 0
+    ) -> None:
         self._commands.append((command, parameters, expected_return_val))
 
-    def run_all(self):
+    def run_all(self) -> str:
         bat_file = ""
 
         log_file = tempfile.NamedTemporaryFile(mode="w+t", suffix=".log", delete=False)
@@ -63,7 +66,8 @@ class AdminCommandBuilder:
 
         with temp_bat_file(bat_file) as f:
             print(
-                f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. Log at {log_file.name}."
+                f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. "
+                f"Log at {log_file.name}."
             )
             sleep(1)  # Wait for file handle to be closed etc
             try:
@@ -80,9 +84,9 @@ class AdminCommandBuilder:
 
 
 @contextlib.contextmanager
-def temp_bat_file(contents):
+def temp_bat_file(contents: str) -> Generator[str, None, Any]:
+    f = tempfile.NamedTemporaryFile(mode="w+t", suffix=".bat", delete=False)
     try:
-        f = tempfile.NamedTemporaryFile(mode="w+t", suffix=".bat", delete=False)
         f.write(contents)
         f.close()
         yield f.name
