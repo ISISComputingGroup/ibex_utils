@@ -215,7 +215,7 @@ class MysqlTasks(BaseTasks):
             ).run()
 
     def _setup_database_users_and_tables(self, vhd_install: bool = True) -> None:
-        sql_password = ''
+        sql_password = ""
         retry_count = 5
         while --retry_count > 0:
             sql_password = self.prompt.prompt(
