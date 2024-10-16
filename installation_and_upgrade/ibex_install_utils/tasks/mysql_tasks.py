@@ -215,13 +215,18 @@ class MysqlTasks(BaseTasks):
             ).run()
 
     def _setup_database_users_and_tables(self, vhd_install: bool = True) -> None:
-        sql_password = self.prompt.prompt(
-            "Enter the MySQL root password:",
-            UserPrompt.ANY,
-            os.getenv("MYSQL_PASSWORD", "environment variable not set"),
-            show_automatic_answer=False,
-        )
-
+        sql_password = ''
+        retry_count = 5
+        while --retry_count > 0:
+            sql_password = self.prompt.prompt(
+                "Enter the MySQL root password:",
+                UserPrompt.ANY,
+                os.getenv("MYSQL_PASSWORD", "environment variable not set"),
+                show_automatic_answer=False,
+            ).strip()
+            if len(sql_password) > 0:
+                break
+            print("Please enter a non blank password")
         if vhd_install:
             # In the VHD install, need to explicitly temporarily run MySQL.
             cm = self.temporarily_run_mysql(sql_password)
