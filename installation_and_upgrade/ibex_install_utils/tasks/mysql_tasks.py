@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import zipfile
 from time import sleep
+from typing import Generator
 
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInRun
@@ -27,15 +28,11 @@ except ImportError:
     # For Py2 compatibility, can be removed once we are on Py3.
     DETACHED_PROCESS = 0x00000008
 
-try:
-    from contextlib import closing
-except ImportError:
-    from contextlib2 import closing
-
+from contextlib import closing
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.0.39"
+MYSQL_LATEST_VERSION = "8.4.2"
 MYSQL_ZIP = os.path.join(
     INST_SHARE_AREA,
     "kits$",
@@ -129,9 +126,10 @@ class MysqlTasks(BaseTasks):
         # Restart to pick up new my.ini
         admin_commands = AdminCommandBuilder()
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
+        admin_commands.add_command("sc", "stop MYSQL84", expected_return_val=None)
         # Sleep to wait for service to stop so we can restart it.
         admin_commands.add_command("ping", "-n 10 127.0.0.1 >nul", expected_return_val=None)
-        admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
+        admin_commands.add_command("sc", "start MYSQL84", expected_return_val=None)
         admin_commands.run_all()
 
     def _remove_old_versions_of_mysql8(self, clean_install: bool) -> None:
@@ -144,6 +142,8 @@ class MysqlTasks(BaseTasks):
         admin_commands = AdminCommandBuilder()
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
         admin_commands.add_command("sc", "delete MYSQL80", expected_return_val=None)
+        admin_commands.add_command("sc", "stop MYSQL84", expected_return_val=None)
+        admin_commands.add_command("sc", "delete MYSQL84", expected_return_val=None)
         admin_commands.run_all()
 
         sleep(5)  # Time for service to stop
@@ -190,7 +190,7 @@ class MysqlTasks(BaseTasks):
         ).run()
 
     @contextlib.contextmanager
-    def temporarily_run_mysql(self, sql_password: str) -> None:
+    def temporarily_run_mysql(self, sql_password: str) -> Generator[None, None, None]:
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
         # spawn service in background
@@ -215,13 +215,18 @@ class MysqlTasks(BaseTasks):
             ).run()
 
     def _setup_database_users_and_tables(self, vhd_install: bool = True) -> None:
-        sql_password = self.prompt.prompt(
-            "Enter the MySQL root password:",
-            UserPrompt.ANY,
-            os.getenv("MYSQL_PASSWORD", "environment variable not set"),
-            show_automatic_answer=False,
-        )
-
+        sql_password = ""
+        retry_count = 5
+        while --retry_count > 0:
+            sql_password = self.prompt.prompt(
+                "Enter the MySQL root password:",
+                UserPrompt.ANY,
+                os.getenv("MYSQL_PASSWORD", "environment variable not set"),
+                show_automatic_answer=False,
+            ).strip()
+            if len(sql_password) > 0:
+                break
+            print("Please enter a non blank password")
         if vhd_install:
             # In the VHD install, need to explicitly temporarily run MySQL.
             cm = self.temporarily_run_mysql(sql_password)
@@ -239,7 +244,7 @@ class MysqlTasks(BaseTasks):
                     "root",
                     "-e",
                     "ALTER USER 'root'@'localhost' "
-                    f"IDENTIFIED WITH mysql_native_password BY '{sql_password}';FLUSH "
+                    f"IDENTIFIED WITH caching_sha2_password BY '{sql_password}';FLUSH "
                     "privileges; ",
                 ],
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
@@ -260,17 +265,17 @@ class MysqlTasks(BaseTasks):
         # Wait for initialize since admin runner can't wait for completion.
         # Maybe we can detect completion another way?
         admin_commands.add_command(
-            mysqld, '--install MYSQL80 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data"))
+            mysqld, '--install MYSQL84 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data"))
         )
 
-        admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
+        admin_commands.add_command("sc", "start MYSQL84", expected_return_val=None)
         # we use "delayed-auto" for start= as we have some ibex installations
         # where a required disk volume doesn't get mounted in time if just "auto" is used
-        admin_commands.add_command("sc", "config MYSQL80 start= delayed-auto")
+        admin_commands.add_command("sc", "config MYSQL84 start= delayed-auto")
         admin_commands.add_command(
-            "sc", "failure MYSQL80 reset= 900 actions= restart/10000/restart/30000/restart/60000"
+            "sc", "failure MYSQL84 reset= 900 actions= restart/10000/restart/30000/restart/60000"
         )
-        admin_commands.add_command("sc", "failureflag MYSQL80 1")
+        admin_commands.add_command("sc", "failureflag MYSQL84 1")
         admin_commands.add_command(
             "netsh", "advfirewall firewall delete rule name=mysqld.exe", None
         )  # remove old firewall rules
@@ -295,6 +300,7 @@ class MysqlTasks(BaseTasks):
         self._create_mysql_binaries()
 
         if clean_install:
+            shutil.rmtree(MYSQL_FILES_DIR)
             os.makedirs(MYSQL_FILES_DIR)
             mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
@@ -321,7 +327,7 @@ class MysqlTasks(BaseTasks):
 
         Ensure we start from a clean slate. We are creating VHDs so
         we can assume that no files should exist in
-        C:\instrument\apps\mysql or c:\instrument\var\mysql and
+        C:\\instrument\\apps\\mysql or c:\\instrument\\var\\mysql and
         delete them if they do exist. This facilitates
         developer testing/resuming the script if it failed halfway through
         """
@@ -386,7 +392,7 @@ class MysqlTasks(BaseTasks):
                     force = True
                 else:
                     return
-            clean_install = force
+            clean_install = force or MySQL().get_installed_version().startswith("8.0")
             self._remove_old_versions_of_mysql8(clean_install=clean_install)
 
         self._install_vcruntime140()
