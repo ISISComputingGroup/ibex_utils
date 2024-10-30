@@ -1,4 +1,4 @@
-setlocal
+setlocal EnableDelayedExpansion
 call "%~dp0define_latest_genie_python.bat"
 if %errorlevel% neq 0 goto ERROR
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases\4.0.0"

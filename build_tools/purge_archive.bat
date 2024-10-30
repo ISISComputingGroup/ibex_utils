@@ -1,12 +1,14 @@
 setlocal EnableDelayedExpansion
 REM Remove old builds from the archive
 
-if not "%WORKSPACE%" == "" (
+if "%WORKSPACE%" == "" (
+    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat"
+) else (
     if exist "%WORKSPACE%\Python3" rd /s /q %WORKSPACE%\Python3
     if !errorlevel! neq 0 exit /b 1
+    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat" %WORKSPACE%\Python3
 )
-
-call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat" %WORKSPACE%\Python3
+IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
 set PYTHONUNBUFFERED=TRUE
 REM use LATEST_PYTHON3 to avoid process being killed

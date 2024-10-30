@@ -37,6 +37,7 @@ if "%~1" NEQ "" (
 mkdir %LATEST_PYTHON_DIR%
 
 CALL %genie_dir%\BUILD-%PYTHON_BUILD_NO%\genie_python_install.bat %LATEST_PYTHON_DIR%
+IF %errorlevel% neq 0 goto ERROR
 			
 set "LATEST_PYTHON=%LATEST_PYTHON_DIR%\python.exe"
 set "LATEST_PYTHON3=%LATEST_PYTHON_DIR%\python3.exe"
@@ -45,4 +46,8 @@ exit /b 0
 
 :ERROR
 @echo define_latest_genie_python failed
+set PYTHON_BUILD_NO=
+set LATEST_PYTHON_DIR=
+set LATEST_PYTHON=
+set LATEST_PYTHON3=
 exit /b 1
