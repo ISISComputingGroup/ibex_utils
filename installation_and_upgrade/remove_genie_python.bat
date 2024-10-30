@@ -13,7 +13,7 @@ if exist %remove_genie_python_path% (
     REM Checks that "Python_Build_" is in the supplied filepath, so it is a python build.
     echo.%remove_genie_python_path% | findstr /C:"Python_Build_">nul && (
 
-        REM Deleted directory tree + quiet.
+        REM Deletes directory tree + quiet.
         RMDIR /S /Q %remove_genie_python_path%
 
         REM Unassigns environment variables.
@@ -26,6 +26,7 @@ if exist %remove_genie_python_path% (
 
     ) || (
         @echo "%remove_genie_python_path%" is not a python build directory.
+        goto ERROR
     )
 
 ) else (
