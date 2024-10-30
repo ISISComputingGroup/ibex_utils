@@ -36,12 +36,10 @@ if "%~1" NEQ "" (
 
 mkdir %LATEST_PYTHON_DIR%
 
-%genie_dir%\BUILD-%PYTHON_BUILD_NO%\genie_python_install.bat %LATEST_PYTHON_DIR%
+CALL %genie_dir%\BUILD-%PYTHON_BUILD_NO%\genie_python_install.bat %LATEST_PYTHON_DIR%
 			
 set "LATEST_PYTHON=%LATEST_PYTHON_DIR%\python.exe"
 set "LATEST_PYTHON3=%LATEST_PYTHON_DIR%\python3.exe"
-
-rem @echo LATEST PYTHON: %LATEST_PYTHON%
 
 exit /b 0
 
