@@ -300,7 +300,7 @@ class MysqlTasks(BaseTasks):
         self._create_mysql_binaries()
 
         if clean_install:
-            shutil.rmtree(MYSQL_FILES_DIR)
+            self._remove_old_mysql_data_dir()
             os.makedirs(MYSQL_FILES_DIR)
             mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
 
