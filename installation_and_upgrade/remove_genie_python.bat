@@ -5,25 +5,34 @@ if "%~1"=="" (
     goto ERROR
 )
 
-set substring=Python_Build_
-set path=%~1
-set modified_path=%path:%substring%=%
+set remove_genie_python_path=%~1
 
-if "%path%" neq "%modified_path%" (
+REM Checks that supplied filepath exists.
+if exist %remove_genie_python_path% (
 
-    RMDIR /S /Q %path%
+    REM Checks that "Python_Build_" is in the supplied filepath, so it is a python build.
+    echo.%remove_genie_python_path% | findstr /C:"Python_Build_">nul && (
 
-    set LATEST_PYTHON_DIR=
-    set LATEST_PYTHON=
-    set LATEST_PYTHON3=
+        REM Deletes directory tree + quiet.
+        RMDIR /S /Q %remove_genie_python_path%
+
+        REM Unassigns environment variables.
+        set LATEST_PYTHON_DIR=
+        set LATEST_PYTHON=
+        set LATEST_PYTHON3=
+
+        @echo Successfully removed "%remove_genie_python_path%" and unset genie build variables. 
+        exit /b 0
+
+    ) || (
+        @echo "%remove_genie_python_path%" is not a python build directory.
+        goto ERROR
+    )
 
 ) else (
-    @echo Could not find the specified path: %path%.
+    @echo Could not find the specified path: "%remove_genie_python_path%".
     goto ERROR
 )
-
-@echo Successfully removed %path% and unset genie build variables.
-exit /b 0
 
 :ERROR
 @echo remove_genie_python failed
