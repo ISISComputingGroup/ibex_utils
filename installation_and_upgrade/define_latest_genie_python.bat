@@ -29,25 +29,28 @@ if "%PYTHON_BUILD_NO%" == "" (
 )
 
 if "%~1" NEQ "" (
-	set "LATEST_PYTHON_DIR=%~1\Python_Build_%PYTHON_BUILD_NO%" 
+	set "LATEST_PYTHON_DIR_T=%~1\Python_Build_%PYTHON_BUILD_NO%"
 ) else (
-	set "LATEST_PYTHON_DIR=%tmp%\Python_Build_%PYTHON_BUILD_NO%"
+	set "LATEST_PYTHON_DIR_T=%tmp%\Python_Build_%PYTHON_BUILD_NO%"
 )
 
-mkdir %LATEST_PYTHON_DIR%
+mkdir %LATEST_PYTHON_DIR_T%
 
-CALL %genie_dir%\BUILD-%PYTHON_BUILD_NO%\genie_python_install.bat %LATEST_PYTHON_DIR%
-IF %errorlevel% neq 0 goto ERROR
-			
+CALL %genie_dir%\BUILD-%PYTHON_BUILD_NO%\genie_python_install.bat %LATEST_PYTHON_DIR_T%
+IF %errorlevel% neq 0 (
+    call %~dp0remove_genie_python.bat %LATEST_PYTHON_DIR_T%
+    goto ERROR
+)
+set "LATEST_PYTHON_DIR=%LATEST_PYTHON_DIR_T%"
 set "LATEST_PYTHON=%LATEST_PYTHON_DIR%\python.exe"
 set "LATEST_PYTHON3=%LATEST_PYTHON_DIR%\python3.exe"
+set "PYTHON_BUILD_NO="
+set "LATEST_PYTHON_DIR_T="
 
 exit /b 0
 
 :ERROR
 @echo define_latest_genie_python failed
 set PYTHON_BUILD_NO=
-set LATEST_PYTHON_DIR=
-set LATEST_PYTHON=
-set LATEST_PYTHON3=
+set LATEST_PYTHON_DIR_T=
 exit /b 1
