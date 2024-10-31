@@ -5,10 +5,10 @@ if "%~1"=="" (
     goto ERROR
 )
 
-set remove_genie_python_path=%~1
+set "remove_genie_python_path=%~1"
 
 REM Checks that supplied filepath exists.
-if exist %remove_genie_python_path% (
+if exist "%remove_genie_python_path%" (
 
     REM Checks that "Python_Build_" is in the supplied filepath, so it is a python build.
     echo.%remove_genie_python_path% | findstr /C:"Python_Build_">nul && (
@@ -22,6 +22,7 @@ if exist %remove_genie_python_path% (
         set LATEST_PYTHON3=
 
         @echo Successfully removed "%remove_genie_python_path%" and unset genie build variables. 
+        set remove_genie_python_path=
         exit /b 0
 
     ) || (
@@ -35,5 +36,6 @@ if exist %remove_genie_python_path% (
 )
 
 :ERROR
+set remove_genie_python_path=
 @echo remove_genie_python failed
 exit /b 1

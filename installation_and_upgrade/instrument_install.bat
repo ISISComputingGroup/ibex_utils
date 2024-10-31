@@ -1,4 +1,4 @@
-setlocal
+setlocal EnableDelayedExpansion
 
 REM check if console has Administrative privileges
 call "%~dp0check_for_admin_console.bat"

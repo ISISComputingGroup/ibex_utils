@@ -2,6 +2,7 @@ setlocal EnableDelayedExpansion
 set PYTHONUNBUFFERED=1
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 call "%~dp0define_latest_genie_python.bat"
+IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
 IF EXIST "C:\Instrument\Apps\EPICS\stop_ibex_server.bat" (
   start /wait cmd /c "C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
