@@ -200,6 +200,9 @@ class UpgradeInstrument:
         self._python_tasks.update_script_definitions()
         self._server_tasks.setup_log_rotation()
 
+    def run_update_icp(self) -> None:
+        self._server_tasks.update_icp(self.icp_in_labview_modules())
+
     def save_motor_params(self) -> None:
         self._server_tasks.save_motor_parameters_to_file()
 
@@ -405,6 +408,10 @@ UPGRADE_TYPES = {
     "truncate_database": (
         UpgradeInstrument.run_truncate_database,
         "backup and truncate the sql database on the instrument",
+    ),
+    "update_icp": (
+        UpgradeInstrument.run_update_icp,
+        "update isisicp on the instrument",
     ),
     "force_upgrade_mysql": (
         UpgradeInstrument.run_force_upgrade_mysql,
