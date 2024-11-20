@@ -29,9 +29,9 @@ if "%PYTHON_BUILD_NO%" == "" (
 )
 
 if "%~1" NEQ "" (
-	set "LATEST_PYTHON_DIR_T=%~1\Python_Build_%PYTHON_BUILD_NO%"
+	set "LATEST_PYTHON_DIR_T=%~1\Python_Build_%RANDOM%"
 ) else (
-	set "LATEST_PYTHON_DIR_T=%tmp%\Python_Build_%PYTHON_BUILD_NO%"
+	set "LATEST_PYTHON_DIR_T=%tmp%\Python_Build_%RANDOM%"
 )
 
 mkdir %LATEST_PYTHON_DIR_T%
