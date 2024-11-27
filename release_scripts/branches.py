@@ -11,13 +11,13 @@ from git.repo import Repo
 
 EPICS_REPO_URL = "https://github.com/ISISComputingGroup/EPICS.git"
 IBEX_REPO_URL = "https://github.com/ISISComputingGroup/ibex_gui.git"
-GENIE_PYTHON_URL = "https://github.com/ISISComputingGroup/genie_python.git"
+UKTENA_URL = "https://github.com/ISISComputingGroup/uktena.git"
 JSON_BOURNE_URL = "https://github.com/ISISComputingGroup/JSON_bourne.git"
 
 EPICS_DIR = "EPICS"
 IBEX_DIR = "IBEX"
 SCRIPT_GEN_DIR = "SCRIPT_GEN"
-GENIE_PYTHON_DIR = "genie_python"
+UKTENA_DIR = "uktena"
 JSON_BOURNE_DIR = "JSON_bourne"
 
 INSTETC_TEMPLATE_LOCAL_PATH = os.path.join(
@@ -44,9 +44,6 @@ SCRIPT_GENERATOR_POM_LOCAL_PATH = os.path.join(
     "base", "uk.ac.stfc.isis.scriptgenerator.client", "pom.xml"
 )
 SCRIPT_GENERATOR_POM_ABSOLUTE_PATH = os.path.join(SCRIPT_GEN_DIR, SCRIPT_GENERATOR_POM_LOCAL_PATH)
-
-GENIE_PYTHON_VERSION_LOCAL_PATH = os.path.join("Lib", "site-packages", "genie_python", "version.py")
-GENIE_PYTHON_VERSION_ABSOLUTE_PATH = os.path.join(GENIE_PYTHON_DIR, GENIE_PYTHON_VERSION_LOCAL_PATH)
 
 
 def write_instetc_version(version: str):
@@ -95,13 +92,6 @@ def write_gui_version(manifest_path: str, pom_path: str, version: str):
         root.find(f"{{{namespace}}}parent").tail = "\n  "
 
     tree.write(pom_path)
-
-
-def write_genie_python_version(version: str):
-    logging.info(f"Writing version '{version}' to '{GENIE_PYTHON_VERSION_ABSOLUTE_PATH}'.")
-
-    with open(GENIE_PYTHON_VERSION_ABSOLUTE_PATH, "w") as file:
-        file.write(f'VERSION = "{version}"\n')
 
 
 class ReleaseBranch:
@@ -267,12 +257,10 @@ if __name__ == "__main__":
         )
         script_gen.push()
 
-    if os.getenv("GENIE_PYTHON") == "true":
-        genie_python = ReleaseBranch()
-        genie_python.create(GENIE_PYTHON_URL, GENIE_PYTHON_DIR, f"Release_{args.version}")
-        write_genie_python_version(args.version)
-        genie_python.commit([GENIE_PYTHON_VERSION_LOCAL_PATH], f"Update version to {args.version}.")
-        genie_python.push()
+    if os.getenv("UKTENA") == "true":
+        uktena = ReleaseBranch()
+        uktena.create(UKTENA_URL, UKTENA_DIR, f"Release_{args.version}")
+        uktena.push()
 
     if os.getenv("JSON_BOURNE") == "true":
         json_bourne = ReleaseBranch()
