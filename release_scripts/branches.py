@@ -17,7 +17,7 @@ JSON_BOURNE_URL = "https://github.com/ISISComputingGroup/JSON_bourne.git"
 EPICS_DIR = "EPICS"
 IBEX_DIR = "IBEX"
 SCRIPT_GEN_DIR = "SCRIPT_GEN"
-UKTENA_DIR = "uktena"
+UKTENA_DIR = "UKTENA"
 JSON_BOURNE_DIR = "JSON_bourne"
 
 INSTETC_TEMPLATE_LOCAL_PATH = os.path.join(
@@ -46,7 +46,7 @@ SCRIPT_GENERATOR_POM_LOCAL_PATH = os.path.join(
 SCRIPT_GENERATOR_POM_ABSOLUTE_PATH = os.path.join(SCRIPT_GEN_DIR, SCRIPT_GENERATOR_POM_LOCAL_PATH)
 
 
-def write_instetc_version(version: str):
+def write_instetc_version(version: str) -> None:
     logging.info(f"Writing version '{version}' to '{INSTETC_TEMPLATE_ABSOLUTE_PATH}'.")
 
     with open(INSTETC_TEMPLATE_ABSOLUTE_PATH, "r") as file:
@@ -61,7 +61,7 @@ def write_instetc_version(version: str):
         file.write(data)
 
 
-def write_gui_version(manifest_path: str, pom_path: str, version: str):
+def write_gui_version(manifest_path: str, pom_path: str, version: str) -> None:
     # In Manifest file.
     logging.info(f"Writing version '{version}' to '{manifest_path}'.")
 
@@ -97,15 +97,17 @@ def write_gui_version(manifest_path: str, pom_path: str, version: str):
 class ReleaseBranch:
     """Wrapper around a Repo object. Used to perform Git operations on a release branch."""
 
-    def __init__(self, repo: Repo = None):
+    def __init__(self, repo: Repo = None) -> None:
         self.repo = repo
 
-    def create(self, url: str, dir: str, branch_name: str, submodules: bool = False):
+    def create(self, url: str, dir: str, branch_name: str, submodules: bool = False) -> None:
         """
         Initializes a repository by using 'git clone'.
         Creates a release branch for the main repository and, optionally, all submodules.
 
-        Uses an environment variable 'REMOTE' set in Jenkins to check if submodules should be updated with '--remote'.
+        Uses an environment variable 'REMOTE' set in Jenkins to check if submodules
+        should be updated with '--remote'.
+
         Will fail the script if there are any new submodule commits. Defaults to true.
 
         Uses an environment variable 'TAG' set in Jenkins as the source for the release branch.
@@ -123,7 +125,7 @@ class ReleaseBranch:
         logging.info(f"Cloning '{url}' into '{dir}'.")
         self.repo = git.Repo.clone_from(url=url, to_path=dir)
         if branch_name in self.repo.references:
-            logging.error(f"Branch name '{branch_name}' already exists for repo '{url}'.")
+            logging.error(f"Branch name '{branch_name}' " f"already exists for repo '{url}'.")
             sys.exit(1)
 
         source = os.getenv("TAG")
@@ -150,7 +152,8 @@ class ReleaseBranch:
                 new_commits = False
                 for i in self.repo.index.diff(None).iter_change_type("M"):
                     logging.warning(
-                        f"Submodule '{i.a_path}' in repo '{self.repo.remotes.origin.url}' has new commits."
+                        f"Submodule '{i.a_path}' in repo "
+                        f"'{self.repo.remotes.origin.url}' has new commits."
                     )
                     new_commits = True
 
@@ -168,7 +171,8 @@ class ReleaseBranch:
             for submodule in self.repo.submodules:
                 if branch_name in submodule.module().references:
                     logging.error(
-                        f"Branch name '{branch_name}' already exists for repo '{submodule.module().remote().url}'."
+                        f"Branch name '{branch_name}' already "
+                        f"exists for repo '{submodule.module().remote().url}'."
                     )
                     sys.exit(1)
 
@@ -178,7 +182,7 @@ class ReleaseBranch:
                 )
                 submodule.module().create_head(branch_name).checkout()
 
-    def commit(self, items: List[Any], msg: str):
+    def commit(self, items: List[Any], msg: str) -> None:
         """
         Commits a list of items.
 
@@ -191,7 +195,7 @@ class ReleaseBranch:
         self.repo.index.add(items)
         self.repo.index.commit(msg)
 
-    def push(self, submodules: bool = False):
+    def push(self, submodules: bool = False) -> None:
         """
         Pushes changes to remote.
 
@@ -228,7 +232,8 @@ if __name__ == "__main__":
         ioc_submodule = epics.repo.submodule("ioc/master")
         ioc = ReleaseBranch(ioc_submodule.module())
         ioc.commit([INSTETC_TEMPLATE_LOCAL_PATH], f"Update version to {args.version}.")
-        # Set submodule hash to created commit hash. This ensures we use the latest submodule commit.
+        # Set submodule hash to created commit hash.
+        # This ensures we use the latest submodule commit.
         ioc_submodule.binsha = ioc.repo.head.commit.binsha
 
         epics.commit([ioc_submodule], "Update submodule ioc.")
