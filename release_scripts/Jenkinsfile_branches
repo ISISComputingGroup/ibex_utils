@@ -75,8 +75,8 @@ pipeline {
                                 defaultValue: true
                             ),
                             booleanParam(
-                                name: "GENIE_PYTHON",
-                                description: "Create release branch for Genie Python.",
+                                name: "UKTENA",
+                                description: "Create release branch for Uktena Python distribution.",
                                 defaultValue: true
                             ),
                             booleanParam(
@@ -106,8 +106,8 @@ pipeline {
                         build job: "EPICS_release", propagate: false, wait: false
                         build job: "EPICS_release32", propagate: false, wait: false
                     }
-                    if (params.GENIE_PYTHON) {
-                        build job: "genie_python_release_pipeline", propagate: false, wait: false
+                    if (params.UKTENA) {
+                        build job: "uktena_release_pipeline", propagate: false, wait: false
                     }
                     if (params.IBEX_GUI) {
                         build job: "ibex_gui_releases_pipeline", propagate: false, wait: false
