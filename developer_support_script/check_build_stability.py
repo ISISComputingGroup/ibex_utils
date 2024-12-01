@@ -243,6 +243,6 @@ if __name__ == "__main__":
         "System_Tests_galilold",
         "System_Tests_Win11",
     ]
-    SQUISH_JOBS = ["System_Tests_Squish"]
+    SQUISH_JOBS = ["System_Tests_Squish", "System_Tests_Squish_Win11"]
     process_jobs(EPICS_JOBS, "EPICS")
     process_jobs(SQUISH_JOBS, "SQUISH")
