@@ -425,17 +425,18 @@ class SystemTasks(BaseTasks):
             )
             admin_commands.run_all()
 
+            print("waiting for install to finish")
             # vc_redist helpfully finishes with errorlevel 0 before actually copying the files over.
             # therefore we'll sleep for 5 seconds here
             sleep(5)
 
             with open(log_file, "r") as f:
-                last_line = f.readlines()[-1]
+                for line in f.readlines():
+                    print("vc_redist install output: {}".format(line.rstrip()))
 
-            if "Exit code: 0x0" not in last_line:
-                self.prompt.prompt_and_raise_if_not_yes(
-                    "Press Y/N if Git has installed correctly", default="Y"
-                )
+            self.prompt.prompt_and_raise_if_not_yes(
+                "Installing vc redistributable files finished. Please check log output above for errors.", default="Y"
+            )
         else:
             self.prompt.prompt_and_raise_if_not_yes(
                 f"VC redistributable files not found in {exe_file.parent}, please check and make sure {exe_file} is present. "
