@@ -1,7 +1,10 @@
+import datetime
 import glob
 import os
 import shutil
 import subprocess
+from pathlib import Path
+import platform
 
 import psutil
 from ibex_install_utils.admin_runner import AdminCommandBuilder
@@ -15,9 +18,11 @@ from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import (
     APPS_BASE_DIR,
     EPICS_PATH,
+    VAR_DIR
 )
 from ibex_install_utils.version_check import version_check
 from win32com.client import Dispatch
+from time import sleep
 
 GIGABYTE = 1024**3
 
@@ -45,6 +50,8 @@ ALLUSERS_STARTUP = os.path.join(
 SECI = "SECI User interface.lnk"
 SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility")
 SECI_AUTOSTART_LOCATIONS = [os.path.join(USER_STARTUP, SECI), os.path.join(ALLUSERS_STARTUP, SECI)]
+EPICS_CRTL_PATH = os.path.join(EPICS_PATH, "crtl")
+
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(
     os.environ["userprofile"], "desktop", "Mantid+IBEX training"
@@ -400,6 +407,38 @@ class SystemTasks(BaseTasks):
         else:
             self.prompt.prompt_and_raise_if_not_yes(
                 "Download and Install Git from https://git-scm.com/downloads"
+            )
+
+    @task("Update visual studio redistributable files")
+    def install_or_upgrade_vc_redist(self):
+        """
+        Install the latest visual studio redistributable files
+        """
+
+        is_64_bit = platform.machine().endswith("64")
+        exe_file = Path(EPICS_CRTL_PATH, f"vc_redist.{'x64' if is_64_bit else 'x86'}.exe")
+        if exe_file.exists() and exe_file.is_file():
+            log_file = Path(VAR_DIR, "logs", "deploy", f"vc_redist_log{datetime.datetime.now()}.txt")
+            admin_commands = AdminCommandBuilder()
+            admin_commands.add_command(
+                f'"{exe_file}"', f"/install /norestart /passive /quiet /log {log_file}", expected_return_val=None
+            )
+            admin_commands.run_all()
+
+            # vc_redist helpfully finishes with errorlevel 0 before actually copying the files over.
+            # therefore we'll sleep for 5 seconds here
+            sleep(5)
+
+            with open(log_file, "r") as f:
+                last_line = f.readlines()[-1]
+
+            if "Exit code: 0x0" not in last_line:
+                self.prompt.prompt_and_raise_if_not_yes(
+                    "Press Y/N if Git has installed correctly", default="Y"
+                )
+        else:
+            self.prompt.prompt_and_raise_if_not_yes(
+                f"VC redistributable files not found in {exe_file.parent}, please check and make sure {exe_file} is present. "
             )
 
     def confirm(self, message):
