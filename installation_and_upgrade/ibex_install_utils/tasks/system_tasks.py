@@ -15,11 +15,7 @@ from ibex_install_utils.software_dependency.git import Git
 from ibex_install_utils.software_dependency.java import Java
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import (
-    APPS_BASE_DIR,
-    EPICS_PATH,
-    VAR_DIR
-)
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, VAR_DIR
 from ibex_install_utils.version_check import version_check
 from win32com.client import Dispatch
 from time import sleep
@@ -418,10 +414,17 @@ class SystemTasks(BaseTasks):
         is_64_bit = platform.machine().endswith("64")
         exe_file = Path(EPICS_CRTL_PATH, f"vc_redist.{'x64' if is_64_bit else 'x86'}.exe")
         if exe_file.exists() and exe_file.is_file():
-            log_file = Path(VAR_DIR, "logs", "deploy", f"vc_redist_log{time.strftime('%Y%m%d%H%M%S')}.txt")
+            log_file = Path(
+                VAR_DIR, "logs", "deploy", f"vc_redist_log{time.strftime('%Y%m%d%H%M%S')}.txt"
+            )
 
             # AdminRunner doesn't seem to work here, saying it can't find a handle, so just run as a normal command as the process itself prompts for admin.
-            RunProcess(working_dir=str(exe_file.parent), executable_file=exe_file.name, prog_args=["/install", "/norestart", "/passive", "/quiet", "/log", str(log_file)], expected_return_codes=[0] ).run()
+            RunProcess(
+                working_dir=str(exe_file.parent),
+                executable_file=exe_file.name,
+                prog_args=["/install", "/norestart", "/passive", "/quiet", "/log", str(log_file)],
+                expected_return_codes=[0],
+            ).run()
 
             # vc_redist helpfully finishes with errorlevel 0 before actually copying the files over.
             # therefore we'll sleep for 5 seconds here
@@ -433,12 +436,17 @@ class SystemTasks(BaseTasks):
                     print("vc_redist install output: {}".format(line.rstrip()))
                     last_line = line
 
-            status = "It looked like it installed correctly, but " if "Exit code: 0x0" in last_line else "it looked like the process errored,"
+            status = (
+                "It looked like it installed correctly, but "
+                if "Exit code: 0x0" in last_line
+                else "it looked like the process errored,"
+            )
 
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Installing vc redistributable files finished.\n"
                 f"{status}"
-                f"please check log output above for errors,\nor alternatively {log_file}", default="Y"
+                f"please check log output above for errors,\nor alternatively {log_file}",
+                default="Y",
             )
         else:
             raise ErrorInTask(
