@@ -8,7 +8,7 @@ import re
 import sys
 
 import ibex_install_utils.default_args
-import semantic_version
+import semantic_version  # pyright: ignore
 from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.install_tasks import UPGRADE_TYPES, UpgradeInstrument
