@@ -428,51 +428,66 @@ class SystemTasks(BaseTasks):
         """
         Install the latest visual studio redistributable files
         """
+        import ibex_install_utils.default_args
 
-        is_64_bit = platform.machine().endswith("64")
-        exe_file = Path(EPICS_CRTL_PATH, f"vc_redist.{'x64' if is_64_bit else 'x86'}.exe")
-        if exe_file.exists() and exe_file.is_file():
-            log_file = Path(
-                VAR_DIR, "logs", "deploy", f"vc_redist_log{time.strftime('%Y%m%d%H%M%S')}.txt"
-            )
+        arch = ibex_install_utils.default_args.SERVER_ARCH
 
-            # AdminRunner doesn't seem to work here, saying it can't find a handle, so just run as a
-            # normal command as the process itself prompts for admin.
-            RunProcess(
-                working_dir=str(exe_file.parent),
-                executable_file=exe_file.name,
-                prog_args=["/install", "/norestart", "/passive", "/quiet", "/log", str(log_file)],
-                expected_return_codes=[0],
-            ).run()
+        print(f"Installing vc_redist for arch: {arch}")
 
-            # vc_redist helpfully finishes with errorlevel 0 before actually copying the files over.
-            # therefore we'll sleep for 5 seconds here
-            print("waiting for install to finish")
-            sleep(5)
+        files_to_run = [f"vc_redist.x64.exe"]
+        if arch == "x86":
+            files_to_run.insert(0, "vc_redist.x86.exe")
+        for file in files_to_run:
+            exe_file = Path(EPICS_CRTL_PATH, file)
+            if exe_file.exists() and exe_file.is_file():
+                log_file = Path(
+                    VAR_DIR, "logs", "deploy", f"vc_redist_log{time.strftime('%Y%m%d%H%M%S')}.txt"
+                )
 
-            last_line = ""
-            with open(log_file, "r") as f:
-                for line in f.readlines():
-                    print("vc_redist install output: {}".format(line.rstrip()))
-                    last_line = line
+                # AdminRunner doesn't seem to work here, saying it can't find a handle, so just run as a
+                # normal command as the process itself prompts for admin.
+                RunProcess(
+                    working_dir=str(exe_file.parent),
+                    executable_file=exe_file.name,
+                    prog_args=[
+                        "/install",
+                        "/norestart",
+                        "/passive",
+                        "/quiet",
+                        "/log",
+                        str(log_file),
+                    ],
+                    expected_return_codes=[0],
+                ).run()
 
-            status = (
-                "It looked like it installed correctly, but "
-                if "Exit code: 0x0" in last_line
-                else "it looked like the process errored,"
-            )
+                # vc_redist helpfully finishes with errorlevel 0 before actually copying the files over.
+                # therefore we'll sleep for 5 seconds here
+                print("waiting for install to finish")
+                sleep(5)
 
-            self.prompt.prompt_and_raise_if_not_yes(
-                f"Installing vc redistributable files finished.\n"
-                f"{status}"
-                f"please check log output above for errors,\nor alternatively {log_file}",
-                default="Y",
-            )
-        else:
-            raise ErrorInTask(
-                f"VC redistributable files not found in {exe_file.parent}, please check"
-                f" and make sure {exe_file} is present. "
-            )
+                last_line = ""
+                with open(log_file, "r") as f:
+                    for line in f.readlines():
+                        print("vc_redist install output: {}".format(line.rstrip()))
+                        last_line = line
+
+                status = (
+                    "It looked like it installed correctly, but "
+                    if "Exit code: 0x0" in last_line
+                    else "it looked like the process errored,"
+                )
+
+                self.prompt.prompt_and_raise_if_not_yes(
+                    f"Installing vc redistributable files finished.\n"
+                    f"{status}"
+                    f"please check log output above for errors,\nor alternatively {log_file}",
+                    default="Y",
+                )
+            else:
+                raise ErrorInTask(
+                    f"VC redistributable files not found in {exe_file.parent}, please check"
+                    f" and make sure {exe_file} is present. "
+                )
 
     def confirm(self, message: str) -> None:
         """
