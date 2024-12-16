@@ -8,8 +8,6 @@ from pathlib import Path
 from time import sleep
 
 import psutil
-from win32com.client import Dispatch
-
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.kafka_utils import add_required_topics
@@ -20,6 +18,7 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, VAR_DIR
 from ibex_install_utils.version_check import version_check
+from win32com.client import Dispatch
 
 GIGABYTE = 1024**3
 
