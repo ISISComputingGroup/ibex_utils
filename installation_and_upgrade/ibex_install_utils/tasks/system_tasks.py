@@ -1,14 +1,17 @@
-import time
 import glob
 import os
+import platform
 import shutil
 import subprocess
+import time
 from pathlib import Path
-import platform
+from time import sleep
 
 import psutil
+from win32com.client import Dispatch
+
 from ibex_install_utils.admin_runner import AdminCommandBuilder
-from ibex_install_utils.exceptions import UserStop, ErrorInTask
+from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.software_dependency.git import Git
@@ -17,8 +20,6 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, VAR_DIR
 from ibex_install_utils.version_check import version_check
-from win32com.client import Dispatch
-from time import sleep
 
 GIGABYTE = 1024**3
 
@@ -56,11 +57,12 @@ DESKTOP_TRAINING_FOLDER_PATH = os.path.join(
 
 class SystemTasks(BaseTasks):
     """
-    Tasks relating to the system e.g. installed software other than core IBEX components, windows, firewalls, etc.
+    Tasks relating to the system e.g. installed software other than core IBEX components, windows,
+     firewalls, etc.
     """
 
     @task("Record running LabVIEW VIs or any relevant looking other programs")
-    def record_running_vis(self):
+    def record_running_vis(self) -> None:
         """
         Get user to record running vis
         """
@@ -69,7 +71,7 @@ class SystemTasks(BaseTasks):
         )
 
     @task("Upgrading Notepad++. Please follow system dialogs")
-    def upgrade_notepad_pp(self):
+    def upgrade_notepad_pp(self) -> None:
         """
         Install (start installation of) notepad ++
         Returns:
@@ -84,7 +86,7 @@ class SystemTasks(BaseTasks):
         ).run()
 
     @task("Removing training folder on desktop ...")
-    def clean_up_desktop_ibex_training_folder(self):
+    def clean_up_desktop_ibex_training_folder(self) -> None:
         """
         Remove training folder from the desktop
         Returns:
@@ -93,7 +95,7 @@ class SystemTasks(BaseTasks):
         self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH, self.prompt)
 
     @task("Remove SECI shortcuts")
-    def remove_seci_shortcuts(self):
+    def remove_seci_shortcuts(self) -> None:
         """
         Remove (or at least ask the user to remove) all Seci shortcuts
         """
@@ -108,7 +110,7 @@ class SystemTasks(BaseTasks):
         self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
 
     @task("Remove Treesize shortcuts")
-    def remove_treesize_shortcuts(self):
+    def remove_treesize_shortcuts(self) -> None:
         """
         Remove (or at least ask the user to remove) all Treesize shortcuts.
 
@@ -121,7 +123,7 @@ class SystemTasks(BaseTasks):
         )
 
     @task("Remove SECI 1 Path")
-    def remove_seci_one(self):
+    def remove_seci_one(self) -> None:
         """
         Removes SECI 1
         """
@@ -137,7 +139,7 @@ class SystemTasks(BaseTasks):
 
     @version_check(Java())
     @task("Install java")
-    def check_java_installation(self):
+    def check_java_installation(self) -> None:
         """
         Checks Java installation
         """
@@ -148,24 +150,27 @@ class SystemTasks(BaseTasks):
             subprocess.call(f"msiexec /i {installer}")
             self.prompt.prompt_and_raise_if_not_yes(
                 "Make sure java installed correctly.\r\n"
-                "After following the installer, ensure you close and then re-open your remote desktop session (This "
+                "After following the installer, ensure you close and then re-open"
+                " your remote desktop session (This "
                 "is a workaround for windows not immediately picking up new environment variables)"
             )
         else:
             self.prompt.prompt_and_raise_if_not_yes(
                 "Upgrade openJDK installation by following:\r\n"
                 "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java\r\n\r\n"
-                "After following the installer, ensure you close and then re-open your remote desktop session (This "
+                "After following the installer, ensure you close and then re-open"
+                " your remote desktop session (This "
                 "is a workaround for windows not immediately picking up new environment variables)"
             )
 
     @task("Configure COM ports")
-    def configure_com_ports(self):
+    def configure_com_ports(self) -> None:
         """
         Configure the COM ports
         """
         self.prompt.prompt_and_raise_if_not_yes(
-            "Using NPort Administrator (available under /Kits$/CompGroup/Utilities/), check that the COM ports "
+            "Using NPort Administrator (available under /Kits$/CompGroup/Utilities/), "
+            "check that the COM ports "
             "on this machine are configured to standard, i.e.:\n"
             "- Moxa 1 starts at COM5\n"
             "- Moxa 2 starts at COM21\n"
@@ -173,17 +178,18 @@ class SystemTasks(BaseTasks):
         )
 
     @task("Reapply Hotfixes")
-    def reapply_hotfixes(self):
+    def reapply_hotfixes(self) -> None:
         """
         Reapply any hotfixes to the build.
         """
         self.prompt.prompt_and_raise_if_not_yes(
-            "Have you applied any hotfixes listed that are not fixed by the release, as on the instrument "
+            "Have you applied any hotfixes listed that are not fixed by the release,"
+            " as on the instrument "
             "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?"
         )
 
     @task("Restart VIs")
-    def restart_vis(self):
+    def restart_vis(self) -> None:
         """
         Restart Vis which were running on upgrade start.
         """
@@ -192,7 +198,7 @@ class SystemTasks(BaseTasks):
         )
 
     @task("Update release notes")
-    def update_release_notes(self):
+    def update_release_notes(self) -> None:
         """
         Update the release notes.
         """
@@ -201,7 +207,7 @@ class SystemTasks(BaseTasks):
         )
 
     @task("Update Instrument List")
-    def update_instlist(self):
+    def update_instlist(self) -> None:
         """
         Prompt user to add instrument to the list of known IBEX instruments
         """
@@ -210,14 +216,14 @@ class SystemTasks(BaseTasks):
         )
 
     @task("Update kafka topics")
-    def update_kafka_topics(self):
+    def update_kafka_topics(self) -> None:
         """
         Adds the required kafka topics to the cluster.
         """
         add_required_topics("livedata.isis.cclrc.ac.uk:9092", self._get_instrument_name())
 
     @task("Add Nagios checks")
-    def add_nagios_checks(self):
+    def add_nagios_checks(self) -> None:
         """
         Prompt user to add nagios checks.
         """
@@ -228,7 +234,7 @@ class SystemTasks(BaseTasks):
         )
 
     @task("Inform instrument scientists")
-    def inform_instrument_scientists(self):
+    def inform_instrument_scientists(self) -> None:
         """
         Inform instrument scientists that the machine has been upgraded.
         """
@@ -243,21 +249,22 @@ class SystemTasks(BaseTasks):
 
                     Please let us know if you have any queries or find any problems with the upgrade.
                     Thank you,
-                    <your name>"""
+                    <your name>"""  # noqa: E501
 
         self.prompt.prompt_and_raise_if_not_yes(email_template)
 
     @task("Apply changes in release notes")
-    def apply_changes_noted_in_release_notes(self):
+    def apply_changes_noted_in_release_notes(self) -> None:
         """
         Apply any changes noted in the release notes.
         """
         # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes(
-            "Look in the IBEX wiki at the release notes for the version you are deploying. Apply needed fixes."
+            "Look in the IBEX wiki at the release notes for the version you are deploying."
+            " Apply needed fixes."
         )
 
-    def check_resources(self):
+    def check_resources(self) -> None:
         """
         Check the machine's resources meet minimum requirements.
         """
@@ -265,14 +272,15 @@ class SystemTasks(BaseTasks):
         self._check_disk_usage()
 
     @task("Check virtual machine memory")
-    def check_virtual_memory(self):
+    def check_virtual_memory(self) -> None:
         """
         Checks the machine's virtual memory meet minimum requirements.
         """
         ram = psutil.virtual_memory().total
 
         machine_type = self.prompt.prompt(
-            "Is this machine an instrument (e.g. NDXALF) or a test machine (e.g. NDXSELAB)? (instrument/test) ",
+            "Is this machine an instrument (e.g. NDXALF) or a test machine (e.g. NDXSELAB)?"
+            " (instrument/test) ",
             possibles=["instrument", "test"],
             default="test",
         )
@@ -284,15 +292,18 @@ class SystemTasks(BaseTasks):
 
         if ram >= min_memory:
             print(
-                "Virtual memory ({:.1f}GB) is already at or above the recommended level for this machine type "
+                "Virtual memory ({:.1f}GB) is already at or above the recommended level"
+                " for this machine type "
                 "({:.1f}GB). Nothing to do in this step.".format(
                     ram / GIGABYTE, min_memory / GIGABYTE
                 )
             )
         else:
             self.prompt.prompt_and_raise_if_not_yes(
-                "Current machine memory is {:.1f}GB, the recommended amount for this machine is {:.1f}GB.\n\n"
-                "If appropriate, upgrade this machine's memory allowance by following the instructions in "
+                "Current machine memory is {:.1f}GB, the recommended amount for"
+                " this machine is {:.1f}GB.\n\n"
+                "If appropriate, upgrade this machine's memory allowance by following"
+                " the instructions in "
                 "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Increase-VM-memory.\n\n"
                 "Note, this will require a machine restart.".format(
                     ram / GIGABYTE, min_memory / GIGABYTE
@@ -300,7 +311,7 @@ class SystemTasks(BaseTasks):
             )
 
     @task("Check there is {:.1e}B free disk space".format(FREE_DISK_MIN))
-    def _check_disk_usage(self):
+    def _check_disk_usage(self) -> None:
         """
         Checks the machine's free disk space meets minimum requirements.
         """
@@ -314,20 +325,22 @@ class SystemTasks(BaseTasks):
             )
 
     @task("Put IBEX autostart script into startup for current user")
-    def put_autostart_script_in_startup_area(self):
+    def put_autostart_script_in_startup_area(self) -> None:
         """
-        Checks the startup location for all users for the autostart script and removes any instances.
+        Checks the startup location for all users for the autostart script and removes
+         any instances.
 
-        Checks the startup location of the current user and removes the autostart script if it was copied.
+        Checks the startup location of the current user and removes the autostart script
+         if it was copied.
 
         Creates a shortcut of the ibex server autostart script into the current user startup folder
         so that the IBEX server starts automatically on startup.
         """
 
-        AUTOSTART_SCRIPT_NAME = "ibex_system_boot"
+        autostart_script_name = "ibex_system_boot"
 
         # Check all users startup folder.
-        paths = glob.glob(os.path.join(ALLUSERS_STARTUP, f"{AUTOSTART_SCRIPT_NAME}*"))
+        paths = glob.glob(os.path.join(ALLUSERS_STARTUP, f"{autostart_script_name}*"))
         if len(paths):
             admin_commands = AdminCommandBuilder()
             for path in paths:
@@ -336,38 +349,42 @@ class SystemTasks(BaseTasks):
             admin_commands.run_all()
 
         # Check current user startup folder for copied batch file.
-        autostart_batch_path = os.path.join(USER_STARTUP, f"{AUTOSTART_SCRIPT_NAME}.bat")
+        autostart_batch_path = os.path.join(USER_STARTUP, f"{autostart_script_name}.bat")
         if os.path.exists(autostart_batch_path):
             print(f"Removing: '{autostart_batch_path}'.")
             os.remove(autostart_batch_path)
 
         # Create shortcut to autostart batch file.
-        autostart_shortcut_path = os.path.join(USER_STARTUP, f"{AUTOSTART_SCRIPT_NAME}.lnk")
+        autostart_shortcut_path = os.path.join(USER_STARTUP, f"{autostart_script_name}.lnk")
         if not os.path.exists(autostart_shortcut_path):
             print(f"Adding shortcut: '{autostart_shortcut_path}'.")
             shell = Dispatch("WScript.Shell")
             shortcut = shell.CreateShortCut(autostart_shortcut_path)
-            shortcut.Targetpath = os.path.join(EPICS_PATH, f"{AUTOSTART_SCRIPT_NAME}.bat")
+            shortcut.Targetpath = os.path.join(EPICS_PATH, f"{autostart_script_name}.bat")
             shortcut.save()
         else:
             print("Shortcut already exists.")
 
     @task("Restrict Internet Explorer")
-    def restrict_ie(self):
+    def restrict_ie(self) -> None:
         """
-        Restrict access of external websites to address a security vulnerability in Internet Explorer.
+        Restrict access of external websites to address a security vulnerability
+         in Internet Explorer.
         """
         self.prompt.prompt_and_raise_if_not_yes(
-            "Configure Internet Explorer to restrict access to the web except for select whitelisted sites:\n"
-            "- Open 'Internet Options' (from the gear symbol in the top right corner of the window).\n"
+            "Configure Internet Explorer to restrict access to the web except for"
+            " select whitelisted sites:\n"
+            "- Open 'Internet Options' (from the gear symbol in the top right corner of the window)"
+            ".\n"
             "- Go to the 'Connections' tab and open 'Lan Settings'\n"
-            "- Check 'Use Automatic configuration script' and enter http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
+            "- Check 'Use Automatic configuration script' and enter"
+            " http://dataweb.isis.rl.ac.uk/proxy.pac for 'Address'\n"
             "- Click 'Ok' on all dialogs."
         )
 
     @version_check(Git())
     @task("Update Git")
-    def install_or_upgrade_git(self):
+    def install_or_upgrade_git(self) -> None:
         """
         Install the latest git version
         """
@@ -375,7 +392,8 @@ class SystemTasks(BaseTasks):
         if os.path.exists(git_path):
             if "program files" in os.path.realpath(git_path).lower():
                 print(
-                    f"git installed as admin detected in '{git_path}', attempting to upgrade as admin."
+                    f"git installed as admin detected in '{git_path}', attempting to"
+                    f" upgrade as admin."
                 )
                 admin_commands = AdminCommandBuilder()
                 admin_commands.add_command(
@@ -388,7 +406,8 @@ class SystemTasks(BaseTasks):
                         print("git update output: {}".format(line.rstrip()))
             else:
                 print(
-                    f"git installed as normal user detected in '{git_path}', attempting upgrade as normal user."
+                    f"git installed as normal user detected in '{git_path}', attempting upgrade "
+                    f"as normal user."
                 )
                 RunProcess(
                     working_dir=os.curdir,
@@ -406,7 +425,7 @@ class SystemTasks(BaseTasks):
             )
 
     @task("Update visual studio redistributable files")
-    def install_or_upgrade_vc_redist(self):
+    def install_or_upgrade_vc_redist(self) -> None:
         """
         Install the latest visual studio redistributable files
         """
@@ -418,7 +437,8 @@ class SystemTasks(BaseTasks):
                 VAR_DIR, "logs", "deploy", f"vc_redist_log{time.strftime('%Y%m%d%H%M%S')}.txt"
             )
 
-            # AdminRunner doesn't seem to work here, saying it can't find a handle, so just run as a normal command as the process itself prompts for admin.
+            # AdminRunner doesn't seem to work here, saying it can't find a handle, so just run as a
+            # normal command as the process itself prompts for admin.
             RunProcess(
                 working_dir=str(exe_file.parent),
                 executable_file=exe_file.name,
@@ -431,6 +451,7 @@ class SystemTasks(BaseTasks):
             print("waiting for install to finish")
             sleep(5)
 
+            last_line = ""
             with open(log_file, "r") as f:
                 for line in f.readlines():
                     print("vc_redist install output: {}".format(line.rstrip()))
@@ -450,16 +471,17 @@ class SystemTasks(BaseTasks):
             )
         else:
             raise ErrorInTask(
-                f"VC redistributable files not found in {exe_file.parent}, please check and make sure {exe_file} is present. "
+                f"VC redistributable files not found in {exe_file.parent}, please check"
+                f" and make sure {exe_file} is present. "
             )
 
-    def confirm(self, message):
+    def confirm(self, message: str) -> None:
         """
         Ask user to confirm correct script was chosen.
         """
         self.prompt.prompt_and_raise_if_not_yes(message, default="Y")
 
-    def _read_file(self, path, error_text):
+    def _read_file(self, path: str | os.PathLike[str], error_text: str) -> str:
         """
         print a file contents to screen
         """
@@ -467,11 +489,11 @@ class SystemTasks(BaseTasks):
         try:
             with open(path, "r") as fin:
                 data = fin.read()
-        except:
+        except OSError:
             data = error_text
         return data
 
-    def user_confirm_upgrade_type_on_machine(self, machine_type):
+    def user_confirm_upgrade_type_on_machine(self, machine_type: str) -> None:
         """
         Print information about the current upgrade and prompt the user
         Returns:
