@@ -16,7 +16,7 @@ from ibex_install_utils.logger import Logger
 from ibex_install_utils.user_prompt import UserPrompt
 
 
-def _get_latest_release_path(release_dir):
+def _get_latest_release_path(release_dir: str) -> str:
     regex = re.compile(r"^\d+\.\d+\.\d+$")
 
     releases = [
@@ -32,7 +32,7 @@ def _get_latest_release_path(release_dir):
     return os.path.join(release_dir, f"{current_release}")
 
 
-def _get_latest_existing_dir_path(release_dir, component):
+def _get_latest_existing_dir_path(release_dir: str, component: str) -> str:
     regex = re.compile(r"^\d+\.\d+\.\d+$")
 
     releases = [
@@ -171,8 +171,8 @@ if __name__ == "__main__":
                 )
             except UserStop:
                 print(
-                    "To specify the directory you want use --server_dir, --client_dir, and --genie_python3_dir "
-                    "when running the IBEX_upgrade.py script."
+                    "To specify the directory you want use --server_dir, --client_dir, and"
+                    " --genie_python3_dir when running the IBEX_upgrade.py script."
                 )
                 sys.exit(2)
 

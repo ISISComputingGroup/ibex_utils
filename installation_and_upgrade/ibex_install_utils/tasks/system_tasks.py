@@ -1,6 +1,5 @@
 import glob
 import os
-import platform
 import shutil
 import subprocess
 import time
@@ -434,7 +433,7 @@ class SystemTasks(BaseTasks):
 
         print(f"Installing vc_redist for arch: {arch}")
 
-        files_to_run = [f"vc_redist.x64.exe"]
+        files_to_run = ["vc_redist.x64.exe"]
         if arch == "x86":
             files_to_run.insert(0, "vc_redist.x86.exe")
         for file in files_to_run:
@@ -444,8 +443,8 @@ class SystemTasks(BaseTasks):
                     VAR_DIR, "logs", "deploy", f"vc_redist_log{time.strftime('%Y%m%d%H%M%S')}.txt"
                 )
 
-                # AdminRunner doesn't seem to work here, saying it can't find a handle, so just run as a
-                # normal command as the process itself prompts for admin.
+                # AdminRunner doesn't seem to work here, saying it can't find a handle, so just
+                # run as a normal command as the process itself prompts for admin.
                 RunProcess(
                     working_dir=str(exe_file.parent),
                     executable_file=exe_file.name,
@@ -460,8 +459,8 @@ class SystemTasks(BaseTasks):
                     expected_return_codes=[0],
                 ).run()
 
-                # vc_redist helpfully finishes with errorlevel 0 before actually copying the files over.
-                # therefore we'll sleep for 5 seconds here
+                # vc_redist helpfully finishes with errorlevel 0 before actually
+                # copying the files over, therefore we'll sleep for 5 seconds here
                 print("waiting for install to finish")
                 sleep(5)
 
