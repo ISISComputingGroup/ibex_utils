@@ -7,7 +7,8 @@ import os
 import re
 import sys
 
-import semantic_version
+import ibex_install_utils.default_args
+import semantic_version  # pyright: ignore
 from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.install_tasks import UPGRADE_TYPES, UpgradeInstrument
@@ -15,7 +16,7 @@ from ibex_install_utils.logger import Logger
 from ibex_install_utils.user_prompt import UserPrompt
 
 
-def _get_latest_release_path(release_dir):
+def _get_latest_release_path(release_dir: str) -> str:
     regex = re.compile(r"^\d+\.\d+\.\d+$")
 
     releases = [
@@ -31,7 +32,7 @@ def _get_latest_release_path(release_dir):
     return os.path.join(release_dir, f"{current_release}")
 
 
-def _get_latest_existing_dir_path(release_dir, component):
+def _get_latest_existing_dir_path(release_dir: str, component: str) -> str:
     regex = re.compile(r"^\d+\.\d+\.\d+$")
 
     releases = [
@@ -108,7 +109,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
     parser.add_argument(
-        "--server_arch", default="x64", choices=["x64", "x86"], help="Server build architecture."
+        "--server_arch",
+        default=ibex_install_utils.default_args.SERVER_ARCH,
+        choices=["x64", "x86"],
+        help="Server build architecture.",
     )
 
     deployment_types = [
@@ -121,6 +125,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    ibex_install_utils.default_args.SERVER_ARCH = args.server_arch
 
     if not args.no_log_to_var:
         Logger.set_up()
@@ -165,8 +171,8 @@ if __name__ == "__main__":
                 )
             except UserStop:
                 print(
-                    "To specify the directory you want use --server_dir, --client_dir, and --genie_python3_dir "
-                    "when running the IBEX_upgrade.py script."
+                    "To specify the directory you want use --server_dir, --client_dir, and"
+                    " --genie_python3_dir when running the IBEX_upgrade.py script."
                 )
                 sys.exit(2)
 
