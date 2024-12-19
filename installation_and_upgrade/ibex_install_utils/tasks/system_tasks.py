@@ -427,9 +427,9 @@ class SystemTasks(BaseTasks):
         """
         Install the latest visual studio redistributable files
         """
-        import ibex_install_utils.default_args
+        import ibex_install_utils.current_args
 
-        arch = ibex_install_utils.default_args.SERVER_ARCH
+        arch = ibex_install_utils.current_args.SERVER_ARCH
 
         print(f"Installing vc_redist for arch: {arch}")
 

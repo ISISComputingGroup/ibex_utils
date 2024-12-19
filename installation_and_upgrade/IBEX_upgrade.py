@@ -7,7 +7,7 @@ import os
 import re
 import sys
 
-import ibex_install_utils.default_args
+import ibex_install_utils.current_args
 import semantic_version  # pyright: ignore
 from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.file_utils import FileUtils
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument("--kits_icp_dir", default=None, help="Directory of kits/ICP")
     parser.add_argument(
         "--server_arch",
-        default=ibex_install_utils.default_args.SERVER_ARCH,
+        default=ibex_install_utils.current_args.SERVER_ARCH,
         choices=["x64", "x86"],
         help="Server build architecture.",
     )
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    ibex_install_utils.default_args.SERVER_ARCH = args.server_arch
+    ibex_install_utils.current_args.SERVER_ARCH = args.server_arch
 
     if not args.no_log_to_var:
         Logger.set_up()
