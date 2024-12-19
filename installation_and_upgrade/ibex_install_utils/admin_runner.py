@@ -27,10 +27,14 @@ class AdminRunner:
             lpFile=command,
             lpParameters=parameters,
         )
-
-        win32event.WaitForSingleObject(process_info["hProcess"], 600000)
-        ret = win32process.GetExitCodeProcess(process_info["hProcess"])
-        win32api.CloseHandle(process_info["hProcess"])
+        ret = None
+        try:
+            win32event.WaitForSingleObject(process_info["hProcess"], 600000)
+            ret = win32process.GetExitCodeProcess(process_info["hProcess"])
+            win32api.CloseHandle(process_info["hProcess"])
+        except Exception as e:
+            print(e)
+            raise IOError("Process not created")
 
         if ret != expected_return_val:
             raise IOError(f"Process returned {ret} (expected {expected_return_val})")
@@ -64,6 +68,7 @@ class AdminCommandBuilder:
 
         bat_file += "exit /B 0\r\n"
 
+        comspec = os.getenv("COMSPEC", "cmd.exe")
         with temp_bat_file(bat_file) as f:
             print(
                 f"Executing bat script as admin. Saved as {f}. Check for an admin prompt. "
@@ -71,7 +76,7 @@ class AdminCommandBuilder:
             )
             sleep(1)  # Wait for file handle to be closed etc
             try:
-                AdminRunner.run_command("cmd", f"/c {f}", expected_return_val=0)
+                AdminRunner.run_command(f"{comspec}", f"/c {f}", expected_return_val=0)
             except IOError as e:
                 print(f"Error while executing bat script: {e}.")
                 with open(log_file.name, "r") as logfile:
