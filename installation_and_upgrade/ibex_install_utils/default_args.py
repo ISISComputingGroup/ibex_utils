@@ -1,1 +1,0 @@
-SERVER_ARCH = "x64"
