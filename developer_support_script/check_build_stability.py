@@ -179,7 +179,7 @@ class JobData:
         # Aborted builds.
         valid_builds = self.num_evaluate_builds + self.no_test_report_failures
         all_builds = valid_builds + self.num_aborted_builds
-        percentage_aborted_builds = (self.num_aborted_builds / all_builds) * 100
+        percentage_aborted_builds = (self.num_aborted_builds / all_builds) * 100 if all_builds > 0 else 0
         level = calculate_level(
             percentage_aborted_builds, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE
         )
