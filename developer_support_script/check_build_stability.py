@@ -184,7 +184,7 @@ class JobData:
             percentage_aborted_builds, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE
         )
         print(
-            f"{level}: Aborted builds [{percentage_aborted_builds:.0f}% ({self.num_aborted_builds}/{all_builds})]"
+            f"{level}: Aborted builds [{percentage_aborted_builds:.0f}% ({percentage_aborted_builds})]"
         )
 
         # Failures with no test report
@@ -200,7 +200,7 @@ class JobData:
             WARNING_THRESHOLD_PERCENTAGE,
         )
         print(
-            f"{level}: Failed builds with no Test Report [{percentage_no_test_report_failures:.0f}% ({self.no_test_report_failures}/{valid_builds})]"
+            f"{level}: Failed builds with no Test Report [{percentage_no_test_report_failures:.0f}% ({percentage_no_test_report_failures})]"
         )
 
         # Tests.
@@ -213,7 +213,7 @@ class JobData:
                 percentage_test_failure, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE
             )
             print(
-                f"{level}: [{percentage_test_failure:.0f}% ({num}/{self.num_evaluate_builds})] {name}"
+                f"{level}: [{percentage_test_failure:.0f}% ({percentage_test_failure})] {name}"
             )
 
 
