@@ -81,6 +81,14 @@ IF %errorlevel% neq 0 (
     GOTO ERROR
 )
 
+if not "%1" == "RELEASE" (
+    call "%~dp0update_genie_python_module.bat" C:\Instrument\Apps\Python3
+)
+IF %errorlevel% neq 0 (
+    echo Error %errorlevel% returned from update_genie_python_module.bat
+    GOTO ERROR
+)
+
 call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
 GOTO :EOF
 
