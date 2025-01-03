@@ -13,6 +13,10 @@ if exist "%remove_genie_python_path%" (
     REM Checks that "Python_Build_" is in the supplied filepath, so it is a python build.
     echo.%remove_genie_python_path% | findstr /C:"Python_Build_">nul && (
 
+        REM if caRepeater is running we can't remove directory
+        del /f "%remove_genie_python_path%\CaRepeater.exe"
+        if exist "%remove_genie_python_path%\CaRepeater.exe" taskkill /f /im CaRepeater.exe
+
         REM Deletes directory tree + quiet.
         RMDIR /S /Q %remove_genie_python_path%
 
