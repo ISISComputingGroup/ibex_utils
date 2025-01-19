@@ -41,9 +41,26 @@ class GitTasks(BaseTasks):
 
         try:
             subprocess.check_call(f"cd /d {EPICS_PATH} && git fetch", shell=True)
-            print("Fetched remote")
+            print("Fetching from remote")
         except subprocess.CalledProcessError as e:
             print(f"Error fetching remote: {e}")
+
+        # this sets upstream tracking on all local branches not just current one
+        try:
+            subprocess.check_call(
+                f"cd /d {EPICS_PATH} && FOR /F \"delims=* \" %i IN ('git branch') "
+                "DO git branch --set-upstream-to=origin/%i %i",
+                shell=True,
+            )
+            print("Set branch upstream tracking")
+        except subprocess.CalledProcessError as e:
+            print(f"Error setting branch upstream tracking: {e}")
+
+        try:
+            subprocess.check_call(f"cd /d {EPICS_PATH} && git pull", shell=True)
+            print("Pulled current branch from remote")
+        except subprocess.CalledProcessError as e:
+            print(f"Error pulling from remote: {e}")
 
         try:
             # run a git status to rebuild index if needed
