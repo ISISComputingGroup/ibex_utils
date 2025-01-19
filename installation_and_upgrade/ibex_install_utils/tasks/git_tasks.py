@@ -45,6 +45,12 @@ class GitTasks(BaseTasks):
         except subprocess.CalledProcessError as e:
             print(f"Error fetching remote: {e}")
 
+        try:
+            # run a git status to rebuild index if needed
+            subprocess.check_call(f"cd /d {EPICS_PATH} && git status", shell=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running git status: {e}")
+
         # this sets upstream tracking on all local branches not just current one
         try:
             subprocess.check_call(
