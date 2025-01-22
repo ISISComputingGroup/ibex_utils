@@ -73,6 +73,9 @@ class BackupTasks(BaseTasks):
             if not os.path.exists(BACKUP_DIR):
                 os.mkdir(BACKUP_DIR)
 
+            # move old backups to create space
+            self._move_old_backups_to_share()
+
             # Move the folders
             for path in DIRECTORIES_TO_BACKUP:
                 if path in os.getcwd():
@@ -83,7 +86,6 @@ class BackupTasks(BaseTasks):
                 else:
                     self._backup_dir(path, ignore=IGNORE_PATTERNS.get(path), copy=True)
 
-            self._move_old_backups_to_share()
         else:
             self.prompt.prompt_and_raise_if_not_yes(
                 f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
@@ -222,7 +224,8 @@ class BackupTasks(BaseTasks):
     # ? Moving other backups to stage deleted could be a task on its own
     def _move_old_backups_to_share(self):
         """
-        Move all but the newest backup to the shares.
+        Move all backups to the shares. This should be
+        run before the current installation is backed up
 
         """
         current_backups = [
@@ -230,13 +233,8 @@ class BackupTasks(BaseTasks):
             for d in os.listdir(BACKUP_DIR)
             if os.path.isdir(os.path.join(BACKUP_DIR, d)) and d.startswith("ibex_backup")
         ]
-        if len(current_backups) > 0:
-            all_but_newest_backup = sorted(current_backups, key=os.path.getmtime)[:-1]
-            backups_to_move = all_but_newest_backup
-        else:
-            backups_to_move = []
 
-        for d in backups_to_move:
+        for d in current_backups:
             backup = STAGE_DELETED + "\\" + self._get_machine_name() + "\\" + os.path.basename(d)
             print(f"Moving backup {d} to {backup}")
             self._file_utils.move_dir(d, backup, self.prompt)
