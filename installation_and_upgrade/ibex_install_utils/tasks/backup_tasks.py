@@ -132,7 +132,7 @@ class BackupTasks(BaseTasks):
         return os.path.join(self._get_backup_dir(), os.path.basename(path))
 
     def _check_backup_space(
-        self, src: str, ignore: Callable[[str, list[str]], set[str]] | None = None
+        self, src: str, ignore: "Callable[[str, list[str]], set[str]] | None" = None
     ) -> Tuple[int, int]:
         # Checks if there is enough space to move dir at src into the backup directory
         # (all in bytes)
@@ -151,7 +151,7 @@ class BackupTasks(BaseTasks):
         self,
         src: str,
         copy: bool = True,
-        ignore: Callable[[str, list[str]], set[str]] | None = None,
+        ignore: "Callable[[str, list[str]], set[str]] | None" = None,
     ) -> None:
         """Move a directory to the backup area.
 
