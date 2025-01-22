@@ -5,6 +5,7 @@ import pprint
 import shutil
 import subprocess
 import tempfile
+from typing import Generator, LiteralString, TextIO
 
 import lxml.etree
 from ibex_install_utils.user_prompt import UserPrompt
@@ -24,7 +25,6 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import (
     APPS_BASE_DIR,
-    EPICS_IOC_PATH,
     EPICS_PATH,
     INST_SHARE_AREA,
     INSTRUMENT_BASE_DIR,
@@ -69,10 +69,11 @@ INSTCONFIGS_GIT_URL = (
 
 
 class ServerTasks(BaseTasks):
-    """Tasks relating to installing or maintaining an IBEX server and it's associated configuration files."""
+    """Tasks relating to installing or maintaining an IBEX server and
+    its associated configuration files."""
 
     @staticmethod
-    def _get_config_path():
+    def _get_config_path() -> LiteralString | str | bytes:
         """Returns:
         The path to the instrument's configurations directory
 
@@ -82,7 +83,7 @@ class ServerTasks(BaseTasks):
         )
 
     @task("Removing old settings file")
-    def remove_settings(self):
+    def remove_settings(self) -> None:
         """Remove old settings
         Returns:
 
@@ -90,7 +91,7 @@ class ServerTasks(BaseTasks):
         self._file_utils.remove_tree(SETTINGS_CONFIG_PATH, self.prompt)
 
     @task("Install settings")
-    def install_settings(self):
+    def install_settings(self) -> None:
         """Install new settings from the current folder
         Returns:
 
@@ -118,7 +119,7 @@ class ServerTasks(BaseTasks):
         )
 
     @task("Installing IBEX Server")
-    def install_ibex_server(self, use_old_galil=None):
+    def install_ibex_server(self, use_old_galil: bool = None) -> None:
         """Install ibex server.
 
         Args:
@@ -131,8 +132,9 @@ class ServerTasks(BaseTasks):
         self._swap_galil_driver(use_old_galil)
 
     @task("Set up configuration repository")
-    def setup_config_repository(self):
-        """Creates the configuration repository, and swaps or creates a branch for the instrument."""
+    def setup_config_repository(self) -> None:
+        """Creates the configuration repository,
+        and swaps or creates a branch for the instrument."""
         inst_name = BaseTasks._get_machine_name()
 
         RunProcess(
@@ -238,13 +240,14 @@ class ServerTasks(BaseTasks):
                 ).run()
             except Exception as e:
                 self.prompt.prompt_and_raise_if_not_yes(
-                    f"Something went wrong setting up the configurations repository. Please resolve manually, "
+                    f"Something went wrong setting up the configurations repository. "
+                    f"Please resolve manually, "
                     f"instructions are in the developers manual under "
                     f"First-time-installing-and-building-(Windows): \n {e}"
                 )
 
     @task("Upgrading instrument configuration")
-    def upgrade_instrument_configuration(self):
+    def upgrade_instrument_configuration(self) -> None:
         """Update the configuration on the instrument using its upgrade config script."""
         manual_prompt = (
             "Merge the master configurations branch into the instrument configuration. "
@@ -263,7 +266,8 @@ class ServerTasks(BaseTasks):
                 repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name()))
                 if repo.active_branch.name != BaseTasks._get_machine_name():
                     print(
-                        f"Git branch, '{repo.active_branch}', is not the same as machine name ,'{BaseTasks._get_machine_name()}' "
+                        f"Git branch, '{repo.active_branch}', is not the same as"
+                        f" machine name ,'{BaseTasks._get_machine_name()}' "
                     )
                     raise ErrorInTask("Git branch is not the same as machine name")
                 try:
@@ -287,7 +291,7 @@ class ServerTasks(BaseTasks):
         RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
 
     @task("Install shared instrument scripts repository")
-    def install_shared_scripts_repository(self):
+    def install_shared_scripts_repository(self) -> None:
         """Install shared instrument scripts repository containing"""
         if os.path.isdir(INST_SCRIPTS_PATH):
             if (
@@ -309,7 +313,7 @@ class ServerTasks(BaseTasks):
             ).run()
 
     @task("Set up shared instrument scripts library")
-    def update_shared_scripts_repository(self):
+    def update_shared_scripts_repository(self) -> None:
         """Update the shared instrument scripts repository containing"""
         try:
             repo = git.Repo(INST_SCRIPTS_PATH)
@@ -321,7 +325,7 @@ class ServerTasks(BaseTasks):
             )
 
     @task("Set up calibrations repository")
-    def setup_calibrations_repository(self):
+    def setup_calibrations_repository(self) -> None:
         """Set up the calibration repository"""
         if os.path.isdir(CALIBRATION_PATH):
             if (
@@ -344,7 +348,7 @@ class ServerTasks(BaseTasks):
             ).run()
 
     @task("Updating calibrations repository")
-    def update_calibrations_repository(self):
+    def update_calibrations_repository(self) -> None:
         """Update the calibration repository"""
         try:
             repo = git.Repo(CALIBRATION_PATH)
@@ -356,18 +360,19 @@ class ServerTasks(BaseTasks):
             )
 
     @task("Server release tests")
-    def perform_server_tests(self):
+    def perform_server_tests(self) -> None:
         """Test that the server works"""
         server_release_tests_url = (
-            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/"
-            "Server-Release-Tests"
+            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Server-Release-Tests"
         )
 
         print(f"For further details, see {server_release_tests_url}")
         self.prompt.prompt_and_raise_if_not_yes("Check that blocks are logging as expected")
 
         print(
-            f"Checking that configurations are being pushed to the appropriate repository ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
+            f"Checking that configurations are being pushed to"
+            f" the appropriate repository "
+            f"({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
         )
         repo = git.Repo(self._get_config_path())
         repo.git.fetch()
@@ -377,9 +382,11 @@ class ServerTasks(BaseTasks):
             print("Configurations updating correctly")
         else:
             self.prompt.prompt_and_raise_if_not_yes(
-                f"Repository status shown above is either not 'up to date' or not attached to correct branch. "
+                f"Repository status shown above is either not 'up to date' or "
+                f"not attached to correct branch. "
                 f"Please confirm that configurations are being pushed to the appropriate "
-                f"remote repository branch ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
+                f"remote repository branch"
+                f" ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
             )
 
         self.prompt.prompt_and_raise_if_not_yes(
@@ -388,7 +395,7 @@ class ServerTasks(BaseTasks):
         )
 
     @task("Install wiring tables")
-    def install_wiring_tables(self):
+    def install_wiring_tables(self) -> None:
         """Prompt user to install wiring tables in the appropriate folder."""
         tables_dir = os.path.join(
             SETTINGS_CONFIG_PATH,
@@ -399,7 +406,7 @@ class ServerTasks(BaseTasks):
         self.prompt.prompt_and_raise_if_not_yes(f"Install the wiring tables in {tables_dir}.")
 
     @task("Configure motion setpoints")
-    def configure_motion(self):
+    def configure_motion(self) -> None:
         """Prompt user to configure Galils"""
         url = (
             "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/"
@@ -418,7 +425,9 @@ class ServerTasks(BaseTasks):
         self.prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
 
     @contextmanager
-    def timestamped_pv_backups_file(self, name, directory, extension="txt"):
+    def timestamped_pv_backups_file(
+        self, name: str, directory: str, extension: str = "txt"
+    ) -> Generator[TextIO, None, None]:
         """Context manager to create a timestamped file in the pv backups directory
 
         Args:
@@ -441,7 +450,7 @@ class ServerTasks(BaseTasks):
             yield f
 
     @task("Backup motors, blocks and blockserver to csv files")
-    def save_motor_blocks_blockserver_to_file(self):
+    def save_motor_blocks_blockserver_to_file(self) -> None:
         """Saves the motor, blocks and blockserver to csv file."""
         print("Backing up: motor params pvs")
         self.save_motor_parameters_to_file()
@@ -455,7 +464,7 @@ class ServerTasks(BaseTasks):
         self.save_blockserver_pv_to_file()
         print("Finished backing up: blockserver config pvs")
 
-    def save_motor_parameters_to_file(self):
+    def save_motor_parameters_to_file(self) -> None:
         """Saves the motor parameters to csv file."""
         with self.timestamped_pv_backups_file(
             name="motors", directory="motors", extension="csv"
@@ -463,7 +472,7 @@ class ServerTasks(BaseTasks):
             print(f"saving motor params to {f.name}")
             get_params_and_save_to_file(f)
 
-    def save_blocks_to_file(self):
+    def save_blocks_to_file(self) -> None:
         """Saves block parameters in a file."""
         blocks = self._ca.get_blocks()
         if blocks is None:
@@ -474,7 +483,7 @@ class ServerTasks(BaseTasks):
                 counter = 0
                 manager = multiprocessing.Manager()
                 data = manager.list()
-                for block in blocks:
+                for _ in blocks:
                     data.append(" ")
                 for block in blocks:
                     block_processes.append(
@@ -502,10 +511,10 @@ class ServerTasks(BaseTasks):
             else:
                 print("Blockserver available but no blocks found - not archiving anything")
 
-    def block_caget(self, block, counter, data):
+    def block_caget(self, block: str, counter: int, data: list[str]) -> None:
         data[counter] = f"{self._ca.cget(block)}\r\n"
 
-    def save_blockserver_pv_to_file(self):
+    def save_blockserver_pv_to_file(self) -> None:
         """Saves the blockserver PV to a file."""
         pvs_to_save = [
             ("all_component_details", "CS:BLOCKSERVER:ALL_COMPONENT_DETAILS"),
@@ -536,23 +545,24 @@ class ServerTasks(BaseTasks):
             process.start()
             process.join()
 
-    def get_pv(self, pv, name):
-        def _pretty_print(data):
+    def get_pv(self, pv: str, name: str) -> None:
+        def _pretty_print(data: str | None) -> str:
             return pprint.pformat(data, width=800, indent=2)
 
         with self.timestamped_pv_backups_file(directory="inst_servers", name=name) as f:
             try:
                 f.write(f"{_pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))}\r\n")
-            except:
+            except:  # noqa: E722
                 pass
 
     @task("Update the ICP")
-    def update_icp(self, icp_in_labview_modules, register_icp=True):
-        """Updates the IPC to the latest version.
+    def update_icp(self, icp_in_labview_modules: bool, register_icp: bool = True) -> None:
+        """Updates the ICP to the latest version.
 
         Args:
             icp_in_labview_modules (bool): true if the ICP is in labview modules
-            register_icp (bool): whether to re-register the ISISICP program (requires admin rights; interactive only)
+            register_icp (bool): whether to re-register the ISISICP program
+              (requires admin rights; interactive only)
         """
         register_icp_commands = AdminCommandBuilder()
 
@@ -564,7 +574,8 @@ class ServerTasks(BaseTasks):
             except Exception as e:
                 print(f"Failed to find dae_type ({e}), not installing ICP")
                 return
-            # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2, if it's talking to a DAE3 it will be 3 or 4
+            # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2,
+            # if it's talking to a DAE3 it will be 3 or 4
             if dae_type in [1, 2]:
                 dae_type = 2
             elif dae_type in [3, 4]:
@@ -620,7 +631,7 @@ class ServerTasks(BaseTasks):
     @task(
         "Set username and password for alerts (only required if this is a SECI to IBEX migration)"
     )
-    def set_alert_url_and_password(self):
+    def set_alert_url_and_password(self) -> None:
         print(
             "The URL and password for alerts are at http://www.facilities.rl.ac.uk/isis/computing/instruments/Lists/Access/AllItems.aspx"
         )
@@ -636,7 +647,7 @@ class ServerTasks(BaseTasks):
             print("No username/password provided - skipping step")
 
     @task("Run config checker")
-    def run_config_checker(self):
+    def run_config_checker(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             print(f"Cloning InstrumentChecker to {tmpdir}")
             git.Repo.clone_from(
@@ -670,15 +681,15 @@ class ServerTasks(BaseTasks):
 
             RunProcess(tmpdir, python, prog_args=args).run()
 
-    def select_galil_driver(self):
+    def select_galil_driver(self) -> bool:
         """Select galil driver to use. Return True if old driver in operation or should be used"""
         # GALIL_OLD.txt file gets copied to the tmp dir by instrument_deploy.bat
         tmpdir = tempfile.gettempdir()
 
         if os.path.exists(os.path.join(tmpdir, "GALIL_OLD.txt")):
             os.remove(os.path.join(tmpdir, "GALIL_OLD.txt"))
-            # we don't need to swap back to new GALIL for the update as install will remove all files anyway
-            # we just need to record our current choice
+            # we don't need to swap back to new GALIL for the update as install will remove all
+            # files anyway, we just need to record our current choice
             print(
                 "Old galil driver version detected and will automatically be restored after update."
             )
@@ -699,11 +710,12 @@ class ServerTasks(BaseTasks):
                 return True
             else:
                 print(
-                    "Old Galil driver is default - only change to new driver if you explicitly know this is needed!"
+                    "Old Galil driver is default - only change to new driver if you explicitly"
+                    " know this is needed!"
                 )
                 return not self.prompt.confirm_step("Use new Galil driver")
 
-    def _swap_galil_driver(self, use_old):
+    def _swap_galil_driver(self, use_old: bool) -> None:
         """Swap galil back to old if needed
         Args:
             use_old(bool): whether to restore old driver version
@@ -718,12 +730,8 @@ class ServerTasks(BaseTasks):
                 prog_args=["checkout", "galil-old"],
             ).run()
 
-    def ioc_dir_exists(self, ioc_dirname):
-        full_ioc_path = os.path.join(EPICS_IOC_PATH, ioc_dirname)
-        return os.path.exists(full_ioc_path)
-
     @task("Set up log rotation")
-    def setup_log_rotation(self):
+    def setup_log_rotation(self) -> None:
         """Sets up instrument log rotation via windows scheduled task."""
         python = r"c:\instrument\apps\python3\python.exe"
         logrotate = r"c:\instrument\apps\epics\utils\logrotate.py"

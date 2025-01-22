@@ -73,7 +73,7 @@ if __name__ == "__main__":
         "--release_suffix",
         dest="release_suffix",
         default="",
-        help="Suffix for specifying non-standard releases " "(such as those including hot fixes)",
+        help="Suffix for specifying non-standard releases (such as those including hot fixes)",
     )
     parser.add_argument(
         "--server_build_prefix", default="EPICS", help="Prefix for build directory name"

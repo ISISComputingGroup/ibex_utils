@@ -175,17 +175,6 @@ class SystemTasks(BaseTasks):
             "- etc.\n"
         )
 
-    @task("Reapply Hotfixes")
-    def reapply_hotfixes(self) -> None:
-        """
-        Reapply any hotfixes to the build.
-        """
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Have you applied any hotfixes listed that are not fixed by the release,"
-            " as on the instrument "
-            "release notes at https://github.com/ISISComputingGroup/IBEX/wiki?"
-        )
-
     @task("Restart VIs")
     def restart_vis(self) -> None:
         """
@@ -193,15 +182,6 @@ class SystemTasks(BaseTasks):
         """
         self.prompt.prompt_and_raise_if_not_yes(
             "Please restart any VIs that were running at the start of the upgrade"
-        )
-
-    @task("Update release notes")
-    def update_release_notes(self) -> None:
-        """
-        Update the release notes.
-        """
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Have you updated the instrument release notes at https://github.com/ISISComputingGroup/IBEX/wiki?"
         )
 
     @task("Update Instrument List")
@@ -251,15 +231,14 @@ class SystemTasks(BaseTasks):
 
         self.prompt.prompt_and_raise_if_not_yes(email_template)
 
-    @task("Apply changes in release notes")
-    def apply_changes_noted_in_release_notes(self) -> None:
+    @task("Clear/reapply hotfixes")
+    def clear_or_reapply_hotfixes(self) -> None:
         """
         Apply any changes noted in the release notes.
         """
         # For future reference, genie_python can send emails!
         self.prompt.prompt_and_raise_if_not_yes(
-            "Look in the IBEX wiki at the release notes for the version you are deploying."
-            " Apply needed fixes."
+            "Have you cleared/reapplied hotfixes listed in https://github.com/ISISComputingGroup/IBEX/wiki#instrument-information--hotfixes?"
         )
 
     def check_resources(self) -> None:

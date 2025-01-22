@@ -106,8 +106,7 @@ class MysqlTasks(BaseTasks):
 
         except ErrorInRun as ex:
             self.prompt.prompt_and_raise_if_not_yes(
-                f"Unable to run mysql command, please truncate the database manually. "
-                f"Error is {ex}"
+                f"Unable to run mysql command, please truncate the database manually. Error is {ex}"
             )
 
     def _configure_mysql(self) -> None:
@@ -182,7 +181,7 @@ class MysqlTasks(BaseTasks):
             executable_file="mysqld.exe",
             executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
             prog_args=[
-                f'--datadir={os.path.join(MYSQL_FILES_DIR, "data")}',
+                f"--datadir={os.path.join(MYSQL_FILES_DIR, 'data')}",
                 "--initialize-insecure",
                 "--console",
                 "--log-error-verbosity=3",
