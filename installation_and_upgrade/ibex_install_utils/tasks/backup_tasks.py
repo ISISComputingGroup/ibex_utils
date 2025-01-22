@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Callable, Tuple
 
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.progress_bar import ProgressBar
@@ -38,7 +39,8 @@ IGNORE_PATTERNS = {
     ),
 }
 """
-Dictionary {PATH: list of glob-style ignore patterns} with ignore pattern passed to shutil.copytree during backup
+Dictionary {PATH: list of glob-style ignore patterns} with ignore pattern
+passed to shutil.copytree during backup
 used to exclude directories from a running instrument that are either not useful
 or e.g. may have too long a path or some other issues
 
@@ -50,7 +52,8 @@ DIRECTORIES_TO_BACKUP = (*ALL_INSTALL_DIRECTORIES, SETTINGS_DIR, AUTOSAVE)
 
 class BackupTasks(BaseTasks):
     """
-    The tasks dealing with backing up current install, removing current install and moving old backups to the shares.
+    The tasks dealing with backing up current install, removing current install
+    and moving old backups to the shares.
 
     """
 
@@ -64,7 +67,7 @@ class BackupTasks(BaseTasks):
     """To indicate tasks' progress"""
 
     @task("Backup old directories")
-    def backup_old_directories(self):
+    def backup_old_directories(self) -> None:
         """
         Backup old directories.
 
@@ -73,45 +76,50 @@ class BackupTasks(BaseTasks):
             if not os.path.exists(BACKUP_DIR):
                 os.mkdir(BACKUP_DIR)
 
+            # move old backups to create space
+            self._move_old_backups_to_share()
+
             # Move the folders
             for path in DIRECTORIES_TO_BACKUP:
                 if path in os.getcwd():
                     self.prompt.prompt_and_raise_if_not_yes(
-                        f"You appear to be trying to delete the folder, {path}, containing the current working directory {os.getcwd()}. "
+                        f"You appear to be trying to delete the folder, {path}, "
+                        f"containing the current working directory {os.getcwd()}. "
                         f"Please do this manually to be on the safe side"
                     )
                 else:
                     self._backup_dir(path, ignore=IGNORE_PATTERNS.get(path), copy=True)
 
-            self._move_old_backups_to_share()
         else:
             self.prompt.prompt_and_raise_if_not_yes(
-                f"Unable to find data directory '{BACKUP_DATA_DIR}'. Please backup the current installation of IBEX "
-                f"manually"
+                f"Unable to find data directory '{BACKUP_DATA_DIR}'. "
+                "Please backup the current installation of IBEX manually"
             )
 
     @task("Verify backup")
-    def backup_checker(self):
+    def backup_checker(self) -> None:
         """
-        Verify backup. This function checks if the backup has been sucessful by checking for a
-        VERSION.txt file within the backup folders for EPICS, PYTHON, GUI.
+        Verify backup. This function checks if the backup has been sucessful by checking
+        for a VERSION.txt file within the backup folders for EPICS, PYTHON, GUI.
 
         """
         for path in (EPICS_PATH, PYTHON_3_PATH, GUI_PATH):
             path_to_backup = self._path_to_backup(path)
             if not os.path.exists(os.path.join(path_to_backup, "VERSION.txt")):
                 self.prompt.prompt_and_raise_if_not_yes(
-                    f"Error found with backup. Backup failed at '{path_to_backup}'. Please backup manually."
+                    f"Error found with backup. Backup failed at '{path_to_backup}'. "
+                    "Please backup manually."
                 )
 
         for path in (SETTINGS_DIR, AUTOSAVE, EPICS_UTILS_PATH):
             if not os.path.exists(self._path_to_backup(path)):
                 self.prompt.prompt_and_raise_if_not_yes(
-                    f"Error found with backup. '{path}' did not back up properly. Please backup manually."
+                    f"Error found with backup. '{path}' did not back up properly. "
+                    "Please backup manually."
                 )
 
     @task("Removing old version of IBEX")
-    def remove_old_ibex(self):
+    def remove_old_ibex(self) -> None:
         """
         Removes older versions of IBEX server, client, genie_python and epics utils.
 
@@ -119,11 +127,13 @@ class BackupTasks(BaseTasks):
         for path in ALL_INSTALL_DIRECTORIES:
             self._file_utils.remove_tree(path[0], self.prompt, leave_top_if_link=True)
 
-    def _path_to_backup(self, path):
+    def _path_to_backup(self, path: str) -> str:
         """Returns backup path for the given path"""
         return os.path.join(self._get_backup_dir(), os.path.basename(path))
 
-    def _check_backup_space(self, src, ignore=None):
+    def _check_backup_space(
+        self, src: str, ignore: "Callable[[str, list[str]], set[str]] | None" = None
+    ) -> Tuple[int, int]:
         # Checks if there is enough space to move dir at src into the backup directory
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
@@ -137,7 +147,12 @@ class BackupTasks(BaseTasks):
 
         return backup_size, number_of_files
 
-    def _backup_dir(self, src, copy=True, ignore=None):
+    def _backup_dir(
+        self,
+        src: str,
+        copy: bool = True,
+        ignore: "Callable[[str, list[str]], set[str]] | None" = None,
+    ) -> None:
         """Move a directory to the backup area.
 
         If the optional copy flag is true, the directory in `src` will be kept;
@@ -152,6 +167,7 @@ class BackupTasks(BaseTasks):
             ignore: A callable like `shutil.ignore_patterns`
 
         """
+        dst = None
         try:
             # Optimistic start
             print(f"\nPreparing to back up {src} ...")
@@ -163,7 +179,7 @@ class BackupTasks(BaseTasks):
 
             print("Attempting to " + ("copy" if copy else "move") + f" {src} to {dst}")
 
-            def copy_function(src, dst):
+            def copy_function(src: str, dst: str) -> None:
                 """Just a copy or move operation that also updates the progress bar."""
                 if copy:
                     shutil.copy2(src, dst)
@@ -187,7 +203,8 @@ class BackupTasks(BaseTasks):
                 print(f"Skipping {src} backup as not present has been marked as OK.")
             else:
                 self.prompt.prompt_and_raise_if_not_yes(
-                    f"You appear to backing up {src}, but it doesn't exist on this machine. Please manually check your installation first."
+                    f"You appear to backing up {src}, but it doesn't exist on this machine. "
+                    "Please manually check your installation first."
                 )
 
         except FileExistsError:
@@ -209,10 +226,11 @@ class BackupTasks(BaseTasks):
                 _, _, msg = error
                 print(msg)
 
-        except:
+        except Exception as e:
             # All other errors
             self.prompt.prompt_and_raise_if_not_yes(
-                f"Something went wrong while backing up {src}. Please backup this app manually."
+                f"Something went wrong while backing up {src} ({e}). "
+                "Please backup this app manually."
             )
 
         else:
@@ -220,9 +238,10 @@ class BackupTasks(BaseTasks):
             print(f"Successfully backed up to {dst}.")
 
     # ? Moving other backups to stage deleted could be a task on its own
-    def _move_old_backups_to_share(self):
+    def _move_old_backups_to_share(self) -> None:
         """
-        Move all but the newest backup to the shares.
+        Move all backups to the shares. This should be
+        run before the current installation is backed up
 
         """
         current_backups = [
@@ -230,13 +249,8 @@ class BackupTasks(BaseTasks):
             for d in os.listdir(BACKUP_DIR)
             if os.path.isdir(os.path.join(BACKUP_DIR, d)) and d.startswith("ibex_backup")
         ]
-        if len(current_backups) > 0:
-            all_but_newest_backup = sorted(current_backups, key=os.path.getmtime)[:-1]
-            backups_to_move = all_but_newest_backup
-        else:
-            backups_to_move = []
 
-        for d in backups_to_move:
+        for d in current_backups:
             backup = STAGE_DELETED + "\\" + self._get_machine_name() + "\\" + os.path.basename(d)
             print(f"Moving backup {d} to {backup}")
             self._file_utils.move_dir(d, backup, self.prompt)
@@ -247,7 +261,8 @@ if __name__ == "__main__":
     Must be called with pythonpath set to `<exact path on your pc>/installation_and_upgrade`
     as that is the root of this module and all our imports work that way.
 
-    This effectively means to call `set PYTHONPATH=. && python ibex_install_utils/tasks/backup_tasks.py`
+    This effectively means to call 
+            `set PYTHONPATH=. && python ibex_install_utils/tasks/backup_tasks.py`
     from the installation_and_upgrade directory in terminal.
     """
     print("Running backup task standalone.")
