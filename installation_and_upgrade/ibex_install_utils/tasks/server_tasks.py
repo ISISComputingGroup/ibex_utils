@@ -425,8 +425,9 @@ class ServerTasks(BaseTasks):
         self.prompt.prompt_and_raise_if_not_yes("Confirm motion set points have been configured.")
 
     @contextmanager
-    def timestamped_pv_backups_file(self, name: str, directory: str, extension: str = "txt") \
-            -> Generator[TextIO, None, None]:
+    def timestamped_pv_backups_file(
+        self, name: str, directory: str, extension: str = "txt"
+    ) -> Generator[TextIO, None, None]:
         """Context manager to create a timestamped file in the pv backups directory
 
         Args:
