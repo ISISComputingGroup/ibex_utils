@@ -92,7 +92,7 @@ call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release
 IF %errorlevel% neq 0 exit /b %errorlevel%
 ENDLOCAL
 
-start /wait cmd /c "%START_IBEX%"
+start /i /wait cmd /c "%START_IBEX%"
 
 REM python should be installed correctly at this point, so use local python
 set "LATEST_PYTHON_DIR=C:\Instrument\Apps\Python3\"
