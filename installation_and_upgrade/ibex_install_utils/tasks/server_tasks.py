@@ -735,7 +735,10 @@ class ServerTasks(BaseTasks):
         """Sets up instrument log rotation via windows scheduled task."""
         python = r"c:\instrument\apps\python3\python.exe"
         logrotate = r"c:\instrument\apps\epics\utils\logrotate.py"
-        task_cmd = f"cmd.exe /c start /min {python} {logrotate}"
+        task_cmd = (
+            f"cmd.exe /c start /min {python} {logrotate} "
+            r"> C:\Instrument\Var\logs\schtasks\logrotate.log 2>&1"
+        )
 
         admin_commands = AdminCommandBuilder()
         admin_commands.add_command(
