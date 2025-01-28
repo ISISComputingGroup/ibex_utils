@@ -737,7 +737,7 @@ class ServerTasks(BaseTasks):
         logrotate = r"c:\instrument\apps\epics\utils\logrotate.py"
         task_cmd = (
             f"cmd.exe /c start /min {python} {logrotate} "
-            "> C:\Instrument\Var\logs\schtasks\logrotate.log 2>&1"
+            r"> C:\Instrument\Var\logs\schtasks\logrotate.log 2>&1"
         )
 
         admin_commands = AdminCommandBuilder()
