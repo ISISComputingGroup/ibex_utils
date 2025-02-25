@@ -4,8 +4,8 @@ import shutil
 import stat
 from datetime import datetime, timedelta
 
-max_build_age_in_days = 30
-minimum_number_of_builds_to_keep = 10
+max_build_age_in_days = 7
+minimum_number_of_builds_to_keep = 5
 build_area = r"\\isis.cclrc.ac.uk\inst$\kits$\CompGroup\ICP"
 
 
