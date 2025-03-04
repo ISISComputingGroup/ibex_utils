@@ -186,14 +186,15 @@ if __name__ == "__main__":
     elif args.kits_icp_dir is not None:
         if args.deployment_type == "install_latest_incr":
             epics_build_dir = os.path.join(
-                args.kits_icp_dir, "EPICS", args.server_build_prefix + "_" + 
+                args.kits_icp_dir, "EPICS", args.server_build_prefix + "_" +
                     args.server_winbuild + "_" + args.server_arch
             )
         else:
             epics_build_dir = os.path.join(
                 args.kits_icp_dir,
                 "EPICS",
-                args.server_build_prefix + "_CLEAN_" + args.server_winbuild + "_" + args.server_arch,
+                args.server_build_prefix + "_CLEAN_" + args.server_winbuild +
+                    "_" + args.server_arch,
             )
 
         try:
