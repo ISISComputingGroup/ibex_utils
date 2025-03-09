@@ -1,7 +1,6 @@
 import re
-
 from collections import OrderedDict
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 AXIS_NUMBER_REGEX = r"(?<=Axis )\S+"
 
@@ -13,15 +12,13 @@ common_setting_names = {
     "HLIM": "Soft Max",
     "NEGATED": "Negate Motor Direction",
     "ENCODER_RES": "Encoder Steps Per Unit",
-    "MOTOR_RES": "Motor Steps Per Unit"
+    "MOTOR_RES": "Motor Steps Per Unit",
 }
 
 
-def apply_home_shift(old_homeval: float,
-                     old_offset: float,
-                     old_user_offset: float,
-                     old_hlim: float,
-                     old_llim: float) -> Dict[str, Optional[str]]:
+def apply_home_shift(
+    old_homeval: float, old_offset: float, old_user_offset: float, old_hlim: float, old_llim: float
+) -> Dict[str, Optional[str]]:
     """
     Combines both the user and axis offsets into one (the new axis offset).
     Shifts the axis limits by the difference between the old and new home position
@@ -46,12 +43,12 @@ def apply_home_shift(old_homeval: float,
     difference_in_schemes = old_combined_offset - new_offset
 
     # Infinite limits do not get changed (set to None so can be ignored)
-    if abs(old_hlim) != float('inf'):
+    if abs(old_hlim) != float("inf"):
         new_hlim = old_hlim + difference_in_schemes
     else:
         new_hlim = None
 
-    if abs(old_llim) != float('inf'):
+    if abs(old_llim) != float("inf"):
         new_llim = old_llim + difference_in_schemes
     else:
         new_llim = None
@@ -60,7 +57,7 @@ def apply_home_shift(old_homeval: float,
         common_setting_names["OFFSET"]: new_offset,
         common_setting_names["HLIM"]: new_hlim,
         common_setting_names["LLIM"]: new_llim,
-        common_setting_names["USER_OFFSET"]: new_user_offset
+        common_setting_names["USER_OFFSET"]: new_user_offset,
     }
     return new_settings
 
@@ -107,13 +104,17 @@ class Galil:
         """
         settings = ["[{}]".format(self.crate_index)]
         for crate_setting, setting_value in self.settings.items():
-            settings.append("{setting} = {value}".format(setting=crate_setting, value=setting_value))
+            settings.append(
+                "{setting} = {value}".format(setting=crate_setting, value=setting_value)
+            )
         for axis_letter in self.axes.keys():
             axis = self.axes[axis_letter]
             for setting, value in axis.settings.items():
-                settings.append("Axis {axis_letter} {setting} = {value}".format(axis_letter=axis_letter,
-                                                                                setting=setting,
-                                                                                value=value))
+                settings.append(
+                    "Axis {axis_letter} {setting} = {value}".format(
+                        axis_letter=axis_letter, setting=setting, value=value
+                    )
+                )
         return settings
 
 
@@ -133,7 +134,7 @@ class Axis:
         Returns:
             String containing "setting_name = value" pair
         """
-        return ini_line[len(self.axis_line_prefix):].strip()
+        return ini_line[len(self.axis_line_prefix) :].strip()
 
     def add_setting_from_ini_line(self, ini_line: str):
         """
@@ -199,6 +200,10 @@ def extract_galil_settings_from_file(file: List[str]) -> Dict[str, Galil]:
         elif "=" in line:
             galil_crates[crate_index].parse_line(line)
         else:
-            print("Line did not contain valid setting or galil identifier information, ignoring: {}".format(line))
+            print(
+                "Line did not contain valid setting or galil identifier information, ignoring: {}".format(
+                    line
+                )
+            )
 
     return galil_crates

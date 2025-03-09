@@ -7,8 +7,14 @@ from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import INSTRUMENT_BASE_DIR, INST_SHARE_AREA, EPICS_PATH, APPS_BASE_DIR, \
-    SETTINGS_DIR, VAR_DIR
+from ibex_install_utils.tasks.common_paths import (
+    APPS_BASE_DIR,
+    EPICS_PATH,
+    INST_SHARE_AREA,
+    INSTRUMENT_BASE_DIR,
+    SETTINGS_DIR,
+    VAR_DIR,
+)
 
 
 class Vhd:
@@ -21,14 +27,30 @@ class Vhd:
 
 VHDS = [
     # Key = VHD location, Value = Mount point
-    Vhd(name="Apps", source_filename="empty_apps.vhdx", dest_filename="apps.vhdx", mount_point=APPS_BASE_DIR),
-    Vhd(name="Settings", source_filename="empty_settings.vhdx", dest_filename="settings.vhdx", mount_point=SETTINGS_DIR),
-    Vhd(name="Var", source_filename="empty_var.vhdx", dest_filename="var.vhdx", mount_point=VAR_DIR),
+    Vhd(
+        name="Apps",
+        source_filename="empty_apps.vhdx",
+        dest_filename="apps.vhdx",
+        mount_point=APPS_BASE_DIR,
+    ),
+    Vhd(
+        name="Settings",
+        source_filename="empty_settings.vhdx",
+        dest_filename="settings.vhdx",
+        mount_point=SETTINGS_DIR,
+    ),
+    Vhd(
+        name="Var", source_filename="empty_var.vhdx", dest_filename="var.vhdx", mount_point=VAR_DIR
+    ),
 ]
 
 
-FILE_TO_REQUEST_VHD_MOUNTING = os.path.join(INSTRUMENT_BASE_DIR, "ibex_vhd_deployment_mount_vhds.txt")
-FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join(INSTRUMENT_BASE_DIR, "ibex_vhd_deployment_dismount_vhds.txt")
+FILE_TO_REQUEST_VHD_MOUNTING = os.path.join(
+    INSTRUMENT_BASE_DIR, "ibex_vhd_deployment_mount_vhds.txt"
+)
+FILE_TO_REQUEST_VHD_DISMOUNTING = os.path.join(
+    INSTRUMENT_BASE_DIR, "ibex_vhd_deployment_dismount_vhds.txt"
+)
 VHD_MOUNT_DISMOUNT_TIMEOUT = 300
 
 
@@ -53,8 +75,10 @@ class VHDTasks(BaseTasks):
 
         os.mkdir(LOCAL_VHD_DIR)
         for vhd in VHDS:
-            shutil.copyfile(os.path.join(REMOTE_VHD_SRC_DIR, vhd.source_filename),
-                            os.path.join(LOCAL_VHD_DIR, vhd.source_filename))
+            shutil.copyfile(
+                os.path.join(REMOTE_VHD_SRC_DIR, vhd.source_filename),
+                os.path.join(LOCAL_VHD_DIR, vhd.source_filename),
+            )
 
     def _create_file_and_wait_for_it_to_be_deleted(self, filename, timeout):
         with open(filename, "w") as f:
@@ -71,24 +95,36 @@ class VHDTasks(BaseTasks):
             print("--- start scheduled task output ---")
             print("---")
             try:
-                with open(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r") as f:
+                with open(
+                    os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy"), "r"
+                ) as f:
                     for line in f.readlines():
                         print("output from scheduled task: {}".format(line.rstrip()))
             except FileNotFoundError:
-                print("File {} doesn't exist no log available".format(os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy")))
+                print(
+                    "File {} doesn't exist no log available".format(
+                        os.path.join("C:\\", "Instrument", "scheduledtasklog_ibex_vhd_deploy")
+                    )
+                )
             print("---")
             print("--- end scheduled task output ---")
             print("---")
-            raise IOError(f"File at {filename} still existed after {timeout}s, check VHD scheduled task is running "
-                          f"correctly ")
+            raise IOError(
+                f"File at {filename} still existed after {timeout}s, check VHD scheduled task is running "
+                f"correctly "
+            )
 
     @task("Request VHDs to be mounted")
     def request_mount_vhds(self):
-        self._create_file_and_wait_for_it_to_be_deleted(FILE_TO_REQUEST_VHD_MOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT)
+        self._create_file_and_wait_for_it_to_be_deleted(
+            FILE_TO_REQUEST_VHD_MOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT
+        )
 
     @task("Request VHDs to be dismounted")
     def request_dismount_vhds(self):
-        self._create_file_and_wait_for_it_to_be_deleted(FILE_TO_REQUEST_VHD_DISMOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT)
+        self._create_file_and_wait_for_it_to_be_deleted(
+            FILE_TO_REQUEST_VHD_DISMOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT
+        )
 
     @task("Mount VHDs")
     def mount_vhds(self):
@@ -105,36 +141,46 @@ class VHDTasks(BaseTasks):
                 os.remove(driveletter_file)
 
             if os.path.exists(vhd.mount_point):
-                admin_commands.add_command("move",
-                                           f'"{vhd.mount_point}" "{vhd.mount_point}_backup"',
-                                           expected_return_val=None)
+                admin_commands.add_command(
+                    "move",
+                    f'"{vhd.mount_point}" "{vhd.mount_point}_backup"',
+                    expected_return_val=None,
+                )
 
             # Mount the VHD and write it's assigned drive letter to a file.
             admin_commands.add_command(
                 "powershell",
-                r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'
-                    .format(vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename), name=vhd.name,
-                            driveletter_file=driveletter_file))
+                r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'.format(
+                    vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename),
+                    driveletter_file=driveletter_file,
+                ),
+            )
 
             # Append :\\ to drive letter, e.g. E -> E:\\ (this is necessary so that directory junctions work correctly)
             admin_commands.add_command(
                 "powershell",
-                r'-command "echo :\\ | out-file -filepath {driveletter_file} -Encoding ASCII -Append -NoNewline"'
-                    .format(driveletter_file=driveletter_file)
+                r'-command "echo :\\ | out-file -filepath {driveletter_file} -Encoding ASCII -Append -NoNewline"'.format(
+                    driveletter_file=driveletter_file
+                ),
             )
 
-            # If parent of mount point doesn't exist mklink will fail, create it to avoid this 
+            # If parent of mount point doesn't exist mklink will fail, create it to avoid this
             vhd_mount_point_parent = os.path.dirname(vhd.mount_point)
             if not os.path.exists(vhd_mount_point_parent):
                 admin_commands.add_command(
-                "powershell",
-                r'-command "&cmd /c mkdir {mount_point_parent}"'.format(mount_point_parent=vhd_mount_point_parent))
+                    "powershell",
+                    r'-command "&cmd /c mkdir {mount_point_parent}"'.format(
+                        mount_point_parent=vhd_mount_point_parent
+                    ),
+                )
 
             # Create a directory junction from the mount point to the disk's assigned drive letter
             admin_commands.add_command(
                 "powershell",
-                r'-command "&cmd /c mklink /J /D {mount_point} @(cat {driveletter_file})"'
-                    .format(mount_point=vhd.mount_point, name=vhd.name, driveletter_file=driveletter_file))
+                r'-command "&cmd /c mklink /J /D {mount_point} @(cat {driveletter_file})"'.format(
+                    mount_point=vhd.mount_point, driveletter_file=driveletter_file
+                ),
+            )
 
         admin_commands.run_all()
 
@@ -142,7 +188,6 @@ class VHDTasks(BaseTasks):
 
     @task("Dismount VHDs")
     def dismount_vhds(self):
-
         if not os.path.exists(FILE_TO_REQUEST_VHD_DISMOUNTING):
             return
 
@@ -156,7 +201,8 @@ class VHDTasks(BaseTasks):
             admin_commands.add_command(
                 "powershell",
                 r'-command "Hyper-V\Dismount-VHD {vhd_file}"'.format(
-                    vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename)),
+                    vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename)
+                ),
                 expected_return_val=None,
             )
 
@@ -177,9 +223,11 @@ class VHDTasks(BaseTasks):
 
             # Restore previous directories to where they were before mounting VHDS
             if os.path.exists(f"{vhd.mount_point}_backup"):
-                admin_commands.add_command("move",
-                                           f'"{vhd.mount_point}_backup" "{vhd.mount_point}"',
-                                           expected_return_val=None)
+                admin_commands.add_command(
+                    "move",
+                    f'"{vhd.mount_point}_backup" "{vhd.mount_point}"',
+                    expected_return_val=None,
+                )
 
         admin_commands.add_command("sc", "start MYSQL80", expected_return_val=None)
         admin_commands.run_all()
@@ -188,17 +236,22 @@ class VHDTasks(BaseTasks):
 
     @task("Deploy VHDS")
     def deploy_vhds(self):
-
         if self._ibex_version is not None:
-            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Releases", "{}".format(self._ibex_version))
+            build_folder = os.path.join(
+                REMOTE_VHD_DEST_DIR, "Releases", "{}".format(self._ibex_version)
+            )
         else:
-            build_folder = os.path.join(REMOTE_VHD_DEST_DIR, "Builds", "Build{}".format(os.environ["BUILD_NUMBER"]))
+            build_folder = os.path.join(
+                REMOTE_VHD_DEST_DIR, "Builds", "Build-{}".format(os.environ["BUILD_NUMBER"])
+            )
         os.makedirs(build_folder)
 
         for vhd in VHDS:
             print(f"Deploying {vhd.source_filename} to '{build_folder}'")
-            shutil.copyfile(os.path.join(LOCAL_VHD_DIR, vhd.source_filename),
-                            os.path.join(build_folder, vhd.dest_filename))
+            shutil.copyfile(
+                os.path.join(LOCAL_VHD_DIR, vhd.source_filename),
+                os.path.join(build_folder, vhd.dest_filename),
+            )
 
         print("Cleaning up local artefacts...")
         shutil.rmtree(LOCAL_VHD_DIR)

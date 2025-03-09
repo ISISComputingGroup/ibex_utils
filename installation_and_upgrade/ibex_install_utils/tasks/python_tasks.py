@@ -10,6 +10,7 @@ class PythonTasks(BaseTasks):
     """
     Tasks relating to installing or maintaining an installation of genie_python.
     """
+
     @task("Installing Genie Python 3")
     def install_genie_python3(self):
         """
@@ -24,16 +25,18 @@ class PythonTasks(BaseTasks):
         Update (or at least ask the user to update) the script definitions used by the script generator.
         """
         if os.path.exists("C:\\ScriptGeneratorConfigs") or os.path.exists("C:\\ScriptDefinitions"):
-            print("Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)." + \
-                  "Check with the scientists that it is ok to do this." + \
-                  "You can do it by git pull, you may need to merge changes made on the instrument.")
+            print(
+                "Update the script definitions for the script generator (likely in C:\\ScriptDefinitions or C:\\ScriptGeneratorConfigs)."
+                + "Check with the scientists that it is ok to do this."
+                + "You can do it by git pull, you may need to merge changes made on the instrument."
+            )
 
     @task("Remove instrument scripts githooks")
     def remove_instrument_script_githooks(self):
         """
         Remove the githooks in the instrument scripts dierectory
         """
-        hook_path = os.path.join(INSTRUMENT_BASE_DIR,"scripts", ".git", "hooks", "commit-msg")
+        hook_path = os.path.join(INSTRUMENT_BASE_DIR, "scripts", ".git", "hooks", "commit-msg")
         if os.path.exists(hook_path):
             try:
                 os.remove(hook_path)

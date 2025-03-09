@@ -5,40 +5,46 @@ that the control software has logged when values changed.
 """
 
 # std imports
-from argparse import ArgumentParser
-from collections import OrderedDict
-from datetime import datetime, timedelta
 import logging
 import os.path as osp
 import sys
-# third party imports
-from h5py import (File as HDF5File)
+from argparse import ArgumentParser
+from collections import OrderedDict
+from datetime import datetime, timedelta
+
 import numpy as np
+
+# third party imports
+from h5py import File as HDF5File
 from six import iteritems
 
 # Logger for this module
 LOGGER = logging.getLogger(__name__)
 
 # ISIS NeXus entry names
-ROOT_ENTRY = 'raw_data_1'
-SAMPLE_ENV_LOGS_ENTRY = 'selog'
-VALUE_LOG_ENTRY = 'value_log'
-RUN_START_ENTRY = 'start_time'
-TIME_ENTRY = 'time'
-VALUE_ENTRY = 'value'
-TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S'
+ROOT_ENTRY = "raw_data_1"
+SAMPLE_ENV_LOGS_ENTRY = "selog"
+VALUE_LOG_ENTRY = "value_log"
+RUN_START_ENTRY = "start_time"
+TIME_ENTRY = "time"
+VALUE_ENTRY = "value"
+TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 # Constants
-TEN_DAYS_IN_SECONDS = 10*24*60*60
+TEN_DAYS_IN_SECONDS = 10 * 24 * 60 * 60
 
 
 def parse_args():
     """Parse input arguments to script"""
-    parser = ArgumentParser(description='Process log entries from an ISIS NeXus file and display'
-                                        'values from a given time period')
-    parser.add_argument("filepath", help='Path to an ISIS NeXus file')
-    parser.add_argument("selog_names", nargs='*', help='An optional list of SE log names')
-    parser.add_argument("--outfile", help='Path to outputfile. If None is given then display to screen')
+    parser = ArgumentParser(
+        description="Process log entries from an ISIS NeXus file and display"
+        "values from a given time period"
+    )
+    parser.add_argument("filepath", help="Path to an ISIS NeXus file")
+    parser.add_argument("selog_names", nargs="*", help="An optional list of SE log names")
+    parser.add_argument(
+        "--outfile", help="Path to outputfile. If None is given then display to screen"
+    )
     return parser.parse_args()
 
 
@@ -64,15 +70,14 @@ def logs_info(h5file, rel_time_start, names=None):
     :returns: A dict giving a list of time/values for each log entry
     """
     root = h5file[ROOT_ENTRY]
-    start_time_str = root[RUN_START_ENTRY][0].decode('UTF-8')
+    start_time_str = root[RUN_START_ENTRY][0].decode("UTF-8")
     start_timestamp = datetime.strptime(start_time_str, TIMESTAMP_FORMAT)
     selog_group = root[SAMPLE_ENV_LOGS_ENTRY]
 
     names = names if names is not None else selog_group.keys()
     log_values = OrderedDict()
     for name in names:
-        log_values[name] = find_log_info(selog_group[name], start_timestamp,
-                                         rel_time_start)
+        log_values[name] = find_log_info(selog_group[name], start_timestamp, rel_time_start)
 
     return log_values
 
@@ -133,8 +138,8 @@ def write_out(info, out_file):
             else:
                 format_str = "{}    {}"
             out_file.write(format_str.format(time, value))
-            out_file.write('\n')
-        out_file.write('\n')
+            out_file.write("\n")
+        out_file.write("\n")
 
 
 def main():
@@ -142,21 +147,21 @@ def main():
     args = parse_args()
 
     if not osp.exists(args.filepath):
-        fatal(f'File {args.filepath} does not exist.')
+        fatal(f"File {args.filepath} does not exist.")
 
     try:
-        h5file = HDF5File(args.filepath, mode='r')
+        h5file = HDF5File(args.filepath, mode="r")
     except Exception as exc:
         fatal(str(exc))
 
     info = logs_info(h5file, TEN_DAYS_IN_SECONDS, args.selog_names)
     if args.outfile is not None:
-        outfile = open(args.outfile, 'w')
+        outfile = open(args.outfile, "w")
     else:
         outfile = sys.stdout
 
     write_out(info, outfile)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

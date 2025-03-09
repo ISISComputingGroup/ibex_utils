@@ -1,12 +1,12 @@
-
-
 """
 Look at the size of
 
 """
+
 import getpass
 import os
 import subprocess
+
 from six.moves import input
 
 areas = {
@@ -24,14 +24,12 @@ areas = {
     "mysql-mysql": r"{INST_PATH}\var\mysql\Data\mysql",
     "mysql-performance_schema": r"{INST_PATH}\var\mysql\Data\performance_schema",
     "mysql-sys": r"{INST_PATH}\var\mysql\Data\sys",
-    "gui": r"{INST_PATH}\Apps\Client\workspace"
+    "gui": r"{INST_PATH}\Apps\Client\workspace",
 }
 
-files_in_dir = {
-    "mysql_files": r"{INST_PATH}\var\mysql\Data"
-}
+files_in_dir = {"mysql_files": r"{INST_PATH}\var\mysql\Data"}
 
-FNULL = open(os.devnull, 'w')
+FNULL = open(os.devnull, "w")
 
 
 class CalibrationsFolder:
@@ -46,22 +44,33 @@ class CalibrationsFolder:
         """
         Returns: True if disconnect is successful, else False.
         """
-        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', '/del', '/y'],
-                               stdout=FNULL, stderr=FNULL) == 0
+        return (
+            subprocess.call(
+                ["net", "use", f"{CalibrationsFolder.DRIVE_LETTER}:", "/del", "/y"],
+                stdout=FNULL,
+                stderr=FNULL,
+            )
+            == 0
+        )
 
     def connect_to_drive(self):
         """
         Returns: True if the connection is successful, else False
         """
         print("connecting")
-        net_use_cmd_line = ['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', self.network_location,
-                            f'/user:{self.username_with_domain}', self.password]
-        return subprocess.call(net_use_cmd_line,
-                               stdout=FNULL, stderr=FNULL) == 0
+        net_use_cmd_line = [
+            "net",
+            "use",
+            f"{CalibrationsFolder.DRIVE_LETTER}:",
+            self.network_location,
+            f"/user:{self.username_with_domain}",
+            self.password,
+        ]
+        return subprocess.call(net_use_cmd_line, stdout=FNULL, stderr=FNULL) == 0
 
     def __init__(self, instrument_host, username, password):
         self.username_with_domain = f"{instrument_host}\\{username}"
-        self.network_location = r'\\{}\c$\Instrument'.format(instrument_host)
+        self.network_location = r"\\{}\c$\Instrument".format(instrument_host)
         self.password = password
 
     def __enter__(self):
@@ -87,7 +96,7 @@ def size_of_files_in_dir(path):
     return size
 
 
-def size_of_dir_tree(start_path='.'):
+def size_of_dir_tree(start_path="."):
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
@@ -97,10 +106,8 @@ def size_of_dir_tree(start_path='.'):
 
 
 def get_for_instrument(instrument_host, username, password):
-
     with CalibrationsFolder(instrument_host, username, password) as repo:
-        templates = {"HOST_NAME": instrument_host,
-                     "INST_PATH": f"{repo.DRIVE_LETTER}:\\"}
+        templates = {"HOST_NAME": instrument_host, "INST_PATH": f"{repo.DRIVE_LETTER}:\\"}
 
         sizes = {}
 
@@ -127,7 +134,24 @@ if __name__ == "__main__":
     all_sizes = {}
     inst_names = []
 
-    for index, inst in enumerate(["NDXSANDALS", "NDXVESUVIO", "NDXZOOM", "NDXALF", "NDXEMMA-A", "NDXENGINX", "NDXGEM", "NDXHRPD", "NDXIMAT", "NDXIRIS", "NDXLARMOR", "NDEMUONFE", "NDXMERLIN", "NDXPOLARIS"]):
+    for index, inst in enumerate(
+        [
+            "NDXSANDALS",
+            "NDXVESUVIO",
+            "NDXZOOM",
+            "NDXALF",
+            "NDXEMMA-A",
+            "NDXENGINX",
+            "NDXGEM",
+            "NDXHRPD",
+            "NDXIMAT",
+            "NDXIRIS",
+            "NDXLARMOR",
+            "NDEMUONFE",
+            "NDXMERLIN",
+            "NDXPOLARIS",
+        ]
+    ):
         print(f"-- {inst} --")
         sizes = get_for_instrument(inst, username, password)
         print(sizes)
@@ -145,5 +169,7 @@ if __name__ == "__main__":
 
     print("{:20},{}".format("File type", ",".join(inst_names)))
     for name, inst_sizes in sorted(all_sizes.items(), key=lambda x: x[0]):
-        sizes_from_all_instruments = ", ".join(["{:10.1f}".format(bytes_to_mb(size)) for size in inst_sizes])
+        sizes_from_all_instruments = ", ".join(
+            ["{:10.1f}".format(bytes_to_mb(size)) for size in inst_sizes]
+        )
         print("{:20},{}".format(name, sizes_from_all_instruments))

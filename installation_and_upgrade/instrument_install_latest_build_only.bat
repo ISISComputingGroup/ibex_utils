@@ -10,7 +10,7 @@ setlocal EnableDelayedExpansion
 
 set PYTHONUNBUFFERED=TRUE
 
-call "%~dp0\define_latest_genie_python.bat"
+call "%~dp0define_latest_genie_python.bat"
 IF %errorlevel% neq 0 (
     @echo Failed to define genie python
     GOTO ERROR
@@ -81,8 +81,18 @@ IF %errorlevel% neq 0 (
     GOTO ERROR
 )
 
+if not "%1" == "RELEASE" (
+    call "%~dp0update_genie_python_module.bat" C:\Instrument\Apps\Python3
+)
+IF %errorlevel% neq 0 (
+    echo Error %errorlevel% returned from update_genie_python_module.bat
+    GOTO ERROR
+)
+
+call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
 GOTO :EOF
 
 :ERROR
 echo Error on Install
+call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
 exit /b 2

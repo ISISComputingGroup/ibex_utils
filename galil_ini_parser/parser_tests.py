@@ -1,11 +1,16 @@
 import unittest
-
-from galil_ini_parser import Galil, Axis
-from galil_ini_parser import apply_home_shift, common_setting_names, extract_galil_settings_from_file
-
-from mock import patch, call
-from parameterized import parameterized
 from typing import Dict
+
+from mock import patch
+from parameterized import parameterized
+
+from galil_ini_parser import (
+    Axis,
+    Galil,
+    apply_home_shift,
+    common_setting_names,
+    extract_galil_settings_from_file,
+)
 
 GALIL_CRATE_INDEX = "G1"
 AXIS_INDEX = "A"
@@ -14,7 +19,9 @@ SETTING_STRING_WITHOUT_AXIS = "{setting} = {value}"
 SETTING_STRING_WITH_AXIS = "Axis {axis_index} {setting} = {value}"
 
 
-def POPULATE_AXIS(offset: float, user_offset: float, homeval: float, hlim: float, llim: float) -> Dict[str, float]:
+def POPULATE_AXIS(
+    offset: float, user_offset: float, homeval: float, hlim: float, llim: float
+) -> Dict[str, float]:
     """
     Creates a dictionary with key/value pairs corresponding to axis parameters to be changed
     """
@@ -29,24 +36,28 @@ def POPULATE_AXIS(offset: float, user_offset: float, homeval: float, hlim: float
     return axis
 
 
-TEST_AXIS_CASES = ([
-    ("Nonzero homeval nonzero offset",
-     POPULATE_AXIS(7.0, 3.0, 20.0, 50.0, 10.0),
-     POPULATE_AXIS(20.0, 0.0, 20.0, 40.0, 0.0)),
-
-    ("Zero homeval nonzero offsets",
-     POPULATE_AXIS(10.0, 5.0, 0.0, 50.0, -10.0),
-     POPULATE_AXIS(0.0, 0.0, 0.0, 65.0, 5.0)),
-
-    ("Nonzero homeval zero offsets",
-     POPULATE_AXIS(0.0, 0.0, 1045.0, 1045.0, -10.0),
-     POPULATE_AXIS(1045.0, 0.0, 1045.0, 0.0, -1055.0)),
-
-    ("Infinite limits",
-     POPULATE_AXIS(7.0, 3.0, 20.0, float("inf"), -1.0*float("inf")),
-     POPULATE_AXIS(20.0, 0.0, 20.0, None, None))
-
-])
+TEST_AXIS_CASES = [
+    (
+        "Nonzero homeval nonzero offset",
+        POPULATE_AXIS(7.0, 3.0, 20.0, 50.0, 10.0),
+        POPULATE_AXIS(20.0, 0.0, 20.0, 40.0, 0.0),
+    ),
+    (
+        "Zero homeval nonzero offsets",
+        POPULATE_AXIS(10.0, 5.0, 0.0, 50.0, -10.0),
+        POPULATE_AXIS(0.0, 0.0, 0.0, 65.0, 5.0),
+    ),
+    (
+        "Nonzero homeval zero offsets",
+        POPULATE_AXIS(0.0, 0.0, 1045.0, 1045.0, -10.0),
+        POPULATE_AXIS(1045.0, 0.0, 1045.0, 0.0, -1055.0),
+    ),
+    (
+        "Infinite limits",
+        POPULATE_AXIS(7.0, 3.0, 20.0, float("inf"), -1.0 * float("inf")),
+        POPULATE_AXIS(20.0, 0.0, 20.0, None, None),
+    ),
+]
 
 FLOAT_SETTING = {"Setting": 1.2}
 
@@ -68,46 +79,66 @@ class GalilTests(unittest.TestCase):
     def test_GIVEN_setting_line_with_no_axis_label_THEN_line_gets_added_to_crate_settings(self):
         new_setting = "Setting"
         setting_value = "value"
-        self.galil.parse_line(SETTING_STRING_WITHOUT_AXIS.format(setting=new_setting, value=setting_value))
+        self.galil.parse_line(
+            SETTING_STRING_WITHOUT_AXIS.format(setting=new_setting, value=setting_value)
+        )
 
         self.assertEqual(self.galil.settings[new_setting], setting_value)
 
-    def test_GIVEN_setting_line_with_axis_label_WHEN_that_axis_does_not_exist_THEN_axis_label_extracted_correctly(self):
+    def test_GIVEN_setting_line_with_axis_label_WHEN_that_axis_does_not_exist_THEN_axis_label_extracted_correctly(
+        self,
+    ):
         axis_index = "A"
         new_setting = "Setting"
         setting_value = "value"
-        extracted_axis_letter = self.galil.get_axis_letter_from_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
-                                                                                                     setting=new_setting,
-                                                                                                     value=setting_value))
+        extracted_axis_letter = self.galil.get_axis_letter_from_line(
+            SETTING_STRING_WITH_AXIS.format(
+                axis_index=axis_index, setting=new_setting, value=setting_value
+            )
+        )
 
         self.assertEqual(axis_index, extracted_axis_letter)
 
-    def test_GIVEN_setting_line_with_axis_label_WHEN_that_axis_does_not_exist_THEN_new_axis_is_made(self):
+    def test_GIVEN_setting_line_with_axis_label_WHEN_that_axis_does_not_exist_THEN_new_axis_is_made(
+        self,
+    ):
         axis_index = "A"
         new_setting = "Setting"
         setting_value = "value"
 
         self.assertNotIn(axis_index, self.galil.axes.keys())
 
-        self.galil.parse_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
-                                                                setting=new_setting, value=setting_value))
+        self.galil.parse_line(
+            SETTING_STRING_WITH_AXIS.format(
+                axis_index=axis_index, setting=new_setting, value=setting_value
+            )
+        )
 
         self.assertIn(axis_index, self.galil.axes.keys())
 
-    def test_GIVEN_setting_line_with_axis_label_WHEN_that_axis_does_exist_THEN_setting_gets_added_to_axis(self):
+    def test_GIVEN_setting_line_with_axis_label_WHEN_that_axis_does_exist_THEN_setting_gets_added_to_axis(
+        self,
+    ):
         axis_index = "A"
         new_setting = "Setting"
         setting_value = "value"
-        self.galil.parse_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
-                                                                setting=new_setting, value=setting_value))
+        self.galil.parse_line(
+            SETTING_STRING_WITH_AXIS.format(
+                axis_index=axis_index, setting=new_setting, value=setting_value
+            )
+        )
 
         self.assertEqual(self.galil.axes[axis_index].settings[new_setting], setting_value)
 
-    def test_GIVEN_settings_on_crate_WHEN_save_string_requested_THEN_first_line_is_crate_identifier(self):
+    def test_GIVEN_settings_on_crate_WHEN_save_string_requested_THEN_first_line_is_crate_identifier(
+        self,
+    ):
         galil_save_string = self.galil.get_save_strings()
         self.assertEqual(galil_save_string[0], "[{}]".format(GALIL_CRATE_INDEX))
 
-    def test_GIVEN_settings_on_crate_and_axes_WHEN_save_string_requested_THEN_settings_from_crate_and_axes_are_present(self):
+    def test_GIVEN_settings_on_crate_and_axes_WHEN_save_string_requested_THEN_settings_from_crate_and_axes_are_present(
+        self,
+    ):
         axis_index = "A"
         axis_setting = "Offset"
         axis_setting_value = "12.3"
@@ -123,9 +154,16 @@ class GalilTests(unittest.TestCase):
 
         save_string = self.galil.get_save_strings()
 
-        self.assertIn(SETTING_STRING_WITHOUT_AXIS.format(setting=crate_setting, value=crate_setting_value), save_string)
-        self.assertIn(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index, setting=axis_setting, value=axis_setting_value),
-                      save_string)
+        self.assertIn(
+            SETTING_STRING_WITHOUT_AXIS.format(setting=crate_setting, value=crate_setting_value),
+            save_string,
+        )
+        self.assertIn(
+            SETTING_STRING_WITH_AXIS.format(
+                axis_index=axis_index, setting=axis_setting, value=axis_setting_value
+            ),
+            save_string,
+        )
 
 
 class AxisTests(unittest.TestCase):
@@ -136,35 +174,50 @@ class AxisTests(unittest.TestCase):
     def setUp(self):
         self.axis = Axis("A")
 
-    def test_GIVEN_settings_line_WHEN_line_contains_axis_prefix_THEN_axis_prefix_removed_from_line(self):
+    def test_GIVEN_settings_line_WHEN_line_contains_axis_prefix_THEN_axis_prefix_removed_from_line(
+        self,
+    ):
         axis_index = "A"
         new_setting = "Setting"
         setting_value = "value"
-        parsed_settings_line = self.axis.scrub_axis_prefix(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
-                                                           setting=new_setting, value=setting_value))
+        parsed_settings_line = self.axis.scrub_axis_prefix(
+            SETTING_STRING_WITH_AXIS.format(
+                axis_index=axis_index, setting=new_setting, value=setting_value
+            )
+        )
 
-        self.assertEqual(parsed_settings_line, SETTING_STRING_WITHOUT_AXIS.format(setting=new_setting, value=setting_value))
+        self.assertEqual(
+            parsed_settings_line,
+            SETTING_STRING_WITHOUT_AXIS.format(setting=new_setting, value=setting_value),
+        )
 
     def test_GIVEN_settings_line_THEN_setting_correctly_added_to_axis(self):
         axis_index = "A"
         new_setting = "Setting"
         setting_value = "value"
 
-        self.axis.add_setting_from_ini_line(SETTING_STRING_WITH_AXIS.format(axis_index=axis_index,
-                                            setting=new_setting, value=setting_value))
+        self.axis.add_setting_from_ini_line(
+            SETTING_STRING_WITH_AXIS.format(
+                axis_index=axis_index, setting=new_setting, value=setting_value
+            )
+        )
 
         self.assertEqual(self.axis.settings[new_setting], setting_value)
 
-    @parameterized.expand([
-        ("pos_float", 12.3, float),
-        ("neg_float", -12.3, float),
-        ("pos_inf", float("inf"), float),
-        ("neg_inf", -float("inf"), float),
-        ("pos_int", 123, int),
-        ("neg_int", -123, int),
-        ("string", "string_value", str)
-    ])
-    def test_GIVEN_set_value_exists_WHEN_value_retrieved_THEN_correct_value_returned(self, _, setting_value, caster):
+    @parameterized.expand(
+        [
+            ("pos_float", 12.3, float),
+            ("neg_float", -12.3, float),
+            ("pos_inf", float("inf"), float),
+            ("neg_inf", -float("inf"), float),
+            ("pos_int", 123, int),
+            ("neg_int", -123, int),
+            ("string", "string_value", str),
+        ]
+    )
+    def test_GIVEN_set_value_exists_WHEN_value_retrieved_THEN_correct_value_returned(
+        self, _, setting_value, caster
+    ):
         new_setting = "Setting"
 
         self.axis.settings[new_setting] = setting_value
@@ -205,12 +258,16 @@ class IniParserTests(unittest.TestCase):
     """
 
     @parameterized.expand(TEST_AXIS_CASES)
-    def test_GIVEN_test_case_axis_WHEN_new_limits_calculated_THEN_correct_values_returned(self, _, axis, corrected_axis):
-        new_axis_values = apply_home_shift(axis[common_setting_names["HOMEVAL"]],
-                                           axis[common_setting_names["OFFSET"]],
-                                           axis[common_setting_names["USER_OFFSET"]],
-                                           axis[common_setting_names["HLIM"]],
-                                           axis[common_setting_names["LLIM"]])
+    def test_GIVEN_test_case_axis_WHEN_new_limits_calculated_THEN_correct_values_returned(
+        self, _, axis, corrected_axis
+    ):
+        new_axis_values = apply_home_shift(
+            axis[common_setting_names["HOMEVAL"]],
+            axis[common_setting_names["OFFSET"]],
+            axis[common_setting_names["USER_OFFSET"]],
+            axis[common_setting_names["HLIM"]],
+            axis[common_setting_names["LLIM"]],
+        )
 
         for key in new_axis_values.keys():
             self.assertEqual(corrected_axis[key], new_axis_values[key])

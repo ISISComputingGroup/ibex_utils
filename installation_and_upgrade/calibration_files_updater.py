@@ -2,17 +2,18 @@
 Script to update calibration files on instruments
 """
 
-import git
-import subprocess
+import getpass
 import json
 import logging
 import os
-import getpass
+import subprocess
+
+import git
 from genie_python import genie as g
 from genie_python.utilities import dehex_and_decompress
 from six.moves import input
 
-FNULL = open(os.devnull, 'w')
+FNULL = open(os.devnull, "w")
 
 
 class CalibrationsFolder:
@@ -27,20 +28,38 @@ class CalibrationsFolder:
         """
         Returns: True if disconnect is successful, else False.
         """
-        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', '/del', '/y'],
-                               stdout=FNULL, stderr=FNULL) == 0
+        return (
+            subprocess.call(
+                ["net", "use", f"{CalibrationsFolder.DRIVE_LETTER}:", "/del", "/y"],
+                stdout=FNULL,
+                stderr=FNULL,
+            )
+            == 0
+        )
 
     def connect_to_drive(self):
         """
         Returns: True if the connection is successful, else False
         """
-        return subprocess.call(['net', 'use', f'{CalibrationsFolder.DRIVE_LETTER}:', self.network_location,
-                                f'/user:{self.username_with_domain}', self.password],
-                               stdout=FNULL, stderr=FNULL) == 0
+        return (
+            subprocess.call(
+                [
+                    "net",
+                    "use",
+                    f"{CalibrationsFolder.DRIVE_LETTER}:",
+                    self.network_location,
+                    f"/user:{self.username_with_domain}",
+                    self.password,
+                ],
+                stdout=FNULL,
+                stderr=FNULL,
+            )
+            == 0
+        )
 
     def __init__(self, instrument_host, username, password):
         self.username_with_domain = f"{instrument_host}\\{username}"
-        self.network_location = r'\\{}\c$\Instrument\Settings\config\common'.format(instrument_host)
+        self.network_location = r"\\{}\c$\Instrument\Settings\config\common".format(instrument_host)
         self.password = password
 
     def __enter__(self):
@@ -58,7 +77,7 @@ def get_instrument_hosts():
     """
     Returns: A collection of instrument host names
     """
-    return (inst['hostName'] for inst in json.loads(dehex_and_decompress(g.get_pv("CS:INSTLIST"))))
+    return (inst["hostName"] for inst in json.loads(dehex_and_decompress(g.get_pv("CS:INSTLIST"))))
 
 
 def update_instrument(host, username, password, logger, dry_run=False):
@@ -85,7 +104,9 @@ def update_instrument(host, username, password, logger, dry_run=False):
         elif len(repo.git.diff()) > 0:
             logger.warning(f"The calibrations folder on {host} has uncommitted changes")
         elif dry_run:
-            logger.info(f"{host} has passed all status checks, but not updated as this is a dry run")
+            logger.info(
+                f"{host} has passed all status checks, but not updated as this is a dry run"
+            )
             success = True
         else:
             try:
@@ -100,7 +121,7 @@ def update_instrument(host, username, password, logger, dry_run=False):
 
 if __name__ == "__main__":
     # Set up logging
-    logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)
+    logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s", level=logging.INFO)
     logger = logging.getLogger("main")
 
     # Get user credentials, don't store in the repo
@@ -122,7 +143,12 @@ if __name__ == "__main__":
     failed_instruments = [host for host in results.keys() if not results[host]]
     successful_instruments = [host for host in results.keys() if results[host]]
     if len(successful_instruments) > 0:
-        logger.warning("The following instruments were updated successfully: " + ", ".join(successful_instruments))
+        logger.warning(
+            "The following instruments were updated successfully: "
+            + ", ".join(successful_instruments)
+        )
     if len(failed_instruments) > 0:
-        logger.warning("The following instruments could not be updated. Please do them by hand: " +
-                       ", ".join(failed_instruments))
+        logger.warning(
+            "The following instruments could not be updated. Please do them by hand: "
+            + ", ".join(failed_instruments)
+        )

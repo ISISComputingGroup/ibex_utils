@@ -3,15 +3,22 @@ Filesystem utility classes
 """
 
 import binascii
+import logging
+import msilib
 import os
 import shutil
 import tempfile
 import time
+import zipfile
 import zlib
+from contextlib import contextmanager
+
+import win32api
 from ibex_install_utils.exceptions import UserStop
 from ibex_install_utils.run_process import RunProcess
 
 LABVIEW_DAE_DIR = os.path.join("C:\\", "LabVIEW modules", "DAE")
+
 
 def _winapi_path(dos_path):
     path = os.path.abspath(dos_path)
@@ -24,6 +31,7 @@ def _winapi_path(dos_path):
         win_path = long_path_identifier + path
     return win_path
 
+
 def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None):
     latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
     build_num = None
@@ -35,6 +43,7 @@ def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num
         return os.path.join(build_dir, f"{build_prefix}{build_num}")
     return os.path.join(build_dir, f"{build_prefix}{build_num}", directory_above_build_num)
 
+
 def _get_dir_size(path="."):
     total = 0
     with os.scandir(_winapi_path(path)) as it:
@@ -45,12 +54,14 @@ def _get_dir_size(path="."):
                 total += _get_dir_size(entry.path)
     return total
 
-def get_size(path='.'):
+
+def get_size(path="."):
     wpath = _winapi_path(path)
     if os.path.isfile(wpath):
         return os.path.getsize(wpath)
     elif os.path.isdir(wpath):
         return _get_dir_size(wpath)
+
 
 class FileUtils:
     """
@@ -85,15 +96,36 @@ class FileUtils:
                 if use_robocopy:
                     empty_dir = os.path.join(os.path.dirname(path), "empty_dir_for_robocopy")
                     if os.path.exists(empty_dir):
-                        os.rmdir(empty_dir) # in case left over from previous aborted run
+                        os.rmdir(empty_dir)  # in case left over from previous aborted run
                     os.mkdir(empty_dir)
                     if not os.path.exists(empty_dir):
-                        prompt.prompt_and_raise_if_not_yes(f'Error creating empty dir for robocopy "{empty_dir}". '
-                                                           f'Please do this manually')
+                        prompt.prompt_and_raise_if_not_yes(
+                            f'Error creating empty dir for robocopy "{empty_dir}". '
+                            f"Please do this manually"
+                        )
                     if os.path.isdir(path):
-                        args = [f"{empty_dir}", f"{path}", "/PURGE", "/NJH", "/NJS", "/NP", "/NFL", "/NDL", "/NS", "/NC", "/R:1", "/LOG:NUL"]
+                        args = [
+                            f"{empty_dir}",
+                            f"{path}",
+                            "/PURGE",
+                            "/NJH",
+                            "/NJS",
+                            "/NP",
+                            "/NFL",
+                            "/NDL",
+                            "/NS",
+                            "/NC",
+                            "/R:1",
+                            "/LOG:NUL",
+                        ]
                         try:
-                            RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args, expected_return_codes=[0,1,2]).run()
+                            RunProcess(
+                                working_dir=os.curdir,
+                                executable_file="robocopy",
+                                executable_directory="",
+                                prog_args=args,
+                                expected_return_codes=[0, 1, 2],
+                            ).run()
                         except:
                             pass
                     os.rmdir(empty_dir)
@@ -117,14 +149,35 @@ class FileUtils:
                 break
         else:
             if os.path.exists(path):
-                prompt.prompt_and_raise_if_not_yes(f'Error when deleting "{path}". Please do this manually')
+                prompt.prompt_and_raise_if_not_yes(
+                    f'Error when deleting "{path}". Please do this manually'
+                )
 
     @staticmethod
     def robocopy_move(src, dst, prompt, retries=10):
         for _ in range(retries):
             try:
-                args = [f"{src}", f"{dst}","/E", "/MOV", "/PURGE", "/XJ", "/R:2", "/LOG:NUL", "/NFL", "/NDL", "/NP", "/MT:32"]
-                RunProcess(working_dir=os.curdir, executable_file="robocopy", executable_directory="", prog_args=args, expected_return_codes=[0, 1]).run()
+                args = [
+                    f"{src}",
+                    f"{dst}",
+                    "/E",
+                    "/MOV",
+                    "/PURGE",
+                    "/XJ",
+                    "/R:2",
+                    "/LOG:NUL",
+                    "/NFL",
+                    "/NDL",
+                    "/NP",
+                    "/MT:32",
+                ]
+                RunProcess(
+                    working_dir=os.curdir,
+                    executable_file="robocopy",
+                    executable_directory="",
+                    prog_args=args,
+                    expected_return_codes=[0, 1],
+                ).run()
             except Exception as e:
                 print("Error copying files with robocopy: " + str(e))
 
@@ -181,12 +234,18 @@ class FileUtils:
                 shutil.move(FileUtils.winapi_path(source), FileUtils.winapi_path(destination))
                 break
             except shutil.Error as ex:
-                prompt_message = f"Unable to move '{source}' to '{destination}': {str(ex)}\n Try again?"
+                prompt_message = (
+                    f"Unable to move '{source}' to '{destination}': {str(ex)}\n Try again?"
+                )
                 if prompt.prompt(prompt_message, possibles=["Y", "N"], default="N") != "Y":
                     raise UserStop
-                
+
     @staticmethod
-    def get_latest_directory_path(build_dir, build_prefix, directory_above_build_num=None, ):
+    def get_latest_directory_path(
+        build_dir,
+        build_prefix,
+        directory_above_build_num=None,
+    ):
         latest_build_path = os.path.join(build_dir, "LATEST_BUILD.txt")
         build_num = None
         for line in open(latest_build_path):
@@ -207,9 +266,9 @@ class FileUtils:
                 elif entry.is_dir():
                     total += FileUtils._get_dir_size(entry.path)
         return total
-    
+
     @staticmethod
-    def get_size_and_number_of_files(path='.', ignore=None):
+    def get_size_and_number_of_files(path=".", ignore=None):
         # use copytree to get size of directory
         size_of_dir = 0
         number_of_files = 0
@@ -219,13 +278,18 @@ class FileUtils:
             nonlocal number_of_files
             number_of_files += 1
             size_of_dir += os.path.getsize(FileUtils.winapi_path(src))
-        
+
         temp_dir = tempfile.gettempdir()
         backup_temp_dir = os.path.join(temp_dir, "copy_tree_temp_dir")
-        shutil.copytree(FileUtils.winapi_path(path), FileUtils.winapi_path(backup_temp_dir), ignore=ignore, copy_function=total_up_size, dirs_exist_ok=True)
+        shutil.copytree(
+            FileUtils.winapi_path(path),
+            FileUtils.winapi_path(backup_temp_dir),
+            ignore=ignore,
+            copy_function=total_up_size,
+            dirs_exist_ok=True,
+        )
         return size_of_dir, number_of_files
 
-                
     @staticmethod
     def dehex_and_decompress(value):
         """Decompresses the inputted string, assuming it is in hex encoding.
@@ -236,7 +300,80 @@ class FileUtils:
         Returns:
             bytes : A decompressed version of the inputted string
         """
-        assert type(value) == bytes, \
-            "Non-bytes argument passed to dehex_and_decompress, maybe Python 2/3 compatibility issue\n" \
+        assert type(value) == bytes, (
+            "Non-bytes argument passed to dehex_and_decompress, maybe Python 2/3 compatibility issue\n"
             "Argument was type {} with value {}".format(value.__class__.__name__, value)
+        )
         return zlib.decompress(binascii.unhexlify(value))
+
+
+def get_version(path: str):
+    """Reads the version of a file from file version info.
+
+    Args:
+        path: The path to the file.
+    Returns:
+        The string version (x.x.x.x) on successful read, None otherwise.
+    """
+    version = None
+    try:
+        info = win32api.GetFileVersionInfo(path, "\\")
+        ms = info["FileVersionMS"]
+        ls = info["FileVersionLS"]
+        version = f"{win32api.HIWORD(ms)}.{win32api.LOWORD(ms)}.{win32api.HIWORD(ls)}.{win32api.LOWORD(ls)}"
+    except:
+        logging.exception(f"Can't get file version info of '{path}'")
+    logging.info(f"Read version '{version}' from file info of '{path}'")
+    return version
+
+
+def get_msi_property(path: str, property: str) -> str:
+    """Reads a property from msi metadata database of a file.
+
+    Args:
+        path: The path to the file.
+        property: The property to read.
+    Returns:
+        The string value of the property on successful read, None otherwise.
+    """
+    value = None
+    try:
+        db = msilib.OpenDatabase(path, msilib.MSIDBOPEN_READONLY)
+        view = db.OpenView("SELECT Value FROM Property WHERE Property='" + property + "'")
+        view.Execute(None)
+        result = view.Fetch()
+        value = result.GetString(1)
+    except:
+        logging.exception(f"Can't read property '{property}' from file '{path}'.")
+    logging.info(f"Read value '{value}' for property '{property}' from file '{path}'.")
+    return value
+
+
+@contextmanager
+def file_in_zip(zipname, peek_at_filename: str):
+    """
+    Usage:
+        with file_in_zip(zipname, filename_within_zip) as file:
+            do something
+    """
+    _, file_extension = os.path.splitext(peek_at_filename)
+    try:
+        tmp = tempfile.NamedTemporaryFile(
+            mode="wb", suffix=file_extension, delete=False
+        )  # Manually delete file.
+
+        with zipfile.ZipFile(zipname) as z:
+            with z.open(peek_at_filename) as zf:
+                shutil.copyfileobj(zf, tmp)
+
+        #! Workaround
+        # Wen trying to read file version you get:
+        # 'The specified image file did not contain a resource section.'
+        # unless you close and reopen the file.
+        tmp.close()
+        tmp = open(tmp.name)
+
+        yield tmp
+    finally:
+        tmp.close()
+        os.remove(tmp.name)  # Manually remove temp file

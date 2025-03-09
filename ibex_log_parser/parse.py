@@ -22,12 +22,11 @@ class LogLine:
 
 
 def parse_severe_line(previous_line, line):
-
     # Mar 22, 2017 12:04:24 PM org.epics.pvmanager.SourceDesiredRateDecoupler sendDesiredRateEvent
     pattern = r"(.* (?:AM|PM)).*"
     match = re.match(pattern, previous_line)
-    date_string, = match.groups()
-    date_time = datetime.strptime(date_string, '%b %d, %Y %I:%M:%S %p')
+    (date_string,) = match.groups()
+    date_time = datetime.strptime(date_string, "%b %d, %Y %I:%M:%S %p")
     # SEVERE: Ticket2162: TE:NDW1407:CS:IOC:INSTETC_01:DEVIOS:TOD - PVDirector event connected true
 
     match = re.match(SEVERE_LINE_START + "(.*) - (.*)", line)
@@ -72,7 +71,11 @@ def print_and_log(log_file, message):
 
 def read_log_files(log_file, day, month):
     filedir = r"C:\Instrument\runtime-ibex.product\logs" + "\\" + month
-    filepaths = [os.path.join(filedir, filepath) for filepath in os.listdir(filedir) if month + "-" + day in filepath]
+    filepaths = [
+        os.path.join(filedir, filepath)
+        for filepath in os.listdir(filedir)
+        if month + "-" + day in filepath
+    ]
     filepaths.append(r"C:\Instrument\runtime-ibex.product\logs\isis.log")
 
     pvChanges = []
@@ -116,7 +119,6 @@ def log_events_after_time(log_file, pvChanges, start_time_hour, start_time_mins,
 
 
 def log_flow_control(log_file, pvChanges):
-
     print_and_log(log_file, "Flow control")
     for pvChange in pvChanges:
         if str("flow control") in str(pvChange.message).lower():
@@ -124,7 +126,6 @@ def log_flow_control(log_file, pvChanges):
 
 
 if __name__ == "__main__":
-
     month = "2017-04"
     day = "06"
 
