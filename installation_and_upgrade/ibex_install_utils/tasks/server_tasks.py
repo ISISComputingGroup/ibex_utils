@@ -338,7 +338,7 @@ class ServerTasks(BaseTasks):
             ):
                 self.update_calibrations_repository()
         else:
-            repo_url = "http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git"
+            repo_url = "https://gitlab.stfc.ac.uk/isisexperimentcontrols/common.git"
             location = "C:\Instrument\Settings\config\common"
             RunProcess(
                 working_dir=os.curdir,
