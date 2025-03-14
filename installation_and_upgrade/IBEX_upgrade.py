@@ -114,6 +114,13 @@ if __name__ == "__main__":
         choices=["x64", "x86"],
         help="Server build architecture.",
     )
+    parser.add_argument(
+        "--server_winbuild",
+        dest="server_winbuild",
+        default="win7",
+        choices=["win7", "win10", "win11"],
+        help="Server winbuild.",
+    )
 
     deployment_types = [
         f"{choice}: {deployment_types}" for choice, (_, deployment_types) in UPGRADE_TYPES.items()
@@ -179,13 +186,19 @@ if __name__ == "__main__":
     elif args.kits_icp_dir is not None:
         if args.deployment_type == "install_latest_incr":
             epics_build_dir = os.path.join(
-                args.kits_icp_dir, "EPICS", args.server_build_prefix + "_win7_" + args.server_arch
+                args.kits_icp_dir,
+                "EPICS",
+                args.server_build_prefix + "_" + args.server_winbuild + "_" + args.server_arch,
             )
         else:
             epics_build_dir = os.path.join(
                 args.kits_icp_dir,
                 "EPICS",
-                args.server_build_prefix + "_CLEAN_win7_" + args.server_arch,
+                args.server_build_prefix
+                + "_CLEAN_"
+                + args.server_winbuild
+                + "_"
+                + args.server_arch,
             )
 
         try:

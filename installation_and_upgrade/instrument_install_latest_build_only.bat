@@ -5,6 +5,8 @@ REM  normally will use EPICS_win7_x64 or EPICS_CLEAN_win7_x64 depending on incre
 REM  with prefix specified will use {prefix}_win7_x64 and {prefix}_CLEAN_win7_x64 for server install source directory
 REM argument 3 can be x86 or x64, defaults to x64 if not specified.
 REM  this will change e.g. {prefix}_win7_x64  to {prefix}_win7_x86   as server source directory to use
+REM argument 4 can be server winbuild, defaults to win7 if not specified.
+REM  this will change e.g. {prefix}_win7_x64  to {prefix}_win1_x64   as server source directory to use
 
 setlocal EnableDelayedExpansion
 
@@ -33,6 +35,10 @@ if not "%2" == "" (
 set SERVER_ARCH=x64
 if not "%3" == "" set SERVER_ARCH=%3
 @echo Using server arch %SERVER_ARCH%
+
+set SERVER_WINBUILD=win7
+if not "%4" == "" set SERVER_WINBUILD=%4
+@echo Using server winbuild %SERVER_WINBUILD%
 
 set INSTALL_TYPE=install_latest
 if "%1" == "INCR" (
@@ -72,9 +78,9 @@ if "%1" == "RELEASE" (
     REM set INSTALL_TYPE=instrument_install
     REM set INSTALL_TYPE=training_update
     set INSTALL_TYPE=install_latest
-    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --release_dir "%RELEASE_SOURCE%" --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE!
+    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --release_dir "%RELEASE_SOURCE%" --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE! --server_winbuild %SERVER_WINBUILD%
 ) else (
-    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE!
+    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE! --server_winbuild %SERVER_WINBUILD%
 )
 IF %errorlevel% neq 0 (
     echo Error %errorlevel% returned from IBEX_upgrade script
