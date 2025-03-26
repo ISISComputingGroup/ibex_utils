@@ -12,7 +12,7 @@ WARNING_THRESHOLD_PERCENTAGE = 10
 ERROR_THRESHOLD_PERCENTAGE = 50
 
 
-def request_json(url: str) -> Any:
+def request_json(url: str) -> dict|None:
     """
     Utility function to get Json data from Jenkins.
 
