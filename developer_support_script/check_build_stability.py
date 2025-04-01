@@ -219,7 +219,7 @@ class JobData:
             print(f"{level}: [{percentage_test_failure:.0f}%] {name}")
 
 
-def process_jobs(jobs: list(str), summary_name: str) -> None:
+def process_jobs(jobs: list[str], summary_name: str) -> None:
     first = True
     job_summary = None
     for job in jobs:
