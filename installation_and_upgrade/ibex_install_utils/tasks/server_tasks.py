@@ -338,7 +338,7 @@ class ServerTasks(BaseTasks):
             ):
                 self.update_calibrations_repository()
         else:
-            repo_url = "http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git"
+            repo_url = "https://gitlab.stfc.ac.uk/isisexperimentcontrols/common.git"
             location = "C:\Instrument\Settings\config\common"
             RunProcess(
                 working_dir=os.curdir,
@@ -352,6 +352,12 @@ class ServerTasks(BaseTasks):
         """Update the calibration repository"""
         try:
             repo = git.Repo(CALIBRATION_PATH)
+            print(
+                "If this is the first time using the gitlab calibration files repo, "
+                "you'll be prompted for username and password please enter username "
+                "(required on git-for-windows!) and deploy token - "
+                'see Keeper for this ("Calibrations repository deploy token")'
+            )
             repo.git.pull()
         except git.GitCommandError:
             self.prompt.prompt_and_raise_if_not_yes(

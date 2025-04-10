@@ -2,11 +2,11 @@
 
 ### Calibration Files' Location: 
 
- `http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git`
+ `https://gitlab.stfc.ac.uk/isisexperimentcontrols/common.git`
 
 This repo should be cloned with:
 
- `git clone http://control-svcs.isis.cclrc.ac.uk/gitroot/instconfigs/common.git C:\Instrument\Settings\config\common`
+ `git clone https://gitlab.stfc.ac.uk/isisexperimentcontrols/common.git C:\Instrument\Settings\config\common`
 
 ### Converting Files
 
