@@ -1,12 +1,14 @@
 setlocal EnableDelayedExpansion
 REM Remove old builds from the archive
 
-if "%WORKSPACE%" == "" (
+set "WORKWIN=%WORKSPACE:/=\%"
+
+if "%WORKWIN%" == "" (
     call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat"
 ) else (
-    if exist "%WORKSPACE%\Python3" rd /s /q %WORKSPACE%\Python3
+    if exist "%WORKWIN%\Python3" rd /s /q %WORKWIN%\Python3
     if !errorlevel! neq 0 exit /b 1
-    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat" %WORKSPACE%\Python3
+    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat" %WORKWIN%\Python3
 )
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
