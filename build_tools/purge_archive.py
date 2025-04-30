@@ -3,13 +3,14 @@ import os
 import shutil
 import stat
 from datetime import datetime, timedelta
+from typing import Callable
 
-max_build_age_in_days = 30
-minimum_number_of_builds_to_keep = 10
+max_build_age_in_days = 7
+minimum_number_of_builds_to_keep = 5
 build_area = r"\\isis.cclrc.ac.uk\inst$\kits$\CompGroup\ICP"
 
 
-def winapi_path(dos_path):
+def winapi_path(dos_path: str) -> str:
     path = os.path.abspath(dos_path)
     long_path_identifier = "\\\\?\\"
     if path.startswith(long_path_identifier):
@@ -21,7 +22,7 @@ def winapi_path(dos_path):
     return win_path
 
 
-def rmtree_error(func, path, exc_info):
+def rmtree_error(func: Callable[[str], None], path: str, exc_info: tuple) -> None:
     try:
         if not os.access(path, os.W_OK):
             os.chmod(path, stat.S_IWUSR)
@@ -30,7 +31,7 @@ def rmtree_error(func, path, exc_info):
         print(f"Unable to delete file: {e}")
 
 
-def delete_dir(directory):
+def delete_dir(directory: str) -> None:
     print(f"Deleting directory: {directory}")
     try:
         shutil.rmtree(winapi_path(directory), onerror=rmtree_error)
@@ -38,7 +39,7 @@ def delete_dir(directory):
         print(f"Unable to delete directory {directory}: {e}")
 
 
-def delete_file(file):
+def delete_file(file: str) -> None:
     print(f"Deleting file: {file}")
     try:
         os.remove(winapi_path(file))
@@ -46,17 +47,17 @@ def delete_file(file):
         print(f"Unable to delete file {file}: {e}")
 
 
-def old_enough_to_delete(f):
+def old_enough_to_delete(f: str) -> bool:
     return datetime.now() - datetime.fromtimestamp(os.path.getmtime(f)) > timedelta(
         days=max_build_age_in_days
     )
 
 
-def is_build_dir(d):
+def is_build_dir(d: str) -> bool:
     return os.path.isdir(d) and "BUILD" in os.path.split(d)[-1].upper()
 
 
-def deletion_directories(project_areas):
+def deletion_directories(project_areas: list[str]) -> list[str]:
     dirs = []
     for project_area in project_areas:
         project_dirs = [os.path.join(project_area, sub_dir) for sub_dir in os.listdir(project_area)]
@@ -71,7 +72,7 @@ def deletion_directories(project_areas):
     return dirs
 
 
-def deletion_files(project_areas, pattern):
+def deletion_files(project_areas: list[str], pattern: str) -> list[str]:
     files = []
     for project_area in project_areas:
         files_by_age = sorted(
@@ -87,7 +88,7 @@ def deletion_files(project_areas, pattern):
     return files
 
 
-def purge(dry_run=False):
+def purge(dry_run: bool = False) -> None:
     print("Beginning archive purge...")
     project_areas = [
         os.path.join(build_area, proj)
