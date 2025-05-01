@@ -179,8 +179,18 @@ class BackupTasks(BaseTasks):
 
             dst = self._path_to_backup(src)
 
-            print(f"Attempting to backup {src} to tarfile at {dst}")
-            shutil.make_archive(dst, format="zip", root_dir=src)
+            print(f"Attempting to backup {src} to zipfile at {dst}")
+            with zipfile.ZipFile(
+                dst,
+                "w",
+                compression=zipfile.ZIP_DEFLATED,
+                strict_timestamps=False
+            ) as zf:
+                for src_path, _, src_filenames in os.walk(src):
+                    for src_filename in src_filenames:
+                        path = os.path.normpath(os.path.join(src_path, src_filename))
+                        if os.path.isfile(path):
+                            zf.write(path, os.path.relpath(src, path))
 
             if not copy:
                 print(f"Removing {src} after backup")
