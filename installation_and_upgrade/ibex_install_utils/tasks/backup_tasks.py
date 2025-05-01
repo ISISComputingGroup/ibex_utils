@@ -190,7 +190,7 @@ class BackupTasks(BaseTasks):
                     for src_filename in src_filenames:
                         path = os.path.normpath(os.path.join(src_path, src_filename))
                         if os.path.isfile(path):
-                            zf.write(path, os.path.relpath(src, path))
+                            zf.write(path, os.path.relpath(path, src))
 
             if not copy:
                 print(f"Removing {src} after backup")
