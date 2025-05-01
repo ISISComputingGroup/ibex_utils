@@ -316,6 +316,7 @@ class UpgradeInstrument:
 
     def run_developer_update(self) -> None:
         """Update all the developer tools to latest version"""
+        self._backup_tasks.backup_old_directories()
         self._mysql_tasks.install_mysql(force=False)
         self._system_tasks.check_java_installation()
         self._system_tasks.install_or_upgrade_git()

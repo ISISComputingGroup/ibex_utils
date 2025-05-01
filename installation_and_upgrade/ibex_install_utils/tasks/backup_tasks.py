@@ -1,5 +1,6 @@
 import os
 import shutil
+import zipfile
 from typing import Callable, Tuple
 
 from ibex_install_utils.file_utils import FileUtils
@@ -77,7 +78,7 @@ class BackupTasks(BaseTasks):
                 os.mkdir(BACKUP_DIR)
 
             # move old backups to create space
-            self._move_old_backups_to_share()
+            # self._move_old_backups_to_share()
 
             # Move the folders
             for path in DIRECTORIES_TO_BACKUP:
@@ -172,30 +173,18 @@ class BackupTasks(BaseTasks):
             # Optimistic start
             print(f"\nPreparing to back up {src} ...")
 
+            # Files will compress slightly, but close enough as a pessimistic estimate
             _, number_of_files = self._check_backup_space(src, ignore=ignore)
             self.progress_bar.reset(total=number_of_files)
 
             dst = self._path_to_backup(src)
 
-            print("Attempting to " + ("copy" if copy else "move") + f" {src} to {dst}")
+            print(f"Attempting to backup {src} to tarfile at {dst}")
+            shutil.make_archive(dst, format="zip", root_dir=src)
 
-            def copy_function(src: str, dst: str) -> None:
-                """Just a copy or move operation that also updates the progress bar."""
-                if copy:
-                    shutil.copy2(src, dst)
-                else:
-                    shutil.move(src, dst)
-
-                self.progress_bar.progress += 1
-                self.progress_bar.print()
-
-            # Actual backup step
-            shutil.copytree(
-                FileUtils.winapi_path(src),
-                FileUtils.winapi_path(dst),
-                ignore=ignore,
-                copy_function=copy_function,
-            )
+            if not copy:
+                print(f"Removing {src} after backup")
+                # shutil.rmtree(src)
 
         except FileNotFoundError:
             # Source file is not present
