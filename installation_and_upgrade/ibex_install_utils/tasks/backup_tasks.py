@@ -78,7 +78,7 @@ class BackupTasks(BaseTasks):
                 os.mkdir(BACKUP_DIR)
 
             # move old backups to create space
-            # self._move_old_backups_to_share()
+            self._move_old_backups_to_share()
 
             # Move the folders
             for path in DIRECTORIES_TO_BACKUP:
@@ -181,11 +181,7 @@ class BackupTasks(BaseTasks):
 
             print(f"Attempting to backup {src} to zipfile at {dst}")
             with zipfile.ZipFile(
-                dst,
-                "w",
-                compression=zipfile.ZIP_DEFLATED,
-                compresslevel=1,
-                strict_timestamps=False
+                dst, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1, strict_timestamps=False
             ) as zf:
                 for src_path, dirs, src_filenames in os.walk(src, topdown=True):
                     if ignore is not None:
@@ -205,7 +201,7 @@ class BackupTasks(BaseTasks):
 
             if not copy:
                 print(f"Removing {src} after backup")
-                # shutil.rmtree(src)
+                shutil.rmtree(src)
 
         except FileNotFoundError:
             # Source file is not present
