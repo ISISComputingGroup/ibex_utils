@@ -188,8 +188,13 @@ class BackupTasks(BaseTasks):
                 strict_timestamps=False
             ) as zf:
                 for src_path, dirs, src_filenames in os.walk(src, topdown=True):
-                    excluded_files = ignore(src_path, src_filenames)
-                    excluded_dirs = ignore(src_path, dirs)
+                    if ignore is not None:
+                        excluded_files = ignore(src_path, src_filenames)
+                        excluded_dirs = ignore(src_path, dirs)
+                    else:
+                        excluded_files = []
+                        excluded_dirs = []
+
                     dirs[:] = [d for d in dirs if d not in excluded_dirs]
                     for src_filename in src_filenames:
                         path = os.path.normpath(os.path.join(src_path, src_filename))
