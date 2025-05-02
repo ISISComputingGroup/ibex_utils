@@ -177,7 +177,7 @@ class BackupTasks(BaseTasks):
             _, number_of_files = self._check_backup_space(src, ignore=ignore)
             self.progress_bar.reset(total=number_of_files)
 
-            dst = self._path_to_backup(src)
+            dst = self._path_to_backup(src) + ".zip"
 
             print(f"Attempting to backup {src} to zipfile at {dst}")
             with zipfile.ZipFile(
@@ -188,6 +188,8 @@ class BackupTasks(BaseTasks):
             ) as zf:
                 for src_path, _, src_filenames in os.walk(src):
                     for src_filename in src_filenames:
+                        self.progress_bar.progress += 1
+                        self.progress_bar.print()
                         path = os.path.normpath(os.path.join(src_path, src_filename))
                         if os.path.isfile(path):
                             zf.write(path, os.path.relpath(path, src))
