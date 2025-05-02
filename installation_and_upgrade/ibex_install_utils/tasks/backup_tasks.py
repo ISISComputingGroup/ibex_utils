@@ -188,11 +188,12 @@ class BackupTasks(BaseTasks):
                 strict_timestamps=False
             ) as zf:
                 for src_path, dirs, src_filenames in os.walk(src, topdown=True):
-                    excluded = ignore(src_path, src_filenames)
-                    dirs[:] = [d for d in dirs if d not in excluded]
+                    excluded_files = ignore(src_path, src_filenames)
+                    excluded_dirs = ignore(src_path, dirs)
+                    dirs[:] = [d for d in dirs if d not in excluded_dirs]
                     for src_filename in src_filenames:
                         path = os.path.normpath(os.path.join(src_path, src_filename))
-                        if os.path.isfile(path):
+                        if os.path.isfile(path) and src_filename not in excluded_files:
                             self.progress_bar.progress += 1
                             self.progress_bar.print()
                             zf.write(path, os.path.relpath(path, src))
