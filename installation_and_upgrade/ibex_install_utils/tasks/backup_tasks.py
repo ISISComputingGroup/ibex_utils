@@ -184,6 +184,7 @@ class BackupTasks(BaseTasks):
                 dst,
                 "w",
                 compression=zipfile.ZIP_DEFLATED,
+                compresslevel=1,
                 strict_timestamps=False
             ) as zf:
                 for src_path, _, src_filenames in os.walk(src):
