@@ -92,7 +92,7 @@ def purge(dry_run: bool = False) -> None:
     print("Beginning archive purge...")
     project_areas = [
         os.path.join(build_area, proj)
-        for proj in ("Client_E4", "script_generator", "genie_python_3", "VHDS")
+        for proj in ("Client_E4", "Client_E4_win11", "script_generator", "genie_python_3", "VHDS")
     ] + [
         os.path.join(build_area, "EPICS", proj)
         for proj in os.listdir(os.path.join(build_area, "EPICS"))
