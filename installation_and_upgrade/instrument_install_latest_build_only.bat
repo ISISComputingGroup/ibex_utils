@@ -56,7 +56,7 @@ if exist "%GENIECMDLOGDIR%\%GENIECMDLOGFILE%" (
 	robocopy "%GENIECMDLOGDIR%" "%TEMP%" "%GENIECMDLOGFILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
 )
 
-REM Create the "GALIL_OLD.txt" or "GALIL_NEX.txt" file in tmp dir
+REM Create the "GALIL_OLD.txt" or "GALIL_NEW.txt" file in tmp dir
 REM to inform the IBEX Server installation step which Galil version to use
 set "GALIL_OLD_FILE=GALIL_OLD.txt"
 set "GALIL_NEW_FILE=GALIL_NEW.txt"
@@ -65,13 +65,21 @@ set "GALIL_OLD_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL-OLD"
 if exist "%TEMP%\%GALIL_OLD_FILE%" del "%TEMP%\%GALIL_OLD_FILE%"
 if exist "%TEMP%\%GALIL_NEW_FILE%" del "%TEMP%\%GALIL_NEW_FILE%"
 if exist "%GALIL_DIR%\%GALIL_OLD_FILE%" (
-	@echo Detected old Galil driver
-	robocopy "%GALIL_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+    @echo Detected old Galil driver - %GALIL_OLD_FILE% in %GALIL_DIR%
+    robocopy "%GALIL_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+    set "DETECT_OLD_GALIL=YES"
 )
 if exist "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" (
     REM GALIL-OLD has not been renamed to GALIL hence we must be using new driver
-	@echo Detected new Galil driver
-	copy /y "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" "%TEMP%\%GALIL_NEW_FILE%"
+    @echo Detected new Galil driver - %GALIL_OLD_FILE% in %GALIL_OLD_DIR%
+    copy /y "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" "%TEMP%\%GALIL_NEW_FILE%"
+    set "DETECT_NEW_GALIL=YES"
+)
+if "%DETECT_OLD_GALIL%" == "YES" (
+    if "%DETECT_NEW_GALIL%" == "YES" (
+        @echo ERROR - both NEW and OLD GALIL driver appear enabled, this should not be possible
+        exit /b 1
+    )
 )
 
 if "%1" == "RELEASE" (
