@@ -8,36 +8,11 @@ from typing import Any, Generator
 class AdminRunner:
     @staticmethod
     def run_command(command: str, parameters: str, expected_return_val: int | None = 0) -> None:
-        try:
-            import win32api
-            import win32con
-            import win32event
-            import win32process
-            from win32com.shell import shellcon
-            from win32com.shell.shell import ShellExecuteEx
-        except ImportError:
-            raise OSError("Can only elevate privileges on windows")
-
-        print(f"Running command: '{command} {parameters}' as administrator")
-
-        process_info = ShellExecuteEx(
-            nShow=win32con.SW_HIDE,
-            fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
-            lpVerb="runas",
-            lpFile=command,
-            lpParameters=parameters,
+        input(
+            f"Manually run command: '{command} {parameters}' as administrator. "
+            f"Press enter to confirm command listed above ran successfully in an admin prompt. "
+            f"It should exit with status code {expected_return_val}"
         )
-        ret = None
-        try:
-            win32event.WaitForSingleObject(process_info["hProcess"], 600000)
-            ret = win32process.GetExitCodeProcess(process_info["hProcess"])
-            win32api.CloseHandle(process_info["hProcess"])
-        except Exception as e:
-            print(e)
-            raise IOError("Process not created")
-
-        if ret != expected_return_val:
-            raise IOError(f"Process returned {ret} (expected {expected_return_val})")
 
 
 class AdminCommandBuilder:
