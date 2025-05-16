@@ -25,7 +25,7 @@ if !errorlevel! equ 0 (
     set MYDIR=!CD!
     for /d %%i in ( !MYDIR!\Client_E4 !MYDIR!\genie_python_3 !MYDIR!\script_generator !MYDIR!\Client_E4_win11 ) do (
         if exist "%%i\branches" (
-            forfiles /p "%%i\branches" /d -60 /c "cmd /c del /q /s @path >NUL"
+            forfiles /p "%%i\branches" /d -60 /c "cmd /c rd /q /s @path >NUL"
         )
     )
 )
