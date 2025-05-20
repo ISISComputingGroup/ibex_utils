@@ -1,12 +1,14 @@
 setlocal EnableDelayedExpansion
 REM Remove old builds from the archive
 
-if "%WORKSPACE%" == "" (
+set "WORKWIN=%WORKSPACE:/=\%"
+
+if "%WORKWIN%" == "" (
     call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat"
 ) else (
-    if exist "%WORKSPACE%\Python3" rd /s /q %WORKSPACE%\Python3
+    if exist "%WORKWIN%\Python3" rd /s /q %WORKWIN%\Python3
     if !errorlevel! neq 0 exit /b 1
-    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat" %WORKSPACE%\Python3
+    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat" %WORKWIN%\Python3
 )
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
@@ -15,12 +17,27 @@ REM use LATEST_PYTHON3 to avoid process being killed
 "%LATEST_PYTHON3%" -u "%~dp0purge_archive.py"
 set errcode=!errorlevel!
 @echo purge_archive.py exited with code !errcode!
+
+@echo Deleting build branches directories
+set "KITROOT=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"
+pushd %KITROOT%
+if !errorlevel! equ 0 (
+    set MYDIR=!CD!
+    for /d %%i in ( !MYDIR!\Client_E4 !MYDIR!\genie_python_3 !MYDIR!\script_generator !MYDIR!\Client_E4_win11 ) do (
+        if exist "%%i\branches" (
+            forfiles /p "%%i\branches" /d -60 /c "cmd /c rd /q /s @path >NUL"
+        )
+    )
+)
+popd
+
 for /F "skip=1" %%I in ('wmic path win32_localtime get dayofweek') do (set /a DOW=%%I 2>NUL)
 if %DOW% neq 6 (
     @echo Skipping debug symbol cleanup as day of week %DOW% is not 6
     CALL "%~dp0..\installation_and_upgrade\remove_genie_python.bat" %LATEST_PYTHON_DIR%
     exit /b !errcode!
 )
+
 REM Remove old debug symbols from the archive
 set "AGESTORE=c:\Program Files (x86)\Windows Kits\10\Debuggers\x64\agestore.exe"
 set "KITROOT=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"

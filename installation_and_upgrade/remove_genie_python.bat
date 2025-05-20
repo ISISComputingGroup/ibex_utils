@@ -14,7 +14,7 @@ if exist "%remove_genie_python_path%" (
     echo.%remove_genie_python_path% | findstr /C:"Python_Build_">nul && (
 
         REM if caRepeater is running we can't remove directory
-        del /f "%remove_genie_python_path%\CaRepeater.exe"
+        del /f "%remove_genie_python_path%\CaRepeater.exe" >NUL 2>&1
         if exist "%remove_genie_python_path%\CaRepeater.exe" taskkill /f /im CaRepeater.exe
 
         REM Deletes directory tree + quiet.

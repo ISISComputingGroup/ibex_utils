@@ -1,5 +1,6 @@
 import os
 import shutil
+import zipfile
 from typing import Callable, Tuple
 
 from ibex_install_utils.file_utils import FileUtils
@@ -172,30 +173,35 @@ class BackupTasks(BaseTasks):
             # Optimistic start
             print(f"\nPreparing to back up {src} ...")
 
+            # Files will compress slightly, but close enough as a pessimistic estimate
             _, number_of_files = self._check_backup_space(src, ignore=ignore)
             self.progress_bar.reset(total=number_of_files)
 
-            dst = self._path_to_backup(src)
+            dst = self._path_to_backup(src) + ".zip"
 
-            print("Attempting to " + ("copy" if copy else "move") + f" {src} to {dst}")
+            print(f"Attempting to backup {src} to zipfile at {dst}")
+            with zipfile.ZipFile(
+                dst, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1, strict_timestamps=False
+            ) as zf:
+                for src_path, dirs, src_filenames in os.walk(src, topdown=True):
+                    if ignore is not None:
+                        excluded_files = ignore(src_path, src_filenames)
+                        excluded_dirs = ignore(src_path, dirs)
+                    else:
+                        excluded_files = []
+                        excluded_dirs = []
 
-            def copy_function(src: str, dst: str) -> None:
-                """Just a copy or move operation that also updates the progress bar."""
-                if copy:
-                    shutil.copy2(src, dst)
-                else:
-                    shutil.move(src, dst)
+                    dirs[:] = [d for d in dirs if d not in excluded_dirs]
+                    for src_filename in src_filenames:
+                        path = os.path.normpath(os.path.join(src_path, src_filename))
+                        if os.path.isfile(path) and src_filename not in excluded_files:
+                            self.progress_bar.progress += 1
+                            self.progress_bar.print()
+                            zf.write(path, os.path.relpath(path, src))
 
-                self.progress_bar.progress += 1
-                self.progress_bar.print()
-
-            # Actual backup step
-            shutil.copytree(
-                FileUtils.winapi_path(src),
-                FileUtils.winapi_path(dst),
-                ignore=ignore,
-                copy_function=copy_function,
-            )
+            if not copy:
+                print(f"Removing {src} after backup")
+                shutil.rmtree(src)
 
         except FileNotFoundError:
             # Source file is not present
