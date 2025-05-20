@@ -1,9 +1,14 @@
+import os
 import re
 import subprocess
 
+import git
+
+from ibex_install_utils.exceptions import ErrorInTask
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import EPICS_PATH
+from ibex_install_utils.tasks.common_paths import EPICS_PATH, SETTINGS_CONFIG_PATH
+from ibex_install_utils.user_prompt import UserPrompt
 
 
 class GitTasks(BaseTasks):
@@ -86,3 +91,85 @@ class GitTasks(BaseTasks):
         except subprocess.CalledProcessError as e:
             print(f"Error checking out to new release branch and push: {e}")
             print("Branch may previously exist either locally or remotely - intervention required")
+
+    # something for the future in case creating new branch fails
+    # maybe one exists we want to use?
+    #    try:
+    #        subprocess.check_call(f"cd {EPICS_PATH} && git checkout %COMPUTERNAME%",
+    #                              shell=True)
+    #        print("Switched to existing release branch")
+    #    except subprocess.CalledProcessError as e:
+    #        print(f"Error switching to existing release branch and push: {e}")
+
+    # Method to check that the machine name matches a git branch
+    def inst_name_matches_branch(self) -> None:
+        repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name()))
+        if repo.active_branch.name != BaseTasks._get_machine_name():
+            print(
+                f"Git branch, '{repo.active_branch}', is not the same as machine name ,"
+                f"'{BaseTasks._get_machine_name()}' "
+            )
+            raise ErrorInTask("Git branch is not the same as machine name")
+
+    @task("Attempt automatic merge of one branch into another")
+    def automatic_merge_of_git_remote(
+        self, branch_to_merge_from: str, branch_to_merge_to: str, dir: str
+    ) -> None:
+        f"""
+        Attempt an automatic merge of one branch
+           {branch_to_merge_from} to another, {branch_to_merge_to} in {dir}
+        """
+        manual_prompt = (
+            f"Merge the {branch_to_merge_from} branch into the {branch_to_merge_to} branch. "
+            f"From {dir} run:\n"
+            "    0. Clean up any in progress merge (e.g. git merge --abort)\n"
+            f"    1. git checkout {branch_to_merge_from}\n"
+            "    2. git pull\n"
+            f"    3. git checkout {branch_to_merge_to}\n"
+            f"    4. git merge {branch_to_merge_from}\n"
+            "    5. Resolve any merge conflicts\n"
+            "    6. git push\n"
+        )
+
+        automatic_prompt = "Attempt automatic merge?"
+        repo = git.Repo(dir)
+        if self.prompt.confirm_step(automatic_prompt):
+            try:
+                try:
+                    subprocess.check_call(f"cd /d {dir}", shell=True)
+                    print(f"     cd: {dir}")
+                    print(f"     checkout: {repo.git.checkout(f'{branch_to_merge_to}')}")
+                    print(f"     fetch: {repo.git.fetch()}")
+                    print(f"     merge: {repo.git.merge(f'{branch_to_merge_from}')}")
+                except git.GitCommandError as e:
+                    # do gc and prune to remove issues with stale references
+                    # this does a pack that takes a while, hence not do every time
+                    print(f"Retrying git operations after a prune due to {e}")
+                    print(f"        gc: {repo.git.gc(prune='now')}")
+                    print(f"     prune: {repo.git.remote('prune', 'origin')}")
+                    print(f"     fetch: {repo.git.fetch()}")
+                    print(f"     merge: {repo.git.merge(f'{branch_to_merge_from}')}")
+                    # no longer push let the instrument do that on start up if needed
+            except git.GitCommandError as e:
+                print(f"Error doing automatic merge, please perform the merge manually: {e}")
+                self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
+        else:
+            self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
+
+
+if __name__ == "__main__":
+    """For running task standalone
+    Must be called with pythonpath set to `<exact path on your pc>/installation_and_upgrade`
+    as that is the root of this module and all our imports work that way.
+
+    This effectively means to call 
+          `set PYTHONPATH=. && python ibex_install_utils/tasks/backup_tasks.py`
+    from the installation_and_upgrade directory in terminal.
+    """
+    print("")
+
+    #! Copying older backups to share will likely fail on developer machines
+    prompt = UserPrompt(False, True)
+
+    git_instance = GitTasks(prompt, "", "", "", "")
+    git_instance.automatic_merge_of_git_remote("branch1", "branch2", "C:/test")
