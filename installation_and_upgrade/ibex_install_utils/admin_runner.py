@@ -55,6 +55,10 @@ class AdminRunner:
     @classmethod
     def _run_command_ssh(cls, command: str, parameters: str) -> int:
         cls._auth_ssh()
+
+        assert cls._ssh_user is not None
+        assert cls._ssh_password is not None
+
         out = subprocess.run(
             [
                 PLINK,
