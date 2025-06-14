@@ -32,6 +32,10 @@ class AdminRunner:
             while True:
                 cls._ssh_user = input("Enter admin username (without domain): ")
                 cls._ssh_password = getpass.getpass("Enter admin password: ")
+
+                assert cls._ssh_user is not None
+                assert cls._ssh_password is not None
+
                 test_output = subprocess.run(
                     [
                         PLINK,
