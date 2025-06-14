@@ -1,43 +1,88 @@
 import contextlib
+import getpass
 import os
+import socket
+import subprocess
 import tempfile
 from time import sleep
 from typing import Any, Generator
 
+# Plink is an SSH binary bundled with putty.
+# Use Plink as it allows passwords on the command-line, as opposed to
+# windows-bundled SSH which does not.
+PLINK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plink.exe")
+SSH_HOST = "localhost"
+
+
+def ssh_available():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((SSH_HOST, 22))
+    sock.close()
+    return result == 0
+
 
 class AdminRunner:
-    @staticmethod
-    def run_command(command: str, parameters: str, expected_return_val: int | None = 0) -> None:
-        try:
-            import win32api
-            import win32con
-            import win32event
-            import win32process
-            from win32com.shell import shellcon
-            from win32com.shell.shell import ShellExecuteEx
-        except ImportError:
-            raise OSError("Can only elevate privileges on windows")
+    _ssh_user = None
+    _ssh_password = None
+    _ssh_authenticated = False
 
-        print(f"Running command: '{command} {parameters}' as administrator")
+    @classmethod
+    def _auth_ssh(cls):
+        if not cls._ssh_authenticated:
+            while True:
+                cls._ssh_user = input("Enter admin username (without domain): ")
+                cls._ssh_password = getpass.getpass("Enter admin password: ")
+                test_output = subprocess.run(
+                    [
+                        PLINK,
+                        "-ssh",
+                        "-batch",
+                        "-pw",
+                        cls._ssh_password,
+                        f"{cls._ssh_user}@{SSH_HOST}",
+                        "net session",  # Will only work if auth worked and admin rights are granted.
+                    ],
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                )
+                if test_output.returncode == 0:
+                    cls._ssh_authenticated = True
+                    break
+                print("SSH credentials were incorrect. Try again.")
 
-        process_info = ShellExecuteEx(
-            nShow=win32con.SW_HIDE,
-            fMask=shellcon.SEE_MASK_NOCLOSEPROCESS,
-            lpVerb="runas",
-            lpFile=command,
-            lpParameters=parameters,
+    @classmethod
+    def _run_command_ssh(cls, command: str, parameters: str) -> int:
+        cls._auth_ssh()
+        out = subprocess.run(
+            [
+                PLINK,
+                "-ssh",
+                "-batch",
+                "-pw",
+                cls._ssh_password,
+                f"{cls._ssh_user}@{SSH_HOST}",
+                f"{command} {parameters}",
+            ],
+            shell=True,
         )
-        ret = None
-        try:
-            win32event.WaitForSingleObject(process_info["hProcess"], 600000)
-            ret = win32process.GetExitCodeProcess(process_info["hProcess"])
-            win32api.CloseHandle(process_info["hProcess"])
-        except Exception as e:
-            print(e)
-            raise IOError("Process not created")
+        return out.returncode
 
-        if ret != expected_return_val:
-            raise IOError(f"Process returned {ret} (expected {expected_return_val})")
+    @classmethod
+    def run_command(
+        cls, command: str, parameters: str, expected_return_val: int | None = 0
+    ) -> None:
+        if ssh_available():
+            return_value = cls._run_command_ssh(command, parameters)
+            if return_value != expected_return_val:
+                raise ValueError(
+                    f"Command failed; expected return value {expected_return_val}, got {return_value}"
+                )
+        else:
+            input(
+                f"Manually run in an admin terminal:\n\n{command} {parameters}\n\nPress enter when done. "
+                f"Return value should be {expected_return_val}."
+            )
 
 
 class AdminCommandBuilder:
@@ -97,3 +142,11 @@ def temp_bat_file(contents: str) -> Generator[str, None, Any]:
         yield f.name
     finally:
         os.remove(f.name)
+
+
+if __name__ == "__main__":
+    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
+    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
+    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
+    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
+    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
