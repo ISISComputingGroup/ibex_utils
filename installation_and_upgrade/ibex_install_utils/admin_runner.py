@@ -14,7 +14,7 @@ PLINK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plink.exe")
 SSH_HOST = "localhost"
 
 
-def ssh_available():
+def ssh_available() -> bool:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     result = sock.connect_ex((SSH_HOST, 22))
     sock.close()
@@ -27,7 +27,7 @@ class AdminRunner:
     _ssh_authenticated = False
 
     @classmethod
-    def _auth_ssh(cls):
+    def _auth_ssh(cls) -> None:
         if not cls._ssh_authenticated:
             while True:
                 cls._ssh_user = input("Enter admin username (without domain): ")
@@ -36,15 +36,12 @@ class AdminRunner:
                     [
                         PLINK,
                         "-ssh",
-                        "-batch",
                         "-pw",
                         cls._ssh_password,
                         f"{cls._ssh_user}@{SSH_HOST}",
-                        "net session",  # Will only work if auth worked and admin rights are granted.
+                        "net session",  # Will only work if got admin rights
                     ],
                     shell=True,
-                    capture_output=True,
-                    text=True,
                 )
                 if test_output.returncode == 0:
                     cls._ssh_authenticated = True
@@ -76,11 +73,13 @@ class AdminRunner:
             return_value = cls._run_command_ssh(command, parameters)
             if return_value != expected_return_val:
                 raise ValueError(
-                    f"Command failed; expected return value {expected_return_val}, got {return_value}"
+                    f"Command failed; expected return "
+                    f"value {expected_return_val}, got {return_value}"
                 )
         else:
             input(
-                f"Manually run in an admin terminal:\n\n{command} {parameters}\n\nPress enter when done. "
+                f"Manually run in an admin terminal:\n\n{command} {parameters}\n\n"
+                f"Press enter when done. "
                 f"Return value should be {expected_return_val}."
             )
 
@@ -142,11 +141,3 @@ def temp_bat_file(contents: str) -> Generator[str, None, Any]:
         yield f.name
     finally:
         os.remove(f.name)
-
-
-if __name__ == "__main__":
-    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
-    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
-    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
-    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
-    AdminRunner().run_command("ping", "ndw2922", expected_return_val=0)
