@@ -1,3 +1,5 @@
+REM instrument_deploy.bat - used for Upgrading IBEX to the latest version
+
 setlocal EnableDelayedExpansion
 
 REM check if console has Administrative privileges
@@ -25,23 +27,19 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+call "%~dp0install_or_update_uv.bat"
+if %errorlevel% neq 0 goto ERROR
+
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 
 IF EXIST "C:\Instrument\Apps\EPICS" (
-  REM use python 3 for pre stop as requires genie
-  SETLOCAL
-  call "%~dp0define_latest_genie_python.bat"
-  IF !errorlevel! neq 0 exit /b !errorlevel!
-  if not exist "!LATEST_PYTHON!" (
-      @echo Cannot find python on network share
-      goto ERROR
-  )
-  call C:\Instrument\Apps\EPICS\config_env.bat
-  set "PYTHONDIR=%LATEST_PYTHON_DIR%"
-  set "PYTHONHOME=%LATEST_PYTHON_DIR%"
-  set "PYTHONPATH=%LATEST_PYTHON_DIR%"
-  call "!LATEST_PYTHON!" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_pre_stop
+  REM TODO is this just for EPICS_CA_ADDR_LIST?
+@REM   call C:\Instrument\Apps\EPICS\config_env.bat
+  set EPICS_CA_AUTO_ADDR_LIST=NO
+  set EPICS_CA_ADDR_LIST=127.255.255.255
+
+  call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_pre_stop
   IF !errorlevel! neq 0 exit /b !errorlevel!
   start /wait cmd /c "%STOP_IBEX%"
   ENDLOCAL
@@ -83,37 +81,17 @@ if "%DETECT_OLD_GALIL%" == "YES" (
     )
 )
 
-REM Set python as share just for script call
-call "%~dp0define_latest_genie_python.bat"
-IF %errorlevel% neq 0 exit /b %errorlevel%
-if not exist "%LATEST_PYTHON%" (
-    @echo Cannot install python from network share
-    goto ERROR
-)
-
-SETLOCAL
-set "PYTHONDIR=%LATEST_PYTHON_DIR%"
-set "PYTHONHOME=%LATEST_PYTHON_DIR%"
-set "PYTHONPATH=%LATEST_PYTHON_DIR%"
-
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_main 
+call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_main
 IF %errorlevel% neq 0 exit /b %errorlevel%
 ENDLOCAL
 
 start /i /wait cmd /c "%START_IBEX%"
 
-REM python should be installed correctly at this point, so use local python
-set "LATEST_PYTHON_DIR=C:\Instrument\Apps\Python3\"
-set "LATEST_PYTHON=%LATEST_PYTHON_DIR%python.exe"
-set "PYTHONDIR=%LATEST_PYTHON_DIR%"
-set "PYTHONHOME=%LATEST_PYTHON_DIR%"
-set "PYTHONPATH=%LATEST_PYTHON_DIR%"
-
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_post_start
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_post_start
+call rmdir /s /q %UV_TEMP_VENV%
 
 exit /b 0
 
 :ERROR
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 EXIT /b 1
