@@ -1,18 +1,95 @@
 import contextlib
+import getpass
 import os
+import socket
+import subprocess
 import tempfile
 from time import sleep
 from typing import Any, Generator
 
+# Plink is an SSH binary bundled with putty.
+# Use Plink as it allows passwords on the command-line, as opposed to
+# windows-bundled SSH which does not.
+PLINK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plink.exe")
+SSH_HOST = "localhost"
+
+
+def ssh_available() -> bool:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((SSH_HOST, 22))
+    sock.close()
+    return result == 0
+
 
 class AdminRunner:
-    @staticmethod
-    def run_command(command: str, parameters: str, expected_return_val: int | None = 0) -> None:
-        input(
-            f"Manually run command: '{command} {parameters}' as administrator. "
-            f"Press enter to confirm command listed above ran successfully in an admin prompt. "
-            f"It should exit with status code {expected_return_val}"
+    _ssh_user = None
+    _ssh_password = None
+    _ssh_authenticated = False
+
+    @classmethod
+    def _auth_ssh(cls) -> None:
+        if not cls._ssh_authenticated:
+            while True:
+                cls._ssh_user = input("Enter admin username (without domain): ")
+                cls._ssh_password = getpass.getpass("Enter admin password: ")
+
+                assert cls._ssh_user is not None
+                assert cls._ssh_password is not None
+
+                test_output = subprocess.run(
+                    [
+                        PLINK,
+                        "-ssh",
+                        "-pw",
+                        cls._ssh_password,
+                        f"{cls._ssh_user}@{SSH_HOST}",
+                        "net session",  # Will only work if got admin rights
+                    ],
+                    shell=True,
+                )
+                if test_output.returncode == 0:
+                    cls._ssh_authenticated = True
+                    break
+                print("SSH credentials were incorrect. Try again.")
+
+    @classmethod
+    def _run_command_ssh(cls, command: str, parameters: str) -> int:
+        cls._auth_ssh()
+
+        assert cls._ssh_user is not None
+        assert cls._ssh_password is not None
+
+        out = subprocess.run(
+            [
+                PLINK,
+                "-ssh",
+                "-batch",
+                "-pw",
+                cls._ssh_password,
+                f"{cls._ssh_user}@{SSH_HOST}",
+                f"{command} {parameters}",
+            ],
+            shell=True,
         )
+        return out.returncode
+
+    @classmethod
+    def run_command(
+        cls, command: str, parameters: str, expected_return_val: int | None = 0
+    ) -> None:
+        if ssh_available():
+            return_value = cls._run_command_ssh(command, parameters)
+            if return_value != expected_return_val:
+                raise ValueError(
+                    f"Command failed; expected return "
+                    f"value {expected_return_val}, got {return_value}"
+                )
+        else:
+            input(
+                f"Manually run in an admin terminal:\n\n{command} {parameters}\n\n"
+                f"Press enter when done. "
+                f"Return value should be {expected_return_val}."
+            )
 
 
 class AdminCommandBuilder:
