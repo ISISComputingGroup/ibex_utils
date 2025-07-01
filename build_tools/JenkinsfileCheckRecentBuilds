@@ -22,9 +22,11 @@ pipeline {
 
         stage("Check Instrument Scripts") {
             steps {
+              timeout(time: 1, unit: 'HOURS') {
                 bat """
                     call build_tools/check_builds_are_recent.bat
                 """
+              }
             }
         }
     }
