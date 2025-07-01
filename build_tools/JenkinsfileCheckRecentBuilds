@@ -12,11 +12,19 @@ pipeline {
         cron('H 1 * * *')
     }
 
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        // as we "checkout scm" with lock as a stage, we do not want to do it here
+        skipDefaultCheckout(true)
+    }
     stages {  
 
         stage("Checkout") {
             steps {
+              timeout(time: 1, unit: 'HOURS') {
                 checkout scm
+              }
             }
         }
 
