@@ -1,3 +1,5 @@
+REM instrument_install.bat - used for installing IBEX for the first time on an instrument PC. 
+
 setlocal EnableDelayedExpansion
 
 REM check if console has Administrative privileges
