@@ -1,3 +1,5 @@
+REM instrument_deploy.bat - used for upgrading IBEX on an instrument PC. 
+
 setlocal EnableDelayedExpansion
 
 REM check if console has Administrative privileges
