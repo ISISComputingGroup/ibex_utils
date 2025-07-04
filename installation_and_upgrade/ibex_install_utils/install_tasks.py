@@ -4,6 +4,7 @@ import json
 import os
 import warnings
 
+from epics import caget
 from genie_python import genie as g
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
@@ -267,7 +268,7 @@ class UpgradeInstrument:
 
         # Check whether inst is SECI or not
         try:
-            central_inst_info = g.get_pv("CS:INSTLIST")
+            central_inst_info = caget("CS:INSTLIST")
             central_inst_info = FileUtils.dehex_and_decompress(
                 bytes(central_inst_info, encoding="utf8")
             ).decode("utf-8")

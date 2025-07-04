@@ -8,3 +8,4 @@ pywin32
 semantic_version
 six
 pyepics
+crc8
