@@ -50,9 +50,8 @@ class CaWrapper:
         if data is None:
             return None
         else:
-            from genie_python.utilities import dehex_and_decompress
-
-            return dehex_and_decompress(data)
+            from ibex_install_utils.file_utils import FileUtils
+            return FileUtils.dehex_and_decompress(data)
 
     def get_blocks(self):
         """

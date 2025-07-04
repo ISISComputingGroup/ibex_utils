@@ -9,9 +9,9 @@ import os
 import subprocess
 
 import git
-from genie_python import genie as g
-from genie_python.utilities import dehex_and_decompress
 from six.moves import input
+from ibex_install_utils.file_utils import FileUtils
+from epics import caget
 
 FNULL = open(os.devnull, "w")
 
@@ -77,7 +77,7 @@ def get_instrument_hosts():
     """
     Returns: A collection of instrument host names
     """
-    return (inst["hostName"] for inst in json.loads(dehex_and_decompress(g.get_pv("CS:INSTLIST"))))
+    return (inst["hostName"] for inst in json.loads(FileUtils.dehex_and_decompress(caget("CS:INSTLIST"))))
 
 
 def update_instrument(host, username, password, logger, dry_run=False):

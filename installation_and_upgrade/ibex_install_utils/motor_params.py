@@ -6,7 +6,7 @@ load the script into a genie_python console and run as a standard user script.
 import csv
 import multiprocessing.dummy as multiprocessing
 import sys
-
+from epics import caget
 from genie_python import genie as g
 
 g.set_instrument(None, import_instrument_init=False)

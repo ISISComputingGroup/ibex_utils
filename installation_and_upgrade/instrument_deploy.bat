@@ -28,7 +28,16 @@ if %errorlevel% neq 0 (
 )
 
 call "%~dp0install_or_update_uv.bat"
+
+REM create temporary virtual environment
+set UV_TEMP_VENV=%~dp0.venv
+set UV_PYTHON=3.12
+REM use the on-disk location as we'll be using a venv anyway so it won't dirty the install
+uv venv %UV_TEMP_VENV%
+%UV_TEMP_VENV%\scripts\activate
+
 if %errorlevel% neq 0 goto ERROR
+uv pip install -r %~dp0\requirements.txt --no-build
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"

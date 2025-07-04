@@ -7,4 +7,4 @@ pytest
 pywin32
 semantic_version
 six
-genie_python
+pyepics
