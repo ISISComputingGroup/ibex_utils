@@ -6,13 +6,7 @@ setlocal EnableDelayedExpansion
   set EPICS_CA_ADDR_LIST=127.255.255.255 130.246.51.255
 
 call "%~dp0install_or_update_uv.bat"
-
-REM create temporary virtual environment
-set UV_TEMP_VENV=%~dp0.venv
-set UV_PYTHON=3.12
-REM use the on-disk location as we'll be using a venv anyway so it won't dirty the install
-uv venv %UV_TEMP_VENV%
-call %UV_TEMP_VENV%\scripts\activate
+call "%~dp0set_up_venv.bat"
 
 call uv pip install -r %~dp0\requirements.txt --no-build
 
