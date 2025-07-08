@@ -27,6 +27,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+call "%~dp0set_epics_ca_addr_list.bat"
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
 if %errorlevel% neq 0 goto ERROR
@@ -35,7 +36,6 @@ set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 
 IF EXIST "C:\Instrument\Apps\EPICS" (
-  call set_epics_ca_addr_list.bat
 
   call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_pre_stop
   IF !errorlevel! neq 0 exit /b !errorlevel!

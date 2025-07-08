@@ -1,6 +1,6 @@
 setlocal EnableDelayedExpansion
 
-call set_epics_ca_addr_list.bat
+call "%~dp0set_epics_ca_addr_list.bat"
 
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
