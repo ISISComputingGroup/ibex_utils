@@ -77,7 +77,7 @@ def get_instrument_hosts():
     """
     Returns: A collection of instrument host names
     """
-    return (inst["hostName"] for inst in json.loads(FileUtils.dehex_and_decompress(caget("CS:INSTLIST"))))
+    return (inst["hostName"] for inst in json.loads(FileUtils.dehex_and_decompress(caget("CS:INSTLIST").tobytes().decode().rstrip('\x00'))))
 
 
 def update_instrument(host, username, password, logger, dry_run=False):

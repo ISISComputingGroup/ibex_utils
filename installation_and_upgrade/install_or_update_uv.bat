@@ -10,3 +10,4 @@ if %errorlevel% neq 0 (
 
 REM set the uv python executable installation directory permanently
 setx UV_PYTHON_INSTALL_DIR C:\Instrument\apps\uv\snakes\
+setx UV_CACHE_DIR C:\Instrument\Var\uvcache\

@@ -12,11 +12,9 @@ setlocal EnableDelayedExpansion
 
 set PYTHONUNBUFFERED=TRUE
 
-call "%~dp0define_latest_genie_python.bat"
-IF %errorlevel% neq 0 (
-    @echo Failed to define genie python
-    GOTO ERROR
-)
+call "%~dp0install_or_update_uv.bat"
+call "%~dp0set_up_venv.bat"
+if %errorlevel% neq 0 goto ERROR
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server.bat"

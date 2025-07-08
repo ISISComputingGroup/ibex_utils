@@ -29,9 +29,7 @@ if %errorlevel% neq 0 (
 
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
-
 if %errorlevel% neq 0 goto ERROR
-uv pip install -r %~dp0\requirements.txt --no-build
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"

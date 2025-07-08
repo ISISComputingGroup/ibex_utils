@@ -55,10 +55,8 @@ def _get_pv_prefix(instrument: str, is_instrument: bool) -> str:
 
     if is_instrument:
         pv_prefix_prefix = "IN"
-        print("THIS IS %s!" % instrument_name.upper())
     else:
         pv_prefix_prefix = "TE"
-        print("THIS IS %s! (test machine)" % instrument_name.upper())
     return "{prefix}:{instrument}:".format(
         prefix=pv_prefix_prefix, instrument=instrument_name
     )

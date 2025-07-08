@@ -7,11 +7,17 @@ setlocal EnableDelayedExpansion
 
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
-
-call uv pip install -r %~dp0\requirements.txt --no-build
+if %errorlevel% neq 0 goto ERROR
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --confirm_step save_motor_params
 
 IF %errorlevel% neq 0 goto ERROR
 
+call rmdir /s /q %UV_TEMP_VENV%
+
+exit /b 0
+
+:ERROR
+call rmdir /s /q %UV_TEMP_VENV%
+EXIT /b 1
