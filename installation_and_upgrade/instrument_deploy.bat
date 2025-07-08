@@ -43,10 +43,10 @@ set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 
 IF EXIST "C:\Instrument\Apps\EPICS" (
-  REM TODO is this just for EPICS_CA_ADDR_LIST?
+  REM TODO is this just for EPICS_CA_ADDR_LIST? need to get this right...
 @REM   call C:\Instrument\Apps\EPICS\config_env.bat
   set EPICS_CA_AUTO_ADDR_LIST=NO
-  set EPICS_CA_ADDR_LIST=127.255.255.255
+  set EPICS_CA_ADDR_LIST=127.255.255.255 130.246.51.255
 
   call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_pre_stop
   IF !errorlevel! neq 0 exit /b !errorlevel!

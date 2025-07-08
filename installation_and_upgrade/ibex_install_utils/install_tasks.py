@@ -3,9 +3,9 @@
 import json
 import os
 import warnings
-
+import epicscorelibs.path.pyepics
 from epics import caget
-from genie_python import genie as g
+from ibex_install_utils.ca_utils import get_machine_details_from_identifier
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
 from ibex_install_utils.tasks.client_tasks import ClientTasks
@@ -276,9 +276,11 @@ class UpgradeInstrument:
         except Exception:
             central_inst_info = {}
 
+        _, _, my_pv_prefix = get_machine_details_from_identifier()
+
         central_specific_inst_info = None
         for inst in central_inst_info:
-            if inst["name"] == g.my_pv_prefix[3:-1]:
+            if inst["name"] == my_pv_prefix[3:-1]:
                 central_specific_inst_info = inst
                 break
 

@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import multiprocessing.dummy as multiprocessing
 import os
@@ -476,7 +477,7 @@ class ServerTasks(BaseTasks):
             name="motors", directory="motors", extension="csv"
         ) as f:
             print(f"saving motor params to {f.name}")
-            get_params_and_save_to_file(f)
+            asyncio.run(get_params_and_save_to_file(f))
 
     def save_blocks_to_file(self) -> None:
         """Saves block parameters in a file."""
