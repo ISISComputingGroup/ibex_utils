@@ -1,4 +1,4 @@
-REM instrument_deploy.bat - used for Upgrading IBEX to the latest version
+REM instrument_deploy.bat - used for upgrading IBEX on an instrument PC.
 
 setlocal EnableDelayedExpansion
 

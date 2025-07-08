@@ -1,4 +1,4 @@
-REM instrument_install.bat - used for deploying IBEX for the first time.
+REM instrument_install.bat - used for installing IBEX for the first time on an instrument PC.
 
 setlocal EnableDelayedExpansion
 

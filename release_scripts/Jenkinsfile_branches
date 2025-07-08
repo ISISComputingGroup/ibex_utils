@@ -50,8 +50,8 @@ pipeline {
                             ),
                             booleanParam(
                                 name: "REMOTE",
-                                description: "Update submodules to latest version from remote. Defaults to true, appropriate for a normal release",
-                                defaultValue: true
+                                description: "Update submodules to latest version from remote. Defaults to false, appropriate for a normal release",
+                                defaultValue: false
                             ),
                             string(
                                 name: "TAG", 
