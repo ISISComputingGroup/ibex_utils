@@ -213,7 +213,7 @@ class CaWrapper:
             A collection of blocks, or None if the PV was not connected
         """
         #TODO test this
-        blocks_hexed = caget(f"{self.prefix}CS:SB:BLOCKNAMES").tobytes().decode().rstrip('\x00')
+        blocks_hexed = caget(f"{self.prefix}CS:BLOCKSERVER:BLOCKNAMES").tobytes().decode().rstrip('\x00')
         return literal_eval(FileUtils.dehex_and_decompress(blocks_hexed).decode())
 
     def cget(self, block: str) -> Any:
