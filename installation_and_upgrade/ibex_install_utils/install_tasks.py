@@ -5,6 +5,7 @@ import os
 import warnings
 
 import epicscorelibs.path.pyepics  # noqa: F401
+import numpy as np
 from epics import caget
 from ibex_install_utils.ca_utils import get_machine_details_from_identifier
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
@@ -270,9 +271,10 @@ class UpgradeInstrument:
         # Check whether inst is SECI or not
         try:
             central_inst_info = caget("CS:INSTLIST")
-            central_inst_info = FileUtils.dehex_and_decompress(
-                bytes(central_inst_info, encoding="utf8")
-            ).decode("utf-8")
+            assert central_inst_info is not None and isinstance(central_inst_info, np.ndarray)
+            central_inst_info = FileUtils.dehex_and_decompress(central_inst_info.tobytes()).decode(
+                "utf-8"
+            )
             central_inst_info = json.loads(central_inst_info)
         except Exception:
             central_inst_info = {}
@@ -343,7 +345,10 @@ class UpgradeInstrument:
 
             # Some config upgrade steps require MySQL to be running
             # For the VHD build, we can always assume we have a MYSQL_PASSWORD env variable
-            with self._mysql_tasks.temporarily_run_mysql(os.getenv("MYSQL_PASSWORD")):
+            mysql_password = os.getenv("MYSQL_PASSWORD")
+            if mysql_password is None:
+                raise Exception("MYSQL_PASSWORD environment variable not set")
+            with self._mysql_tasks.temporarily_run_mysql(mysql_password):
                 self._server_tasks.upgrade_instrument_configuration()
 
             self._server_tasks.setup_calibrations_repository()

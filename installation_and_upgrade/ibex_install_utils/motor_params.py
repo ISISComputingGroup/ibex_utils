@@ -155,19 +155,20 @@ async def get_params_and_save_to_file(
 
         out_dict[PV] = axis_pv
 
-        try:
-            out_dict[INV_MOTOR_RES] = 1.0 / out_dict[MOTOR_RES]
-        except ZeroDivisionError:
-            out_dict[INV_MOTOR_RES] = None
-
-        try:
-            out_dict[INV_ENCODER_RES] = 1.0 / out_dict[ENCODER_RES]
-        except ZeroDivisionError:
-            out_dict[INV_ENCODER_RES] = None
-
-        out_dict[DECEL_DIST] = out_dict[MAX_VELO] * out_dict[ACCEL]
+        if isinstance(out_dict[MOTOR_RES], float):
+            try:
+                out_dict[INV_MOTOR_RES] = 1.0 / out_dict[MOTOR_RES]  # pyright: ignore [reportOperatorIssue]
+            except ZeroDivisionError:
+                out_dict[INV_MOTOR_RES] = None
+        if isinstance(out_dict[ENCODER_RES], float):
+            try:
+                out_dict[INV_ENCODER_RES] = 1.0 / out_dict[ENCODER_RES]  # pyright: ignore [reportOperatorIssue]
+            except ZeroDivisionError:
+                out_dict[INV_ENCODER_RES] = None
+        if isinstance(out_dict[MAX_VELO], float) and isinstance(out_dict[ACCEL], float):
+            out_dict[DECEL_DIST] = out_dict[MAX_VELO] * out_dict[ACCEL]  # pyright: ignore [reportOperatorIssue]
         rows.append(out_dict)
 
-    writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction="ignore")
+    writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction="ignore")  # type: ignore
     writer.writeheader()
     writer.writerows(rows)

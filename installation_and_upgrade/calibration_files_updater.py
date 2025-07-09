@@ -7,12 +7,11 @@ import json
 import logging
 import os
 import subprocess
-from typing import Any, List
+from typing import Any, Generator
 
 import git
 from epics import caget
 from ibex_install_utils.file_utils import FileUtils
-from six.moves import input
 
 FNULL = open(os.devnull, "w")
 
@@ -75,14 +74,17 @@ class CalibrationsFolder:
         self.disconnect_from_drive()
 
 
-def get_instrument_hosts() -> List[str]:
+def get_instrument_hosts() -> Generator[str, None, None]:
     """
     Returns: A collection of instrument host names
     """
+    instlist_raw = caget("CS:INSTLIST")
+    if instlist_raw is None:
+        raise Exception("INSTLIST not reachable")
     return (
         inst["hostName"]
         for inst in json.loads(
-            FileUtils.dehex_and_decompress(caget("CS:INSTLIST").tobytes().decode().rstrip("\x00"))
+            FileUtils.dehex_and_decompress(instlist_raw.tobytes().decode().rstrip("\x00"))
         )
     )
 
