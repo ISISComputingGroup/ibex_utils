@@ -124,14 +124,12 @@ def get_machine_details_from_identifier(
     # then find the first match where pvPrefix equals the machine identifier
     # that's been passed to this function if it is not found instrument_details will be None
     instrument_details = None
-    input_list = caget("CS:INSTLIST").tobytes().decode().rstrip('\x00')
-    if input_list is not None:
-        assert isinstance(input_list, str | bytes)
-        instrument_list = dehex_decompress_and_dejson(input_list)
+    try:
+        instrument_list = dehex_decompress_and_dejson(caget("CS:INSTLIST").tobytes().decode().rstrip('\x00'))
         instrument_details = next(
             (inst for inst in instrument_list if inst["pvPrefix"] == machine_identifier), None
         )
-    else:
+    except AttributeError:
         print(
             "Error getting instlist, \nContinuing execution..."
         )
@@ -212,7 +210,11 @@ class CaWrapper:
         Returns:
             A collection of blocks, or None if the PV was not connected
         """
-        blocks_hexed = caget(f"{self.prefix}CS:BLOCKSERVER:BLOCKNAMES").tobytes()
+        try:
+            blocks_hexed = caget(f"{self.prefix}CS:BLOCKSERVER:BLOCKNAMES").tobytes()
+        except AttributeError as e:
+            print("Error getting blocks.")
+            raise e
         return literal_eval(FileUtils.dehex_and_decompress(blocks_hexed).decode())
 
     def cget(self, block: str) -> Any:
