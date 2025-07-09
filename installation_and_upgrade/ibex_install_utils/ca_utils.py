@@ -2,9 +2,10 @@ import json
 import zlib
 from ast import literal_eval
 from socket import gethostname
-from typing import Any
+from typing import Any, List
 
 import epicscorelibs.path.pyepics  # noqa: F401
+import numpy as np
 from epics import caget, caput
 
 from ibex_install_utils.file_utils import FileUtils
@@ -59,7 +60,7 @@ def dehex_and_decompress(value: bytes | str) -> str:
     return zlib.decompress(bytes.fromhex(value)).decode("utf-8")
 
 
-def dehex_decompress_and_dejson(value: str | bytes) -> Any:  # No known type
+def dehex_decompress_and_dejson(value: str | bytes) -> Any:  # noqa: ANN401
     """
     Convert string from zipped hexed json to a python representation
     :param value: value to convert
@@ -125,14 +126,15 @@ def get_machine_details_from_identifier(
     # then find the first match where pvPrefix equals the machine identifier
     # that's been passed to this function if it is not found instrument_details will be None
     instrument_details = None
-    try:
+    instlist_raw = caget("CS:INSTLIST")
+    if instlist_raw is not None and isinstance(instlist_raw, np.ndarray):
         instrument_list = dehex_decompress_and_dejson(
-            caget("CS:INSTLIST").tobytes().decode().rstrip("\x00")
+            instlist_raw.tobytes().decode().rstrip("\x00")
         )
         instrument_details = next(
             (inst for inst in instrument_list if inst["pvPrefix"] == machine_identifier), None
         )
-    except AttributeError:
+    else:
         print("Error getting instlist, \nContinuing execution...")
 
     if instrument_details is not None:
@@ -171,14 +173,13 @@ class CaWrapper:
     Wrapper around genie python's channel access class providing some useful abstractions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
-        Setting instrument is necessary because genie_python is being run from a network drive so it may not know
-        where it is.
+        Get the current PV prefix.
         """
         _, _, self.prefix = get_machine_details_from_identifier()
 
-    def get_local_pv(self, name):
+    def get_local_pv(self, name: str) -> str | int | float | None:
         """
         Get PV with the local PV prefix appended
 
@@ -188,9 +189,9 @@ class CaWrapper:
         Returns:
             None if the PV was not connected
         """
-        return caget(f"{self.prefix}{name}")
+        return caget(f"{self.prefix}{name}")  # type: ignore
 
-    def get_object_from_compressed_hexed_json(self, name):
+    def get_object_from_compressed_hexed_json(self, name: str) -> bytes | None:
         """
         Gets an object from a compressed hexed json PV
 
@@ -206,26 +207,24 @@ class CaWrapper:
         else:
             return FileUtils.dehex_and_decompress(data)
 
-    def get_blocks(self):
+    def get_blocks(self) -> List[str]:
         """
         Returns:
             A collection of blocks, or None if the PV was not connected
         """
-        try:
-            blocks_hexed = caget(f"{self.prefix}CS:BLOCKSERVER:BLOCKNAMES").tobytes()
-        except AttributeError as e:
-            print("Error getting blocks.")
-            raise e
-        return literal_eval(FileUtils.dehex_and_decompress(blocks_hexed).decode())
+        blocks_hexed = caget(f"{self.prefix}CS:BLOCKSERVER:BLOCKNAMES")
+        if blocks_hexed is None:
+            raise Exception("Error getting blocks from blockserver PV.")
+        return literal_eval(FileUtils.dehex_and_decompress(blocks_hexed.tobytes()).decode())
 
-    def cget(self, block: str) -> Any:
+    def cget(self, block: str) -> str | int | float | None:
         """
         Returns:
             A collection of blocks, or None if the PV was not connected.
         """
-        return caget(f"{self.prefix}CS:SB:{block}")
+        return caget(f"{self.prefix}CS:SB:{block}")  # type: ignore
 
-    def set_pv(self, pv, value, is_local: bool = False):
+    def set_pv(self, pv: str, value: str | float | int, is_local: bool = False) -> None:
         """
         Sets the value of a PV.
         """

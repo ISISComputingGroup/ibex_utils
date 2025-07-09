@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import subprocess
+from typing import Any, List
 
 import git
 from epics import caget
@@ -25,7 +26,7 @@ class CalibrationsFolder:
     DRIVE_LETTER = "q"
 
     @staticmethod
-    def disconnect_from_drive():
+    def disconnect_from_drive() -> bool:
         """
         Returns: True if disconnect is successful, else False.
         """
@@ -38,7 +39,7 @@ class CalibrationsFolder:
             == 0
         )
 
-    def connect_to_drive(self):
+    def connect_to_drive(self) -> bool:
         """
         Returns: True if the connection is successful, else False
         """
@@ -58,23 +59,24 @@ class CalibrationsFolder:
             == 0
         )
 
-    def __init__(self, instrument_host, username, password):
+    def __init__(self, instrument_host: str, username: str, password: str) -> None:
         self.username_with_domain = f"{instrument_host}\\{username}"
         self.network_location = r"\\{}\c$\Instrument\Settings\config\common".format(instrument_host)
         self.password = password
 
-    def __enter__(self):
+    def __enter__(self) -> git.Repo | None:
         """
-        Returns: A git repository for the remote calibration folder if connection is successful, else None.
+        Returns: A git repository for the
+        remote calibration folder if connection is successful, else None.
         """
         self.disconnect_from_drive()
         return git.Repo(self.network_location) if self.connect_to_drive() else None
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:  # noqa: ANN401
         self.disconnect_from_drive()
 
 
-def get_instrument_hosts():
+def get_instrument_hosts() -> List[str]:
     """
     Returns: A collection of instrument host names
     """
@@ -86,7 +88,9 @@ def get_instrument_hosts():
     )
 
 
-def update_instrument(host, username, password, logger, dry_run=False):
+def update_instrument(
+    host: str, username: str, password: str, logger: logging.Logger, dry_run: bool = False
+) -> bool:
     """
     Updates the calibration files on the named host.
 

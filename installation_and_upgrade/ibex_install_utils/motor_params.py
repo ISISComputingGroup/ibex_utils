@@ -1,9 +1,11 @@
 """
-Script to extract information from motors to be consumed by the motion controls team. Exports data as CSV. To run,
-load the script into a genie_python console and run as a standard user script.
+Script to extract information from motors to be consumed by the motion controls team.
+Exports data as CSV.
+To run, load the script into a genie_python console and run as a standard user script.
 """
 
 import csv
+from typing import BinaryIO
 
 from aioca import CANothing, caget
 
@@ -24,7 +26,7 @@ ENCODER_RES, INV_ENCODER_RES = (
     "Encoder Step Size (step per EGU)",
 )
 DECEL_DIST = "Max Deceleration Distance (EGU)"
-P, I, D = "P", "I", "D"
+P, I, D = "P", "I", "D"  # noqa: E741
 
 K1, K2, K3 = "K1", "K2", "K3"
 MTR_TYPE, ENC_TYPE, AUX_ENC_TYPE = "Motor Type", "Encoder Type", "Aux Encoder Type"
@@ -110,13 +112,15 @@ galil_specific_params = {
 }
 
 
-async def get_params_and_save_to_file(file_reference, num_of_controllers=8):
+async def get_params_and_save_to_file(
+    file_reference: BinaryIO, num_of_controllers: int = 8
+) -> None:
     """
     Gets all the motor parameters and saves them to an open file reference as a csv.
 
     Args:
         file_reference (BinaryIO): The csv file to save the data to.
-        num_of_controllers (int, optional): The number of motor controllers on the instrument (default is 8)
+        num_of_controllers (int, optional): The number of motor controllers on the instrument
     """
     list_of_axis_pvs = []
     _, _, pv_prefix = get_machine_details_from_identifier()
