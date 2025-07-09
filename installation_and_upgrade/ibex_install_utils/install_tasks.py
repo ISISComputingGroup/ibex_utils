@@ -3,7 +3,7 @@
 import json
 import os
 import warnings
-import epicscorelibs.path.pyepics
+import epicscorelibs.path.pyepics  # noqa: F401
 from epics import caget
 from ibex_install_utils.ca_utils import get_machine_details_from_identifier
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils

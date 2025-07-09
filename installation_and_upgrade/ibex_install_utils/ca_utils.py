@@ -4,6 +4,7 @@ from ast import literal_eval
 from socket import gethostname
 from typing import Any
 
+import epicscorelibs.path.pyepics  # noqa: F401
 from epics import caget, caput
 
 from ibex_install_utils.file_utils import FileUtils
