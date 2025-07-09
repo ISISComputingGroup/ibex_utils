@@ -1,13 +1,13 @@
 import json
 import zlib
 from ast import literal_eval
-from typing import Any
 from socket import gethostname
+from typing import Any
+
+from epics import caget, caput
 
 from ibex_install_utils.file_utils import FileUtils
 
-import epicscorelibs.path.pyepics
-from epics import caget, caput
 
 def crc8(value: str) -> str:
     """
@@ -44,6 +44,7 @@ def crc8(value: str) -> str:
 
     return "{0:02X}".format(crc)
 
+
 def dehex_and_decompress(value: bytes | str) -> str:
     """
     Dehex and decompress a string and return it
@@ -64,6 +65,7 @@ def dehex_decompress_and_dejson(value: str | bytes) -> Any:  # No known type
     :return: python representation of json
     """
     return json.loads(dehex_and_decompress(value))
+
 
 def _get_pv_prefix(instrument: str, is_instrument: bool) -> str:
     """
@@ -89,13 +91,11 @@ def _get_pv_prefix(instrument: str, is_instrument: bool) -> str:
         pv_prefix_prefix = "IN"
     else:
         pv_prefix_prefix = "TE"
-    return "{prefix}:{instrument}:".format(
-        prefix=pv_prefix_prefix, instrument=instrument_name
-    )
+    return "{prefix}:{instrument}:".format(prefix=pv_prefix_prefix, instrument=instrument_name)
 
 
 def get_machine_details_from_identifier(
-        machine_identifier: str | None = None
+    machine_identifier: str | None = None,
 ) -> tuple[str, str, str]:
     """
     Gets the details of a machine by looking it up in the instrument list first.
@@ -125,26 +125,26 @@ def get_machine_details_from_identifier(
     # that's been passed to this function if it is not found instrument_details will be None
     instrument_details = None
     try:
-        instrument_list = dehex_decompress_and_dejson(caget("CS:INSTLIST").tobytes().decode().rstrip('\x00'))
+        instrument_list = dehex_decompress_and_dejson(
+            caget("CS:INSTLIST").tobytes().decode().rstrip("\x00")
+        )
         instrument_details = next(
             (inst for inst in instrument_list if inst["pvPrefix"] == machine_identifier), None
         )
     except AttributeError:
-        print(
-            "Error getting instlist, \nContinuing execution..."
-        )
+        print("Error getting instlist, \nContinuing execution...")
 
     if instrument_details is not None:
         instrument = instrument_details["name"]
     else:
         instrument = machine_identifier.upper()
         for p in (
-                [instrument_pv_prefix, test_machine_pv_prefix]
-                + instrument_machine_prefixes
-                + test_machine_prefixes
+            [instrument_pv_prefix, test_machine_pv_prefix]
+            + instrument_machine_prefixes
+            + test_machine_prefixes
         ):
             if machine_identifier.startswith(p):
-                instrument = machine_identifier.upper()[len(p):].rstrip(":")
+                instrument = machine_identifier.upper()[len(p) :].rstrip(":")
                 break
 
     if instrument_details is not None:

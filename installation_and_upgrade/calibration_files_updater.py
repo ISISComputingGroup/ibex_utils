@@ -9,9 +9,10 @@ import os
 import subprocess
 
 import git
-from six.moves import input
-from ibex_install_utils.file_utils import FileUtils
 from epics import caget
+from six.moves import input
+
+from ibex_install_utils.file_utils import FileUtils
 
 FNULL = open(os.devnull, "w")
 
@@ -77,7 +78,12 @@ def get_instrument_hosts():
     """
     Returns: A collection of instrument host names
     """
-    return (inst["hostName"] for inst in json.loads(FileUtils.dehex_and_decompress(caget("CS:INSTLIST").tobytes().decode().rstrip('\x00'))))
+    return (
+        inst["hostName"]
+        for inst in json.loads(
+            FileUtils.dehex_and_decompress(caget("CS:INSTLIST").tobytes().decode().rstrip("\x00"))
+        )
+    )
 
 
 def update_instrument(host, username, password, logger, dry_run=False):

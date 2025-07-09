@@ -2,8 +2,11 @@
 Script to extract information from motors to be consumed by the motion controls team. Exports data as CSV. To run,
 load the script into a genie_python console and run as a standard user script.
 """
+
 import csv
-from aioca import caget, CANothing
+
+from aioca import CANothing, caget
+
 from ibex_install_utils.ca_utils import get_machine_details_from_identifier
 
 VELOCITY_UNITS = "EGU per sec"
@@ -106,6 +109,7 @@ galil_specific_params = {
     TL: "_TL_SP",
 }
 
+
 async def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     """
     Gets all the motor parameters and saves them to an open file reference as a csv.
@@ -125,8 +129,18 @@ async def get_params_and_save_to_file(file_reference, num_of_controllers=8):
     rows = []
 
     for axis_pv in list_of_axis_pvs:
-        hr_keys = [axis_pv] + [i for i in all_motor_params.keys()] + [i for i in galil_specific_params.keys()]
-        hr_values = await caget([axis_pv] + [axis_pv + i for i in all_motor_params.values()] + [axis_pv + i for i in galil_specific_params.values()], throw=False, timeout=0.1)
+        hr_keys = (
+            [axis_pv]
+            + [i for i in all_motor_params.keys()]
+            + [i for i in galil_specific_params.keys()]
+        )
+        hr_values = await caget(
+            [axis_pv]
+            + [axis_pv + i for i in all_motor_params.values()]
+            + [axis_pv + i for i in galil_specific_params.values()],
+            throw=False,
+            timeout=0.1,
+        )
 
         if all(isinstance(i, CANothing) for i in hr_values):
             # All PVs failed to connect so don't bother writing this axis
