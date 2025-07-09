@@ -5,7 +5,7 @@ REM if the above didnt work uv is probably not installed. install it.
 if %errorlevel% neq 0 (
     set UV_INSTALL_DIR=C:\Instrument\Apps\uv
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-	set Path=C:\Instrument\Apps\uv;%Path%
+	set "Path=C:\Instrument\Apps\uv;%Path%"
 )
 
 REM set the uv python executable installation directory permanently
