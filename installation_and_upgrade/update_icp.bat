@@ -1,6 +1,7 @@
 setlocal EnableDelayedExpansion
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 
+call "%~dp0set_epics_ca_addr_list.bat"
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
 IF %errorlevel% neq 0 goto ERROR
@@ -12,7 +13,7 @@ IF %errorlevel% neq 0 (
     goto ERROR
 )
 
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step update_icp
+call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step update_icp
 IF %errorlevel% neq 0 goto ERROR
 call rmdir /s /q %UV_TEMP_VENV%
 exit /b 0

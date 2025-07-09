@@ -12,14 +12,16 @@ setlocal EnableDelayedExpansion
 
 set PYTHONUNBUFFERED=TRUE
 
+call "%~dp0set_epics_ca_addr_list.bat"
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
 if %errorlevel% neq 0 goto ERROR
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
-set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server.bat"
 IF EXIST "C:\Instrument\Apps\EPICS" (
     call "%STOP_IBEX%"
+    REM stop_ibex_server calls config_env which means we have to reactivate our venv
+    call %UV_TEMP_VENV%\scripts\activate
 ) else (
     REM in case one has been left around running in the background
     taskkill /f /im caRepeater.exe
@@ -101,10 +103,10 @@ IF %errorlevel% neq 0 (
     GOTO ERROR
 )
 
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 GOTO :EOF
 
 :ERROR
 echo Error on Install
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 exit /b 2

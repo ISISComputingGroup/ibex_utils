@@ -7,6 +7,8 @@ call "%~dp0check_for_admin_console.bat"
 if %errorlevel% neq 0 goto ERROR
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
+
+call "%~dp0set_epics_ca_addr_list.bat"
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
 if %errorlevel% neq 0 goto ERROR
@@ -35,6 +37,8 @@ set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 IF EXIST "C:\Instrument\Apps\EPICS" (start /wait cmd /c "%STOP_IBEX%")
 
 
+REM stop_ibex_server calls config_env which means we have to reactivate our venv
+call %UV_TEMP_VENV%\scripts\activate
 
 call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_install
 if %errorlevel% neq 0 goto ERROR
