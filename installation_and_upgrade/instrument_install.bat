@@ -38,7 +38,7 @@ IF EXIST "C:\Instrument\Apps\EPICS" (start /wait cmd /c "%STOP_IBEX%")
 
 
 REM stop_ibex_server calls config_env which means we have to reactivate our venv
-call %UV_TEMP_VENV%\scripts\activate
+call "%~dp0_activate_venv.bat"
 
 call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_install
 if %errorlevel% neq 0 goto ERROR

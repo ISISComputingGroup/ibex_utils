@@ -8,8 +8,6 @@ if %errorlevel% neq 0 goto ERROR
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --confirm_step instrument_test
 if %errorlevel% neq 0 goto ERROR
 
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
-
 call rmdir /s /q %UV_TEMP_VENV%
 
 exit /b 0

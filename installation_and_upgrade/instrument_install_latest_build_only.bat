@@ -21,7 +21,7 @@ set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 IF EXIST "C:\Instrument\Apps\EPICS" (
     call "%STOP_IBEX%"
     REM stop_ibex_server calls config_env which means we have to reactivate our venv
-    call %UV_TEMP_VENV%\scripts\activate
+    call "%~dp0_activate_venv.bat"
 ) else (
     REM in case one has been left around running in the background
     taskkill /f /im caRepeater.exe

@@ -80,7 +80,7 @@ if "%DETECT_OLD_GALIL%" == "YES" (
 )
 
 REM stop_ibex_server calls config_env which means we have to reactivate our venv
-call %UV_TEMP_VENV%\scripts\activate
+call "%~dp0_activate_venv.bat"
 
 call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_main
 IF %errorlevel% neq 0 exit /b %errorlevel%
@@ -89,6 +89,8 @@ ENDLOCAL
 start /i /wait cmd /c "%START_IBEX%"
 
 REM start_ibex_server calls config_env which means we have to reactivate our venv
+call "%~dp0_activate_venv.bat"
+
 call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_post_start
 call rmdir /s /q %UV_TEMP_VENV%
 

@@ -11,7 +11,8 @@ set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 
 start /wait cmd /c "%STOP_IBEX%"
 
-call "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step force_upgrade_mysql
+call "%~dp0_activate_venv.bat"
+call python -u "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step force_upgrade_mysql
 
 IF %errorlevel% neq 0 (
     set errcode = %ERRORLEVEL%
