@@ -177,7 +177,7 @@ class CaWrapper:
         Setting instrument is necessary because genie_python is being run from a network drive so it may not know
         where it is.
         """
-        self.prefix, _, _ = get_machine_details_from_identifier()
+        _, _, self.prefix = get_machine_details_from_identifier()
 
     def get_local_pv(self, name):
         """
