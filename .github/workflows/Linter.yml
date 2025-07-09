@@ -6,3 +6,4 @@ jobs:
     with:
       compare-branch: origin/master
       requirements-path: installation_and_upgrade/requirements.txt
+      runs-on: 'windows-latest'
