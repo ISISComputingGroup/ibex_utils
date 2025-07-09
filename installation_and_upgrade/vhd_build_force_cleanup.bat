@@ -1,7 +1,10 @@
 setlocal EnableDelayedExpansion
 set PYTHONUNBUFFERED=1
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
-call "%~dp0define_latest_genie_python.bat"
+
+call "%~dp0set_epics_ca_addr_list.bat"
+call "%~dp0install_or_update_uv.bat"
+call "%~dp0set_up_venv.bat"
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
 IF EXIST "C:\Instrument\Apps\EPICS\stop_ibex_server.bat" (
@@ -12,8 +15,8 @@ call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%" r
 
 IF %ERRORLEVEL% NEQ 0 (
   set errcode = %ERRORLEVEL%
-  call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+  call rmdir /s /q %UV_TEMP_VENV%
   EXIT /b !errcode!
 )
 
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%

@@ -1,6 +1,8 @@
 setlocal EnableDelayedExpansion
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
-call "%~dp0define_latest_genie_python.bat"
+
+call "%~dp0install_or_update_uv.bat"
+call "%~dp0set_up_venv.bat"
 IF %errorlevel% neq 0 goto ERROR
 
 git --version
@@ -12,11 +14,10 @@ IF %errorlevel% neq 0 (
 
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step update_icp
 IF %errorlevel% neq 0 goto ERROR
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
-
+call rmdir /s /q %UV_TEMP_VENV%
 exit /b 0
 
 :ERROR
 set errcode = %ERRORLEVEL%
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 EXIT /b !errcode!
