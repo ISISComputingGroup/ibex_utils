@@ -4,13 +4,45 @@ from ast import literal_eval
 from typing import Any
 from socket import gethostname
 
-from crc8 import crc8
-
 from ibex_install_utils.file_utils import FileUtils
 
 import epicscorelibs.path.pyepics
 from epics import caget, caput
 
+def crc8(value: str) -> str:
+    """
+    Generate a CRC 8 from the value (See EPICS\\utils_win32\\master\\src\\crc8.c).
+
+    Args:
+        value: the value to generate a CRC from
+
+    Returns:
+        string: representation of the CRC8 of the value; two characters
+
+    """
+    if value == "":
+        return ""
+
+    crc_size = 8
+    maximum_crc_value = 255
+    generator = 0x07
+
+    as_bytes = value.encode("utf-8")
+
+    crc = 0  # start with 0 so first byte can be 'xored' in
+
+    for byte in as_bytes:
+        crc ^= byte  # XOR-in the next input byte
+
+        for i in range(8):
+            # unlike the c code we have to artifically restrict the
+            # maximum value wherever it is caluclated
+            if (crc >> (crc_size - 1)) & maximum_crc_value != 0:
+                crc = ((crc << 1 & maximum_crc_value) ^ generator) & maximum_crc_value
+            else:
+                crc <<= 1
+
+    return "{0:02X}".format(crc)
 
 def dehex_and_decompress(value: bytes | str) -> str:
     """

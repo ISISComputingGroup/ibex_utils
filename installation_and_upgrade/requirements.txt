@@ -7,7 +7,6 @@ pytest
 pywin32
 semantic_version
 six
-crc8
 aioca
 pyepics
 epicscorelibs
