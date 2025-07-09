@@ -11,9 +11,8 @@ from typing import Any, List
 
 import git
 from epics import caget
-from six.moves import input
-
 from ibex_install_utils.file_utils import FileUtils
+from six.moves import input
 
 FNULL = open(os.devnull, "w")
 

@@ -8,7 +8,6 @@ import csv
 from typing import BinaryIO
 
 from aioca import CANothing, caget
-
 from ibex_install_utils.ca_utils import get_machine_details_from_identifier
 
 VELOCITY_UNITS = "EGU per sec"

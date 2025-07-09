@@ -7,7 +7,6 @@ from typing import Any, List
 import epicscorelibs.path.pyepics  # noqa: F401
 import numpy as np
 from epics import caget, caput
-
 from ibex_install_utils.file_utils import FileUtils
 
 
