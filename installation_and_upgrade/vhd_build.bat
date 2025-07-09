@@ -12,7 +12,6 @@ IF EXIST "C:\Instrument\Apps\EPICS\stop_ibex_server.bat" (
   start /wait cmd /c "C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 )
 
-call "%~dp0_activate_venv.bat"
 call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%" create_vhds --quiet --no_log_to_var
 IF %ERRORLEVEL% NEQ 0 (
   set errcode = %ERRORLEVEL%

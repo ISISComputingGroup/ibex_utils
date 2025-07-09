@@ -11,7 +11,6 @@ IF EXIST "C:\Instrument\Apps\EPICS\stop_ibex_server.bat" (
   start /wait cmd /c "C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 )
 
-call "%~dp0_activate_venv.bat"
 call python -u "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" create_vhds --quiet --no_log_to_var
 
 IF %ERRORLEVEL% NEQ 0 (

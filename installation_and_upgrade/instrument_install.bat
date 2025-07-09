@@ -35,14 +35,8 @@ set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 IF EXIST "C:\Instrument\Apps\EPICS" (start /wait cmd /c "%STOP_IBEX%")
 
-
-REM stop_ibex_server calls config_env which means we have to reactivate our venv
-call "%~dp0_activate_venv.bat"
-call "%~dp0set_epics_ca_addr_list.bat"
-
 call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_install
 if %errorlevel% neq 0 goto ERROR
-ENDLOCAL
 
 start /wait cmd /c "%START_IBEX%"
 
