@@ -8,6 +8,7 @@ if %errorlevel% neq 0 goto ERROR
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
 
+call "%~dp0set_epics_ca_addr_list.bat"
 call "%~dp0install_or_update_uv.bat"
 call "%~dp0set_up_venv.bat"
 if %errorlevel% neq 0 goto ERROR

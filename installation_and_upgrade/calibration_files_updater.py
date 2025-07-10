@@ -76,7 +76,7 @@ class CalibrationsFolder:
 
 def get_instrument_hosts() -> Generator[str, None, None]:
     """
-    Returns: A collection of instrument host names
+    Returns: A generator yielding instrument host names
     """
     instlist_raw = caget("CS:INSTLIST")
     if instlist_raw is None:

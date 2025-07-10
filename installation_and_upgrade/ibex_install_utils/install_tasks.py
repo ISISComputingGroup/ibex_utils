@@ -267,32 +267,6 @@ class UpgradeInstrument:
         Current the server can not be started or stopped in this python script.
         """
         self._system_tasks.user_confirm_upgrade_type_on_machine("Client/Server Machine")
-
-        # Check whether inst is SECI or not
-        try:
-            central_inst_info = caget("CS:INSTLIST")
-            assert central_inst_info is not None and isinstance(central_inst_info, np.ndarray)
-            central_inst_info = FileUtils.dehex_and_decompress(central_inst_info.tobytes()).decode(
-                "utf-8"
-            )
-            central_inst_info = json.loads(central_inst_info)
-        except Exception:
-            central_inst_info = {}
-
-        _, _, my_pv_prefix = get_machine_details_from_identifier()
-
-        central_specific_inst_info = None
-        for inst in central_inst_info:
-            if inst["name"] == my_pv_prefix[3:-1]:
-                central_specific_inst_info = inst
-                break
-
-        if central_specific_inst_info is None:
-            warnings.warn("Unable to find instrument in central list of instruments.", UserWarning)
-        else:
-            if central_specific_inst_info["seci"] == "true":
-                self._system_tasks.record_running_vis()
-
         self._server_tasks.save_motor_blocks_blockserver_to_file()
 
     def run_truncate_database(self) -> None:
