@@ -2,7 +2,6 @@
 
 import os
 
-import epicscorelibs.path.pyepics  # noqa: F401
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
 from ibex_install_utils.tasks.client_tasks import ClientTasks
