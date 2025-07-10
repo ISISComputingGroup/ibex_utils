@@ -59,7 +59,6 @@ class SystemTasks(BaseTasks):
      firewalls, etc.
     """
 
-
     @task("Upgrading Notepad++. Please follow system dialogs")
     def upgrade_notepad_pp(self) -> None:
         """
