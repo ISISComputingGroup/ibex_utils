@@ -1,10 +1,7 @@
 """Tasks associated with install"""
 
-import json
 import os
-import warnings
 
-from genie_python import genie as g
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
 from ibex_install_utils.tasks.backup_tasks import BackupTasks
 from ibex_install_utils.tasks.client_tasks import ClientTasks
@@ -264,29 +261,6 @@ class UpgradeInstrument:
         Current the server can not be started or stopped in this python script.
         """
         self._system_tasks.user_confirm_upgrade_type_on_machine("Client/Server Machine")
-
-        # Check whether inst is SECI or not
-        try:
-            central_inst_info = g.get_pv("CS:INSTLIST")
-            central_inst_info = FileUtils.dehex_and_decompress(
-                bytes(central_inst_info, encoding="utf8")
-            ).decode("utf-8")
-            central_inst_info = json.loads(central_inst_info)
-        except Exception:
-            central_inst_info = {}
-
-        central_specific_inst_info = None
-        for inst in central_inst_info:
-            if inst["name"] == g.my_pv_prefix[3:-1]:
-                central_specific_inst_info = inst
-                break
-
-        if central_specific_inst_info is None:
-            warnings.warn("Unable to find instrument in central list of instruments.", UserWarning)
-        else:
-            if central_specific_inst_info["seci"] == "true":
-                self._system_tasks.record_running_vis()
-
         self._server_tasks.save_motor_blocks_blockserver_to_file()
 
     def run_truncate_database(self) -> None:
@@ -339,7 +313,10 @@ class UpgradeInstrument:
 
             # Some config upgrade steps require MySQL to be running
             # For the VHD build, we can always assume we have a MYSQL_PASSWORD env variable
-            with self._mysql_tasks.temporarily_run_mysql(os.getenv("MYSQL_PASSWORD")):
+            mysql_password = os.getenv("MYSQL_PASSWORD")
+            if mysql_password is None:
+                raise Exception("MYSQL_PASSWORD environment variable not set")
+            with self._mysql_tasks.temporarily_run_mysql(mysql_password):
                 self._server_tasks.upgrade_instrument_configuration()
 
             self._server_tasks.setup_calibrations_repository()

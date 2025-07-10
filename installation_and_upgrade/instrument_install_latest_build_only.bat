@@ -12,14 +12,12 @@ setlocal EnableDelayedExpansion
 
 set PYTHONUNBUFFERED=TRUE
 
-call "%~dp0define_latest_genie_python.bat"
-IF %errorlevel% neq 0 (
-    @echo Failed to define genie python
-    GOTO ERROR
-)
+call "%~dp0set_epics_ca_addr_list.bat"
+call "%~dp0install_or_update_uv.bat"
+call "%~dp0set_up_venv.bat"
+if %errorlevel% neq 0 goto ERROR
 
 set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
-set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server.bat"
 IF EXIST "C:\Instrument\Apps\EPICS" (
     call "%STOP_IBEX%"
 ) else (
@@ -86,9 +84,9 @@ if "%1" == "RELEASE" (
     REM set INSTALL_TYPE=instrument_install
     REM set INSTALL_TYPE=training_update
     set INSTALL_TYPE=install_latest
-    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --release_dir "%RELEASE_SOURCE%" --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE! --server_winbuild %SERVER_WINBUILD%
+    python "%~dp0IBEX_upgrade.py" --release_dir "%RELEASE_SOURCE%" --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE! --server_winbuild %SERVER_WINBUILD%
 ) else (
-    "%LATEST_PYTHON%" -u "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE! --server_winbuild %SERVER_WINBUILD%
+    python "%~dp0IBEX_upgrade.py" --kits_icp_dir "%KITS_ICP_PATH%"  %SERVER_BUILD_PREFIX% --server_arch %SERVER_ARCH% --quiet !INSTALL_TYPE! --server_winbuild %SERVER_WINBUILD%
 )
 IF %errorlevel% neq 0 (
     echo Error %errorlevel% returned from IBEX_upgrade script
@@ -103,10 +101,10 @@ IF %errorlevel% neq 0 (
     GOTO ERROR
 )
 
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 GOTO :EOF
 
 :ERROR
 echo Error on Install
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 exit /b 2

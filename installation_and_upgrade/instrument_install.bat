@@ -1,4 +1,4 @@
-REM instrument_install.bat - used for installing IBEX for the first time on an instrument PC. 
+REM instrument_install.bat - used for installing IBEX for the first time on an instrument PC.
 
 setlocal EnableDelayedExpansion
 
@@ -7,7 +7,10 @@ call "%~dp0check_for_admin_console.bat"
 if %errorlevel% neq 0 goto ERROR
 
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
-call "%~dp0define_latest_genie_python.bat"
+
+call "%~dp0set_epics_ca_addr_list.bat"
+call "%~dp0install_or_update_uv.bat"
+call "%~dp0set_up_venv.bat"
 if %errorlevel% neq 0 goto ERROR
 
 set SERVER_ARCH=x64
@@ -33,22 +36,15 @@ set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
 set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 IF EXIST "C:\Instrument\Apps\EPICS" (start /wait cmd /c "%STOP_IBEX%")
 
-REM Set python as share just for script call
-SETLOCAL
-set "PYTHONDIR=%LATEST_PYTHON_DIR%"
-set "PYTHONHOME=%LATEST_PYTHON_DIR%"
-set "PYTHONPATH=%LATEST_PYTHON_DIR%"
-
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_install
+call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_install
 if %errorlevel% neq 0 goto ERROR
-ENDLOCAL
 
 start /wait cmd /c "%START_IBEX%"
 
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 exit /b 0
 
 :ERROR
 set errcode = %ERRORLEVEL%
-call "%~dp0remove_genie_python.bat" %LATEST_PYTHON_DIR%
+call rmdir /s /q %UV_TEMP_VENV%
 EXIT /b !errcode!

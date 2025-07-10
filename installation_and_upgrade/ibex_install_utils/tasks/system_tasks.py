@@ -59,15 +59,6 @@ class SystemTasks(BaseTasks):
      firewalls, etc.
     """
 
-    @task("Record running LabVIEW VIs or any relevant looking other programs")
-    def record_running_vis(self) -> None:
-        """
-        Get user to record running vis
-        """
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Write down any LabVIEW VIs/relevant looking programs which are running for use later?"
-        )
-
     @task("Upgrading Notepad++. Please follow system dialogs")
     def upgrade_notepad_pp(self) -> None:
         """

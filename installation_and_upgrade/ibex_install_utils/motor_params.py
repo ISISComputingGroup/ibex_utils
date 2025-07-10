@@ -1,15 +1,14 @@
 """
-Script to extract information from motors to be consumed by the motion controls team. Exports data as CSV. To run,
-load the script into a genie_python console and run as a standard user script.
+Script to extract information from motors to be consumed by the motion controls team.
+Exports data as CSV.
+To run, load the script into a genie_python console and run as a standard user script.
 """
 
 import csv
-import multiprocessing.dummy as multiprocessing
-import sys
+from typing import BinaryIO
 
-from genie_python import genie as g
-
-g.set_instrument(None, import_instrument_init=False)
+from aioca import CANothing, caget
+from ibex_install_utils.ca_utils import get_machine_details_from_identifier
 
 VELOCITY_UNITS = "EGU per sec"
 
@@ -26,7 +25,7 @@ ENCODER_RES, INV_ENCODER_RES = (
     "Encoder Step Size (step per EGU)",
 )
 DECEL_DIST = "Max Deceleration Distance (EGU)"
-P, I, D = "P", "I", "D"
+P, I, D = "P", "I", "D"  # noqa: E741
 
 K1, K2, K3 = "K1", "K2", "K3"
 MTR_TYPE, ENC_TYPE, AUX_ENC_TYPE = "Motor Type", "Encoder Type", "Aux Encoder Type"
@@ -112,133 +111,64 @@ galil_specific_params = {
 }
 
 
-def pv_exists(pv):
-    """
-    Gets whether a pv exists.
-
-    Args:
-        pv (string): The PV to check.
-
-    Returns:
-        True if the PV exists, False otherwise
-    """
-    try:
-        g.get_pv(pv)
-        return True
-    except:
-        print("PV does not exist: " + pv)
-        return False
-
-
-def get_params_for_one_axis(axis, data, g, progress, total):
-    """
-    Gets all the interesting parameters for one axis
-
-    Args:
-        axis (string): The PV of the axis.
-
-    Returns:
-        Dict containing the data for each axis
-    """
-    axis_values = {name: g.get_pv(axis + pv) for name, pv in all_motor_params.items()}
-    axis_values[PV] = axis
-
-    try:
-        axis_values[INV_MOTOR_RES] = 1.0 / axis_values[MOTOR_RES]
-    except ZeroDivisionError:
-        axis_values[INV_MOTOR_RES] = None
-
-    try:
-        axis_values[INV_ENCODER_RES] = 1.0 / axis_values[ENCODER_RES]
-    except ZeroDivisionError:
-        axis_values[INV_ENCODER_RES] = None
-
-    axis_values[DECEL_DIST] = axis_values[MAX_VELO] * axis_values[ACCEL]
-    if g.get_pv(axis + "_IOCNAME").startswith("GALIL"):
-        axis_values.update(
-            {name: g.get_pv(axis + pv) for name, pv in galil_specific_params.items()}
-        )
-    else:
-        print("Assuming not a GALIL")
-
-    data.append(axis_values)
-
-    progress.value += 1
-    update_progress_bar(progress.value, total)
-
-
-def update_progress_bar(progress, total, width=20):
-    if total != 0:
-        percent = progress / total
-        arrow = "=" * int(round(width * percent))
-        spaces = " " * (width - len(arrow))
-        sys.stdout.write(
-            f"\rProgress: [{arrow + spaces}] {int(percent * 100)}% ({progress}/{total})"
-        )
-        if progress == total:
-            sys.stdout.write("\n")
-        sys.stdout.flush()
-
-
-def get_params_and_save_to_file(file_reference, num_of_controllers=8):
+async def get_params_and_save_to_file(
+    file_reference: BinaryIO, num_of_controllers: int = 8
+) -> None:
     """
     Gets all the motor parameters and saves them to an open file reference as a csv.
 
     Args:
         file_reference (BinaryIO): The csv file to save the data to.
-        num_of_controllers (int, optional): The number of motor controllers on the instrument (default is 8)
+        num_of_controllers (int, optional): The number of motor controllers on the instrument
     """
-    motor_processes = []
-    manager = multiprocessing.Manager()
-    data = manager.list()
-    progress = manager.Value("i", 0)
     list_of_axis_pvs = []
+    _, _, pv_prefix = get_machine_details_from_identifier()
 
-    for motor in range(1, num_of_controllers + 1):
-        for axis in range(1, 9):
-            axis_pv = g.prefix_pv_name("MOT:MTR{:02d}{:02d}".format(motor, axis))
+    for motor_controller_num in range(1, num_of_controllers + 1):
+        for axis_num in range(1, 9):
+            axis_pv = f"{pv_prefix}MOT:MTR{motor_controller_num:02d}{axis_num:02d}"
             list_of_axis_pvs.append(axis_pv)
 
-    connected_motors = g.connected_pvs_in_list(list_of_axis_pvs)
+    rows = []
 
-    print("Connected motors: " + str(connected_motors))
-
-    number_of_motors = len(connected_motors)
-    update_progress_bar(progress.value, number_of_motors)
-    for axis in connected_motors:
-        motor_processes.append(
-            multiprocessing.Process(
-                target=get_params_for_one_axis, args=(axis, data, g, progress, number_of_motors)
-            )
+    for axis_pv in list_of_axis_pvs:
+        hr_keys = (
+            [axis_pv]
+            + [i for i in all_motor_params.keys()]
+            + [i for i in galil_specific_params.keys()]
+        )
+        hr_values = await caget(
+            [axis_pv]
+            + [axis_pv + i for i in all_motor_params.values()]
+            + [axis_pv + i for i in galil_specific_params.values()],
+            throw=False,
+            timeout=0.1,
         )
 
-    for process in motor_processes:
-        process.start()
-        process.join()
+        if all(isinstance(i, CANothing) for i in hr_values):
+            # All PVs failed to connect so don't bother writing this axis
+            continue
 
-    def get_motor_number(item):
-        try:
-            return int(item["Axis Name"].split(" ")[0].replace("MTR", ""))
-        except:
-            # Currently only used for sorting so we can return -1 to bubble these PVs up to the top
-            # if PV doesn't naming convention of MTRx where x is number (e.g. MTRNORTH)
-            return -1
+        # Sanitising - remove any CANothings and replace with None
+        hr_values = [None if isinstance(i, CANothing) else i for i in hr_values]
+        out_dict = dict(zip(hr_keys, hr_values))
 
-    # Sort the data by motor number
-    sorted_data = sorted(data, key=get_motor_number)
+        out_dict[PV] = axis_pv
 
-    writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction="ignore")
+        if isinstance(out_dict[MOTOR_RES], float):
+            try:
+                out_dict[INV_MOTOR_RES] = 1.0 / out_dict[MOTOR_RES]  # pyright: ignore [reportOperatorIssue]
+            except ZeroDivisionError:
+                out_dict[INV_MOTOR_RES] = None
+        if isinstance(out_dict[ENCODER_RES], float):
+            try:
+                out_dict[INV_ENCODER_RES] = 1.0 / out_dict[ENCODER_RES]  # pyright: ignore [reportOperatorIssue]
+            except ZeroDivisionError:
+                out_dict[INV_ENCODER_RES] = None
+        if isinstance(out_dict[MAX_VELO], float) and isinstance(out_dict[ACCEL], float):
+            out_dict[DECEL_DIST] = out_dict[MAX_VELO] * out_dict[ACCEL]  # pyright: ignore [reportOperatorIssue]
+        rows.append(out_dict)
+
+    writer = csv.DictWriter(file_reference, output_order, restval="N/A", extrasaction="ignore")  # type: ignore
     writer.writeheader()
-    writer.writerows(sorted_data)
-
-
-def get_params_and_save(file_name, num_of_controllers=8):
-    """
-    Gets all the motor parameters and saves them to a file by name as a csv.
-
-    Args:
-        file_name: name of the file to save to
-        num_of_controllers (int, optional): The number of motor controllers on the instrument (default is 8)
-    """
-    with open(file_name, "w") as f:
-        get_params_and_save_to_file(f, num_of_controllers)
+    writer.writerows(rows)
