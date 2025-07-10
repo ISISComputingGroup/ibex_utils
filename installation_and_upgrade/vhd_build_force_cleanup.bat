@@ -1,6 +1,7 @@
 setlocal EnableDelayedExpansion
 set PYTHONUNBUFFERED=1
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
+set "KITS_ICP_PATH=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"
 
 call "%~dp0set_epics_ca_addr_list.bat"
 call "%~dp0install_or_update_uv.bat"
