@@ -11,6 +11,7 @@ REM  this will change e.g. {prefix}_win7_x64  to {prefix}_win1_x64   as server s
 setlocal EnableDelayedExpansion
 
 set PYTHONUNBUFFERED=TRUE
+set "KITS_ICP_PATH=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP"
 
 call "%~dp0set_epics_ca_addr_list.bat"
 call "%~dp0install_or_update_uv.bat"
