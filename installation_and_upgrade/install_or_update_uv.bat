@@ -1,12 +1,6 @@
 REM Script to either update uv or install it
-uv self update
 
-REM if the above didnt work uv is probably not installed. install it.
-if %errorlevel% neq 0 (
-    set UV_INSTALL_DIR=C:\Instrument\Apps\uv
-    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-	set "Path=C:\Instrument\Apps\uv;%Path%"
-)
+robocopy \\isis\inst$\Kits$\CompGroup\ICP\uv\uv-x86_64-pc-windows-msvc c:\Instrument\Apps\uv -MIR -NFL -NDL -NP -R:1 -MT -L
 
 REM set the uv python executable installation directory permanently
 setx UV_PYTHON_INSTALL_DIR C:\Instrument\apps\uv\snakes\
