@@ -1,6 +1,6 @@
 REM Script to either update uv or install it
 
-robocopy \\isis\inst$\Kits$\CompGroup\ICP\uv\uv-x86_64-pc-windows-msvc\ c:\Instrument\Apps\uv\ -MIR
+robocopy \\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\uv\uv-x86_64-pc-windows-msvc\ c:\Instrument\Apps\uv\ -MIR
 set "Path=C:\Instrument\Apps\uv;%Path%"
 
 REM set the uv python executable installation directory permanently
