@@ -35,7 +35,7 @@ set SERVER_ARCH=x64
 if not "%3" == "" set SERVER_ARCH=%3
 @echo Using server arch %SERVER_ARCH%
 
-set SERVER_WINBUILD=win7
+set SERVER_WINBUILD=win
 if not "%4" == "" set SERVER_WINBUILD=%4
 @echo Using server winbuild %SERVER_WINBUILD%
 
