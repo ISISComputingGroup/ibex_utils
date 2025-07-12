@@ -259,7 +259,7 @@ class VHDTasks(BaseTasks):
     @task("Initialize var dir")
     def initialize_var_dir(self):
         """
-        Creates the folder structure for the C:\instrument\var directory.
+        Creates the folder structure for the C:\\instrument\\var directory.
         """
         # config_env creates all the necessary directories for us
         RunProcess(working_dir=EPICS_PATH, executable_file="config_env.bat").run()
