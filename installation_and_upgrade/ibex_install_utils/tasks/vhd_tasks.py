@@ -18,7 +18,9 @@ from ibex_install_utils.tasks.common_paths import (
 
 
 class Vhd:
-    def __init__(self, name, source_filename, dest_filename, mount_point):
+    def __init__(
+        self, name: str, source_filename: str, dest_filename: str, mount_point: str
+    ) -> None:
         self.name = name
         self.source_filename = source_filename
         self.dest_filename = dest_filename
@@ -65,7 +67,7 @@ class VHDTasks(BaseTasks):
     """
 
     @task("Copy VHDs to local area")
-    def copy_vhds_to_local_area(self):
+    def copy_vhds_to_local_area(self) -> None:
         if os.path.exists(LOCAL_VHD_DIR):
             try:
                 shutil.rmtree(LOCAL_VHD_DIR)
@@ -80,7 +82,7 @@ class VHDTasks(BaseTasks):
                 os.path.join(LOCAL_VHD_DIR, vhd.source_filename),
             )
 
-    def _create_file_and_wait_for_it_to_be_deleted(self, filename, timeout):
+    def _create_file_and_wait_for_it_to_be_deleted(self, filename: str, timeout: int) -> None:
         with open(filename, "w") as f:
             f.write("")
 
@@ -110,24 +112,24 @@ class VHDTasks(BaseTasks):
             print("--- end scheduled task output ---")
             print("---")
             raise IOError(
-                f"File at {filename} still existed after {timeout}s, check VHD scheduled task is running "
-                f"correctly "
+                f"File at {filename} still existed after {timeout}s, "
+                "check VHD scheduled task is running correctly "
             )
 
     @task("Request VHDs to be mounted")
-    def request_mount_vhds(self):
+    def request_mount_vhds(self) -> None:
         self._create_file_and_wait_for_it_to_be_deleted(
             FILE_TO_REQUEST_VHD_MOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT
         )
 
     @task("Request VHDs to be dismounted")
-    def request_dismount_vhds(self):
+    def request_dismount_vhds(self) -> None:
         self._create_file_and_wait_for_it_to_be_deleted(
             FILE_TO_REQUEST_VHD_DISMOUNTING, VHD_MOUNT_DISMOUNT_TIMEOUT
         )
 
     @task("Mount VHDs")
-    def mount_vhds(self):
+    def mount_vhds(self) -> None:
         if not os.path.exists(FILE_TO_REQUEST_VHD_MOUNTING):
             return
 
@@ -150,18 +152,20 @@ class VHDTasks(BaseTasks):
             # Mount the VHD and write it's assigned drive letter to a file.
             admin_commands.add_command(
                 "powershell",
-                r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'.format(
+                r'-command "Hyper-V\Mount-VHD -path {vhd_file} -Passthru | Get-Disk | '
+                r"Get-Partition | Get-Volume | foreach {{ $_.DriveLetter }} | "
+                r'out-file -filepath {driveletter_file} -Encoding ASCII -NoNewline"'.format(
                     vhd_file=os.path.join(LOCAL_VHD_DIR, vhd.source_filename),
                     driveletter_file=driveletter_file,
                 ),
             )
 
-            # Append :\\ to drive letter, e.g. E -> E:\\ (this is necessary so that directory junctions work correctly)
+            # Append :\\ to drive letter, e.g. E -> E:\\
+            # (this is necessary so that directory junctions work correctly)
             admin_commands.add_command(
                 "powershell",
-                r'-command "echo :\\ | out-file -filepath {driveletter_file} -Encoding ASCII -Append -NoNewline"'.format(
-                    driveletter_file=driveletter_file
-                ),
+                r'-command "echo :\\ | out-file -filepath {driveletter_file} '
+                r'-Encoding ASCII -Append -NoNewline"'.format(driveletter_file=driveletter_file),
             )
 
             # If parent of mount point doesn't exist mklink will fail, create it to avoid this
@@ -187,13 +191,14 @@ class VHDTasks(BaseTasks):
         os.remove(FILE_TO_REQUEST_VHD_MOUNTING)
 
     @task("Dismount VHDs")
-    def dismount_vhds(self):
+    def dismount_vhds(self) -> None:
         if not os.path.exists(FILE_TO_REQUEST_VHD_DISMOUNTING):
             return
 
         admin_commands = AdminCommandBuilder()
 
-        # Belt and braces - mysql should already be stopped, but make sure by explicitly stopping it again.
+        # Belt and braces - mysql should already be stopped, but make sure by
+        # explicitly stopping it again.
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
 
         for vhd in VHDS:
@@ -213,8 +218,8 @@ class VHDTasks(BaseTasks):
                     r'/c "del /s /q {mount_point}"'.format(mount_point=vhd.mount_point),
                     expected_return_val=None,
                 )
-            # If we don't have a backup then use rmdir to only delete the mount point (does nothing if the dir
-            # is non-empty)
+            # If we don't have a backup then use rmdir to only delete the mount point
+            # (does nothing if the dir is non-empty)
             admin_commands.add_command(
                 "cmd",
                 r'/c "rmdir {mount_point}"'.format(mount_point=vhd.mount_point),
@@ -235,7 +240,7 @@ class VHDTasks(BaseTasks):
         os.remove(FILE_TO_REQUEST_VHD_DISMOUNTING)
 
     @task("Deploy VHDS")
-    def deploy_vhds(self):
+    def deploy_vhds(self) -> None:
         if self._ibex_version is not None:
             build_folder = os.path.join(
                 REMOTE_VHD_DEST_DIR, "Releases", "{}".format(self._ibex_version)
@@ -257,9 +262,9 @@ class VHDTasks(BaseTasks):
         shutil.rmtree(LOCAL_VHD_DIR)
 
     @task("Initialize var dir")
-    def initialize_var_dir(self):
+    def initialize_var_dir(self) -> None:
         """
-        Creates the folder structure for the C:\instrument\var directory.
+        Creates the folder structure for the C:\\instrument\\var directory.
         """
         # config_env creates all the necessary directories for us
         RunProcess(working_dir=EPICS_PATH, executable_file="config_env.bat").run()

@@ -117,8 +117,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--server_winbuild",
         dest="server_winbuild",
-        default="win7",
-        choices=["win7", "win10", "win11"],
+        default="win",
+        choices=["win"],
         help="Server winbuild.",
     )
 

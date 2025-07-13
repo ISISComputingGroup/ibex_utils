@@ -252,7 +252,7 @@ class ServerTasks(BaseTasks):
         """Update the configuration on the instrument using its upgrade config script."""
         manual_prompt = (
             "Merge the master configurations branch into the instrument configuration. "
-            "From C:\Instrument\Settings\config\[machine name] run:\n"
+            "From C:\\Instrument\\Settings\\config\\[machine name] run:\n"
             "    0. Clean up any in progress merge (e.g. git merge --abort)\n"
             "    1. git checkout master\n"
             "    2. git pull\n"
@@ -340,7 +340,7 @@ class ServerTasks(BaseTasks):
                 self.update_calibrations_repository()
         else:
             repo_url = "https://gitlab.stfc.ac.uk/isisexperimentcontrols/common.git"
-            location = "C:\Instrument\Settings\config\common"
+            location = r"C:\Instrument\Settings\config\common"
             RunProcess(
                 working_dir=os.curdir,
                 executable_file="git",
