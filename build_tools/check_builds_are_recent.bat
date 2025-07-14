@@ -1,7 +1,7 @@
 setlocal
-call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat"
-IF %errorlevel% neq 0 EXIT /b %errorlevel%
+call "%~dp0..\installation_and_upgrade\install_or_update_uv.bat"
+call "%~dp0..\installation_and_upgrade\set_up_venv.bat"
+
 set PYTHONUNBUFFERED=TRUE
-REM use LATEST_PYTHON3 so not killed by stop_ibex_server 
-call "%LATEST_PYTHON3%" -u "%~dp0check_builds_are_recent.py"
-call "%~dp0..\installation_and_upgrade\remove_genie_python.bat" %LATEST_PYTHON_DIR%
+
+call python -u "%~dp0check_builds_are_recent.py"

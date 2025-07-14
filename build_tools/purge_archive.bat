@@ -1,20 +1,10 @@
 setlocal EnableDelayedExpansion
-REM Remove old builds from the archive
 
-set "WORKWIN=%WORKSPACE:/=\%"
-
-if "%WORKWIN%" == "" (
-    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat"
-) else (
-    if exist "%WORKWIN%\Python3" rd /s /q %WORKWIN%\Python3
-    if !errorlevel! neq 0 exit /b 1
-    call "%~dp0..\installation_and_upgrade\define_latest_genie_python.bat" %WORKWIN%\Python3
-)
-IF %errorlevel% neq 0 EXIT /b %errorlevel%
+call "%~dp0..\installation_and_upgrade\install_or_update_uv.bat"
+call "%~dp0..\installation_and_upgrade\set_up_venv.bat"
 
 set PYTHONUNBUFFERED=TRUE
-REM use LATEST_PYTHON3 to avoid process being killed
-"%LATEST_PYTHON3%" -u "%~dp0purge_archive.py"
+python -u "%~dp0purge_archive.py"
 set errcode=!errorlevel!
 @echo purge_archive.py exited with code !errcode!
 
@@ -34,7 +24,6 @@ popd
 for /F "skip=1" %%I in ('wmic path win32_localtime get dayofweek') do (set /a DOW=%%I 2>NUL)
 if %DOW% neq 6 (
     @echo Skipping debug symbol cleanup as day of week %DOW% is not 6
-    CALL "%~dp0..\installation_and_upgrade\remove_genie_python.bat" %LATEST_PYTHON_DIR%
     exit /b !errcode!
 )
 
@@ -52,5 +41,3 @@ if exist "%AGESTORE%" (
 ) else (
     @echo agestore does not exist
 )
-
-CALL "%~dp0..\installation_and_upgrade\remove_genie_python.bat" %LATEST_PYTHON_DIR%
