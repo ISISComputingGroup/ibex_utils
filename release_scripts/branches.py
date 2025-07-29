@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import xml.etree.ElementTree as ET
+from git import GitCommandError
 from typing import Any, List
 
 import git
@@ -205,7 +206,10 @@ class ReleaseBranch:
         if submodules:
             for submodule in self.repo.submodules:
                 logging.info(f"Pushing to submodule '{submodule.module().remote().url}'.")
-                submodule.module().git.push("origin", self.branch_name)
+                try:
+                    submodule.module().git.push("origin", self.branch_name)
+                except GitCommandError:
+                    logging.exception("Failed to push to %s: ", submodule.module().remote().url)
 
         self.repo.git.push("origin", self.branch_name)
 
