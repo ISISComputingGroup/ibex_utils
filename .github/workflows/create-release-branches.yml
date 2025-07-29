@@ -33,13 +33,13 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
-  VERSION: ${github.event.inputs.version}
-  REMOTE: ${github.event.inputs.remote}
-  TAG: ${github.event.inputs.tag}
-  EPICS: ${github.event.inputs.create_epics_branches}
-  IBEX_GUI: ${github.event.inputs.create_ibex_gui_branch}
-  SCRIPT_GENERATOR: ${github.event.inputs.create_script_gen_branch}
-  UKTENA: ${github.event.inputs.create_uktena_branch}
+  VERSION: ${{github.event.inputs.version}}
+  REMOTE: ${{github.event.inputs.remote}}
+  TAG: ${{github.event.inputs.tag}}
+  EPICS: ${{github.event.inputs.create_epics_branches}}
+  IBEX_GUI: ${{github.event.inputs.create_ibex_gui_branch}}
+  SCRIPT_GENERATOR: ${{github.event.inputs.create_script_gen_branch}}
+  UKTENA: ${{github.event.inputs.create_uktena_branch}}
 
 jobs:
   create_release_branches:
@@ -50,4 +50,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r release_scripts/requirements.txt
-      - run: python --version ${github.event.inputs.version}
+      - run: python --version ${{github.event.inputs.version}}
