@@ -52,6 +52,6 @@ jobs:
       - run: python -m pip install -r release_scripts/requirements.txt
       - run: |
           mkdir -p ~/.config/git/
-          echo "${{ github.secrets.repo_token }}" > ~/.config/git/credentials
+          echo "${{ secrets.REPO_TOKEN }}" > ~/.config/git/credentials
           git config --global credential.helper store
       - run: python release_scripts/branches.py --version ${{github.event.inputs.version}}
