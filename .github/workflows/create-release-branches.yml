@@ -1,3 +1,4 @@
+name: create-release-branches
 on:
   workflow_dispatch:
     inputs:
