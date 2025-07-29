@@ -12,13 +12,11 @@ from git.repo import Repo
 EPICS_REPO_URL = "https://github.com/ISISComputingGroup/EPICS.git"
 IBEX_REPO_URL = "https://github.com/ISISComputingGroup/ibex_gui.git"
 UKTENA_URL = "https://github.com/ISISComputingGroup/uktena.git"
-JSON_BOURNE_URL = "https://github.com/ISISComputingGroup/JSON_bourne.git"
 
 EPICS_DIR = "EPICS"
 IBEX_DIR = "IBEX"
 SCRIPT_GEN_DIR = "SCRIPT_GEN"
 UKTENA_DIR = "UKTENA"
-JSON_BOURNE_DIR = "JSON_bourne"
 
 INSTETC_TEMPLATE_LOCAL_PATH = os.path.join(
     "INSTETC", "INSTETC-IOC-01App", "Db", "svn-revision.db.tmpl"
@@ -266,8 +264,3 @@ if __name__ == "__main__":
         uktena = ReleaseBranch()
         uktena.create(UKTENA_URL, UKTENA_DIR, f"Release_{args.version}")
         uktena.push()
-
-    if os.getenv("JSON_BOURNE") == "true":
-        json_bourne = ReleaseBranch()
-        json_bourne.create(JSON_BOURNE_URL, JSON_BOURNE_DIR, f"Release_{args.version}")
-        json_bourne.push()
