@@ -123,7 +123,7 @@ class ReleaseBranch:
         logging.info(f"Cloning '{url}' into '{dir}'.")
         self.repo = git.Repo.clone_from(url=url, to_path=dir)
         if branch_name in self.repo.references:
-            logging.error(f"Branch name '{branch_name}' " f"already exists for repo '{url}'.")
+            logging.error(f"Branch name '{branch_name}' already exists for repo '{url}'.")
             sys.exit(1)
 
         source = os.getenv("TAG")
