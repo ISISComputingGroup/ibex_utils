@@ -1,6 +1,1 @@
-# Used for Python on Linux Jenkins node.
-
-###### Requirements without Version Specifiers ######
 GitPython
-
-###### Requirements with Version Specifiers ######
