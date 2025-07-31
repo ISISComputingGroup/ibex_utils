@@ -189,7 +189,7 @@ class SystemTasks(BaseTasks):
         """
         Adds the required kafka topics to the cluster.
         """
-        add_required_topics("livedata.isis.cclrc.ac.uk:9092", self._get_instrument_name())
+        add_required_topics("livedata.isis.cclrc.ac.uk:31092", self._get_instrument_name())
 
     @task("Add Nagios checks")
     def add_nagios_checks(self) -> None:

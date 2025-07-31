@@ -254,6 +254,8 @@ class UpgradeInstrument:
         self._python_tasks.update_script_definitions()
         self._python_tasks.remove_instrument_script_githooks()
         self._server_tasks.setup_log_rotation()
+        self._system_tasks.update_kafka_topics()
+
 
     def run_instrument_deploy_pre_stop(self) -> None:
         """Upgrade an instrument. Steps to do before ibex is stopped.
@@ -293,6 +295,7 @@ class UpgradeInstrument:
         self._mysql_tasks.install_mysql(force=False)
         self._system_tasks.check_java_installation()
         self._system_tasks.install_or_upgrade_git()
+        self._system_tasks.update_kafka_topics()
 
     def run_vhd_creation(self) -> None:
         """Automated job which creates a set of VHDs containing all IBEX components.
