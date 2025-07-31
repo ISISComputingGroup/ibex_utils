@@ -12,6 +12,8 @@ SETTINGS_CONFIG_PATH = os.path.join(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER)
 AUTOSAVE = os.path.join(VAR_DIR, "Autosave")
 """Path to the autosave directory."""
 
+UV = os.path.join("c:\\", "Instrument", "Apps", "uv", "uv.exe")
+
 EPICS_PATH = os.path.join(APPS_BASE_DIR, "EPICS")
 EPICS_IOC_PATH = os.path.join(EPICS_PATH, "ioc", "master")
 EPICS_UTILS_PATH = os.path.join(APPS_BASE_DIR, "EPICS_UTILS")

@@ -27,6 +27,7 @@ class RunProcess:
         expected_return_codes: Union[int, List[int], None] = [0],
         capture_last_output=False,
         progress_metric=[],
+        env: dict | None = None
     ):
         """
         Create a process that needs running
@@ -45,6 +46,8 @@ class RunProcess:
             capture_last_output: Whether to record the last console output of a command while pipes are captured.
             progress_metric: A list that is either empty if progress is not being calculated, or contains the output to
                 count, the 100% value, and optionally a label for printing progress
+            env: Environment variable mapping to pass to subprocess.POpen. Passing None inherits the parent process'
+                environment.
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
@@ -55,6 +58,7 @@ class RunProcess:
         self._capture_last_output = capture_last_output
         self.captured_output = ""
         self._progress_metric = progress_metric
+        self._env = env
         if isinstance(expected_return_codes, int):
             expected_return_codes = [expected_return_codes]
         self._expected_return_codes = expected_return_codes
@@ -102,6 +106,7 @@ class RunProcess:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     stdin=subprocess.PIPE,
+                    env=self._env,
                 )
                 output_lines, err = output.communicate(b" ")
                 for line in output_lines.splitlines():
