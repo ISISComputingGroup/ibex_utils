@@ -16,15 +16,15 @@ class RunProcess:
 
     def __init__(
         self,
-        working_dir: Optional[Union[str | bytes | os.PathLike[str] | os.PathLike[bytes]]],
+        working_dir: Optional[Union[str, bytes, os.PathLike[str], os.PathLike[bytes]]],
         executable_file: str,
         executable_directory: Optional[
-            Union[str | bytes | os.PathLike[str] | os.PathLike[bytes]]
+            Union[str, bytes, os.PathLike[str], os.PathLike[bytes]]
         ] = None,
         press_any_key: bool = False,
         prog_args: Optional[List[str]] = None,
         capture_pipes: bool = True,
-        std_in: Optional[int, IO] = None,
+        std_in: Optional[Union[int, IO]] = None,
         log_command_args: bool = True,
         expected_return_codes: Optional[Union[int, List[int]]] = None,
         capture_last_output: bool = False,
