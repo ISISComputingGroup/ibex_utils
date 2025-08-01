@@ -15,11 +15,11 @@ REQUIRED_SUFFIXES = [
 ]
 
 
-def _get_existing_topics(kafka_broker):
+def _get_existing_topics(kafka_broker: str) -> set[str]:
     return KafkaConsumer(bootstrap_servers=[kafka_broker]).topics()
 
 
-def add_required_topics(kafka_broker, instrument):
+def add_required_topics(kafka_broker: str, instrument: str) -> None:
     """
     Adds required Kafka topics for the instrument
 

@@ -4,7 +4,7 @@ Running processes infrastructure.
 
 import os
 import subprocess
-from typing import List, Union
+from typing import IO, List, Optional
 
 from ibex_install_utils.exceptions import ErrorInRun
 
@@ -16,38 +16,42 @@ class RunProcess:
 
     def __init__(
         self,
-        working_dir,
-        executable_file,
-        executable_directory=None,
-        press_any_key=False,
-        prog_args=None,
-        capture_pipes=True,
-        std_in=None,
-        log_command_args=True,
-        expected_return_codes: Union[int, List[int], None] = [0],
-        capture_last_output=False,
-        progress_metric=[],
+        working_dir: Optional[str | bytes | os.PathLike[str] | os.PathLike[bytes]],
+        executable_file: str,
+        executable_directory: Optional[str | bytes | os.PathLike[str] | os.PathLike[bytes]] = None,
+        press_any_key: bool = False,
+        prog_args: Optional[List[str]] = None,
+        capture_pipes: bool = True,
+        std_in: Optional[int, IO] = None,
+        log_command_args: bool = True,
+        expected_return_codes: Optional[int, List[int]] = None,
+        capture_last_output: bool = False,
+        progress_metric: Optional[List[str]] = None,
         env: dict | None = None,
-    ):
+    ) -> None:
         """
         Create a process that needs running
 
         Args:
             working_dir: working directory of the process
             executable_file: file of the process to run, e.g. a bat file
-            executable_directory: the directory in which the executable file lives, if None, default, use working dir
+            executable_directory: the directory in which the executable file lives,
+             if None, default, use working dir
             press_any_key: if true then press a key to finish the run process
             prog_args(list[string]): arguments to pass to the program
-            capture_pipes: whether to capture pipes and manage in python or let the process access the console
+            capture_pipes: whether to capture pipes and manage in python or let the
+             process access the console
             std_in: std_in sets the stdin pipe to be this
             log_command_args (bool): Whether to show the full command line that is being executed.
-            expected_return_codes (int, None, List[int]): The expected return code for this command. Set it to None to
-                disable return-code checking.
-            capture_last_output: Whether to record the last console output of a command while pipes are captured.
-            progress_metric: A list that is either empty if progress is not being calculated, or contains the output to
+            expected_return_codes (int, None, List[int]): The expected return code for this command.
+             Set it to None to disable return-code checking.
+            capture_last_output: Whether to record the last console output of a command
+            while pipes are captured.
+            progress_metric: A list that is either empty if progress is
+            not being calculated, or contains the output to
                 count, the 100% value, and optionally a label for printing progress
-            env: Environment variable mapping to pass to subprocess.POpen. Passing None inherits the parent process'
-                environment.
+            env: Environment variable mapping to pass to subprocess.POpen.
+            Passing None inherits the parent process' environment.
         """
         self._working_dir = working_dir
         self._bat_file = executable_file
@@ -57,11 +61,13 @@ class RunProcess:
         self._stdin = std_in
         self._capture_last_output = capture_last_output
         self.captured_output = ""
-        self._progress_metric = progress_metric
+        self._progress_metric = progress_metric if progress_metric is not None else []
         self._env = env
         if isinstance(expected_return_codes, int):
             expected_return_codes = [expected_return_codes]
-        self._expected_return_codes = expected_return_codes
+        self._expected_return_codes = (
+            expected_return_codes if expected_return_codes is not None else []
+        )
         self.log_command_args = log_command_args
         if std_in is not None and self._capture_pipes:
             raise NotImplementedError("Capturing pipes and set standard in is not implemented.")
@@ -70,7 +76,7 @@ class RunProcess:
         else:
             self._full_path_to_process_file = os.path.join(executable_directory, executable_file)
 
-    def run(self):
+    def run(self) -> None:
         """
         Run the process
 
@@ -140,7 +146,8 @@ class RunProcess:
         except subprocess.CalledProcessError as ex:
             if ex.output:
                 print(
-                    f"Process failed with return code {ex.returncode} (expected {self._expected_return_codes}). "
+                    f"Process failed with return code {ex.returncode}"
+                    f" (expected {self._expected_return_codes}). "
                     f"Output was: "
                 )
                 for line in ex.output.splitlines():
@@ -148,29 +155,32 @@ class RunProcess:
                 print(" --- ")
             else:
                 print(
-                    f"Process failed with return code {ex.returncode} (expected {self._expected_return_codes}) "
+                    f"Process failed with return code {ex.returncode}"
+                    f" (expected {self._expected_return_codes}) "
                     f"and no output."
                 )
 
             raise ErrorInRun(
-                f"Command failed with return code {ex.returncode} (expected {self._expected_return_codes})"
+                f"Command failed with return code {ex.returncode}"
+                f" (expected {self._expected_return_codes})"
             )
         except WindowsError as ex:
             if ex.errno == 2:
                 raise ErrorInRun(f"Command '{self._bat_file}' not found in '{self._working_dir}'")
             elif ex.errno == 22:
                 raise ErrorInRun(
-                    f"Directory not found to run command '{self._bat_file}', command is in :  '{self._working_dir}'"
+                    f"Directory not found to run command '{self._bat_file}',"
+                    f" command is in :  '{self._working_dir}'"
                 )
             raise ex
 
-    def output_no_progress(self, process):
+    def output_no_progress(self, process: subprocess.Popen) -> None:
         for stdout_line in iter(process.stdout.readline, ""):
             print(f"    > {stdout_line}")
             if self._capture_last_output:
                 self.captured_output = stdout_line
 
-    def output_progress(self, process):
+    def output_progress(self, process: subprocess.Popen) -> None:
         count = 0
         label = ""
         if len(self._progress_metric) > 2:

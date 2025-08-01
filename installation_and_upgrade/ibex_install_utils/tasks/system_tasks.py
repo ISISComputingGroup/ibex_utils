@@ -192,7 +192,7 @@ class SystemTasks(BaseTasks):
         add_required_topics("livedata.isis.cclrc.ac.uk:31092", self._get_instrument_name())
 
     @task("Create virtual environments for python processes")
-    def create_virtual_envs(self):
+    def create_virtual_envs(self) -> None:
         dirs_with_venvs = []
         for root, _, files in os.walk(EPICS_PATH):
             for file in files:
