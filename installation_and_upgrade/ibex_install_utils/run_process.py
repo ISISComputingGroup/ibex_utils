@@ -177,12 +177,16 @@ class RunProcess:
             raise ex
 
     def output_no_progress(self, process: subprocess.Popen) -> None:
+        if process.stdout is None or process.stdout is None:
+            raise Exception(f"No output from process {process}")
         for stdout_line in iter(process.stdout.readline, ""):
             print(f"    > {stdout_line}")
             if self._capture_last_output:
                 self.captured_output = stdout_line
 
     def output_progress(self, process: subprocess.Popen) -> None:
+        if process.stdout is None or process.stdout is None:
+            raise Exception(f"No output from process {process}")
         count = 0
         label = ""
         if len(self._progress_metric) > 2:
