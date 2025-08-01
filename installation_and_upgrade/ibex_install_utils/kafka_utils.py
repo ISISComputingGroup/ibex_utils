@@ -1,9 +1,18 @@
 from kafka import KafkaConsumer
 from kafka.admin import KafkaAdminClient, NewTopic
 
-REQUIRED_SUFFIXES = ["_events", "_sampleEnv", "_runInfo", "_forwarderConfig", "_detSpecMap",
-                     "_forwarderStorage", "_forwarderStatus", "_runLog", "_areaDetector",
-                     "_monitorHistograms"]
+REQUIRED_SUFFIXES = [
+    "_events",
+    "_sampleEnv",
+    "_runInfo",
+    "_forwarderConfig",
+    "_detSpecMap",
+    "_forwarderStorage",
+    "_forwarderStatus",
+    "_runLog",
+    "_areaDetector",
+    "_monitorHistograms",
+]
 
 
 def _get_existing_topics(kafka_broker):

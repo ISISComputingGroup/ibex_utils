@@ -27,7 +27,7 @@ class RunProcess:
         expected_return_codes: Union[int, List[int], None] = [0],
         capture_last_output=False,
         progress_metric=[],
-        env: dict | None = None
+        env: dict | None = None,
     ):
         """
         Create a process that needs running

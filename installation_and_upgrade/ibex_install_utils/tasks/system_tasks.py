@@ -15,7 +15,7 @@ from ibex_install_utils.software_dependency.git import Git
 from ibex_install_utils.software_dependency.java import Java
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
-from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, VAR_DIR, UV
+from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, UV, VAR_DIR
 from ibex_install_utils.version_check import version_check
 from win32com.client import Dispatch
 
@@ -196,7 +196,7 @@ class SystemTasks(BaseTasks):
         dirs_with_venvs = []
         for root, _, files in os.walk(EPICS_PATH):
             for file in files:
-                if file == 'requirements-frozen.txt':
+                if file == "requirements-frozen.txt":
                     dirs_with_venvs.append(root)
 
         for directory in dirs_with_venvs:
@@ -206,14 +206,19 @@ class SystemTasks(BaseTasks):
             if os.path.exists(venv):
                 shutil.rmtree(venv)
 
-            RunProcess(working_dir=os.path.join(directory),
-                       executable_file=UV,
-                       prog_args=["venv", venv_name], env={}).run()
+            RunProcess(
+                working_dir=os.path.join(directory),
+                executable_file=UV,
+                prog_args=["venv", venv_name],
+                env={},
+            ).run()
 
-            RunProcess(working_dir=os.path.join(directory),
-                       executable_file=UV,
-                       prog_args=["pip", "sync", "requirements-frozen.txt"], env={}).run()
-
+            RunProcess(
+                working_dir=os.path.join(directory),
+                executable_file=UV,
+                prog_args=["pip", "sync", "requirements-frozen.txt"],
+                env={},
+            ).run()
 
     @task("Add Nagios checks")
     def add_nagios_checks(self) -> None:

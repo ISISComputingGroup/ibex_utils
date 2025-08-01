@@ -256,7 +256,6 @@ class UpgradeInstrument:
         self._server_tasks.setup_log_rotation()
         self._system_tasks.update_kafka_topics()
 
-
     def run_instrument_deploy_pre_stop(self) -> None:
         """Upgrade an instrument. Steps to do before ibex is stopped.
 
