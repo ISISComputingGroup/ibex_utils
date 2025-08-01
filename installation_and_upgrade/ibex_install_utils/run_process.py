@@ -4,7 +4,7 @@ Running processes infrastructure.
 
 import os
 import subprocess
-from typing import IO, List, Optional
+from typing import IO, List, Optional, Union
 
 from ibex_install_utils.exceptions import ErrorInRun
 
@@ -16,15 +16,17 @@ class RunProcess:
 
     def __init__(
         self,
-        working_dir: Optional[str | bytes | os.PathLike[str] | os.PathLike[bytes]],
+        working_dir: Optional[Union[str | bytes | os.PathLike[str] | os.PathLike[bytes]]],
         executable_file: str,
-        executable_directory: Optional[str | bytes | os.PathLike[str] | os.PathLike[bytes]] = None,
+        executable_directory: Optional[
+            Union[str | bytes | os.PathLike[str] | os.PathLike[bytes]]
+        ] = None,
         press_any_key: bool = False,
         prog_args: Optional[List[str]] = None,
         capture_pipes: bool = True,
         std_in: Optional[int, IO] = None,
         log_command_args: bool = True,
-        expected_return_codes: Optional[int, List[int]] = None,
+        expected_return_codes: Optional[Union[int, List[int]]] = None,
         capture_last_output: bool = False,
         progress_metric: Optional[List[str]] = None,
         env: dict | None = None,
