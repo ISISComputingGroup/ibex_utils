@@ -211,6 +211,7 @@ class SystemTasks(BaseTasks):
                 executable_file=UV,
                 prog_args=["venv", venv_name],
                 env={},
+                expected_return_codes=0,
             ).run()
 
             RunProcess(
@@ -218,6 +219,7 @@ class SystemTasks(BaseTasks):
                 executable_file=UV,
                 prog_args=["pip", "sync", "requirements-frozen.txt"],
                 env={},
+                expected_return_codes=0,
             ).run()
 
     @task("Add Nagios checks")
