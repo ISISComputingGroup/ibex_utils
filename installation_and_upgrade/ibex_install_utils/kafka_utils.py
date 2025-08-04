@@ -1,14 +1,25 @@
 from kafka import KafkaConsumer
 from kafka.admin import KafkaAdminClient, NewTopic
 
-REQUIRED_SUFFIXES = ["_events", "_sampleEnv", "_runInfo", "_epicsForwarderConfig", "_detSpecMap"]
+REQUIRED_SUFFIXES = [
+    "_events",
+    "_sampleEnv",
+    "_runInfo",
+    "_forwarderConfig",
+    "_detSpecMap",
+    "_forwarderStorage",
+    "_forwarderStatus",
+    "_runLog",
+    "_areaDetector",
+    "_monitorHistograms",
+]
 
 
-def get_existing_topics(kafka_broker):
+def _get_existing_topics(kafka_broker: str) -> set[str]:
     return KafkaConsumer(bootstrap_servers=[kafka_broker]).topics()
 
 
-def add_required_topics(kafka_broker, instrument):
+def add_required_topics(kafka_broker: str, instrument: str) -> None:
     """
     Adds required Kafka topics for the instrument
 
@@ -18,7 +29,7 @@ def add_required_topics(kafka_broker, instrument):
     """
     required_topics = set(instrument + suffix for suffix in REQUIRED_SUFFIXES)
     existing_topics = set(
-        filter(lambda topic: topic.startswith(instrument), get_existing_topics(kafka_broker))
+        filter(lambda topic: topic.startswith(instrument), _get_existing_topics(kafka_broker))
     )
 
     if required_topics != existing_topics:
