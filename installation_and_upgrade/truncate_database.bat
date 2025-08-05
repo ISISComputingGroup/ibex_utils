@@ -11,7 +11,7 @@ IF %errorlevel% neq 0 (
     goto ERROR
 )
 
-call "%LATEST_PYTHON%" "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step truncate_database
+call python -u "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step truncate_database
 IF %errorlevel% neq 0 goto ERROR
 call rmdir /s /q %UV_TEMP_VENV%
 
