@@ -68,7 +68,7 @@ class RunProcess:
         if isinstance(expected_return_codes, int):
             expected_return_codes = [expected_return_codes]
         self._expected_return_codes = (
-            expected_return_codes if expected_return_codes is not None else []
+            expected_return_codes if expected_return_codes is not None else [0]
         )
         self.log_command_args = log_command_args
         if std_in is not None and self._capture_pipes:
