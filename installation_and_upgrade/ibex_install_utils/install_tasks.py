@@ -186,7 +186,6 @@ class UpgradeInstrument:
         self._server_tasks.setup_calibrations_repository()
         self._server_tasks.update_calibrations_repository()
         self._system_tasks.clear_or_reapply_hotfixes()
-        self._system_tasks.restart_vis()
         self._server_tasks.install_wiring_tables()
         self._server_tasks.configure_motion()
         self._system_tasks.add_nagios_checks()
@@ -218,7 +217,6 @@ class UpgradeInstrument:
         Current the server can not be started in this python script.
         """
         self._client_tasks.start_ibex_gui()
-        self._system_tasks.restart_vis()
         self._client_tasks.perform_client_tests()
         self._server_tasks.perform_server_tests()
         self._server_tasks.run_config_checker()
