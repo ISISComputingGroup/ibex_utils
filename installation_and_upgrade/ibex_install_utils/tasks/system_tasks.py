@@ -166,7 +166,6 @@ class SystemTasks(BaseTasks):
             "- etc.\n"
         )
 
-
     @task("Update Instrument List")
     def update_instlist(self) -> None:
         """
