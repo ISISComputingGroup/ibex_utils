@@ -148,9 +148,7 @@ if __name__ == "__main__":
     server_suffix = "32" if args.server_arch == "x86" else ""
     if args.release_dir is not None:
         if args.release_version is not None:
-            current_release_dir = os.path.join(
-                args.release_dir, args.release_version
-            )
+            current_release_dir = os.path.join(args.release_dir, args.release_version)
             current_client_version = args.release_version
         else:
             current_release_dir = os.path.join(
