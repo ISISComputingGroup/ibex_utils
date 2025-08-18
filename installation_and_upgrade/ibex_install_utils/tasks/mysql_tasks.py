@@ -8,6 +8,7 @@ from typing import Generator
 
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInRun
+from ibex_install_utils.logger import temporarily_disable_logging
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.software_dependency.mysql import MySQL
 from ibex_install_utils.task import task
@@ -217,12 +218,13 @@ class MysqlTasks(BaseTasks):
         sql_password = ""
         retry_count = 5
         while --retry_count > 0:
-            sql_password = self.prompt.prompt(
-                "Enter the MySQL root password:",
-                UserPrompt.ANY,
-                os.getenv("MYSQL_PASSWORD", "environment variable not set"),
-                show_automatic_answer=False,
-            ).strip()
+            with temporarily_disable_logging():
+                sql_password = self.prompt.prompt(
+                    "Enter the MySQL root password:",
+                    UserPrompt.ANY,
+                    os.getenv("MYSQL_PASSWORD", "environment variable not set"),
+                    show_automatic_answer=False,
+                ).strip()
             if len(sql_password) > 0:
                 break
             print("Please enter a non blank password")

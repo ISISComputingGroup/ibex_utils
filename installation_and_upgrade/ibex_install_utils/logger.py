@@ -1,6 +1,20 @@
 import os
 import sys
 import time
+from contextlib import contextmanager
+
+ENABLE_LOGGING = True
+
+
+@contextmanager
+def temporarily_disable_logging():
+    global ENABLE_LOGGING
+    previous_logging_enabled = ENABLE_LOGGING
+    ENABLE_LOGGING = False
+    try:
+        yield
+    finally:
+        ENABLE_LOGGING = previous_logging_enabled
 
 
 class Logger:
@@ -21,7 +35,10 @@ class Logger:
         print(f"Log file is {LOG_PATH}")
 
     def write(self, message):
-        self.log.write(message)
+        if ENABLE_LOGGING:
+            self.log.write(message)
+        else:
+            self.log.write("[concealed]\n")
         return self.console.write(message)
 
     def flush(self):
@@ -30,7 +47,10 @@ class Logger:
 
     def readline(self):
         text = self.input.readline()
-        self.log.write(text)
+        if ENABLE_LOGGING:
+            self.log.write(text)
+        else:
+            self.log.write("[concealed]\n")
         return text
 
     @staticmethod
