@@ -7,6 +7,8 @@ import tempfile
 from time import sleep
 from typing import Any, Generator
 
+from ibex_install_utils.logger import temporarily_disable_logging
+
 # Plink is an SSH binary bundled with putty.
 # Use Plink as it allows passwords on the command-line, as opposed to
 # windows-bundled SSH which does not.
@@ -30,8 +32,9 @@ class AdminRunner:
     def _auth_ssh(cls) -> None:
         if not cls._ssh_authenticated:
             while True:
-                cls._ssh_user = input("Enter admin username (without domain): ")
-                cls._ssh_password = getpass.getpass("Enter admin password: ")
+                with temporarily_disable_logging():
+                    cls._ssh_user = input("Enter admin username (without domain): ")
+                    cls._ssh_password = getpass.getpass("Enter admin password: ")
 
                 assert cls._ssh_user is not None
                 assert cls._ssh_password is not None
