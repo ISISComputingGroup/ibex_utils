@@ -370,7 +370,7 @@ class ServerTasks(BaseTasks):
     def perform_server_tests(self) -> None:
         """Test that the server works"""
         server_release_tests_url = (
-            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Server-Release-Tests"
+            "https://isiscomputinggroup.github.io/ibex_developers_manual/deployment/deploy/Server-Release-Tests.html"
         )
 
         print(f"For further details, see {server_release_tests_url}")
