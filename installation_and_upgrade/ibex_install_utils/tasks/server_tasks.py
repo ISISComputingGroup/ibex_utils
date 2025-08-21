@@ -369,9 +369,7 @@ class ServerTasks(BaseTasks):
     @task("Server release tests")
     def perform_server_tests(self) -> None:
         """Test that the server works"""
-        server_release_tests_url = (
-            "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Server-Release-Tests"
-        )
+        server_release_tests_url = "https://isiscomputinggroup.github.io/ibex_developers_manual/deployment/deploy/Server-Release-Tests.html"
 
         print(f"For further details, see {server_release_tests_url}")
         self.prompt.prompt_and_raise_if_not_yes("Check that blocks are logging as expected")
