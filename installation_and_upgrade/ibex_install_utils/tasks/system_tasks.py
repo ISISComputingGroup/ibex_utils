@@ -135,9 +135,17 @@ class SystemTasks(BaseTasks):
         installer, _ = Java().find_latest()
 
         if os.path.exists(installer):
-            print(f"Running installer at ({installer})...")
+            print(f"Running installer at {installer}")
+            print(
+                "running"
+                f"msiexec /i {installer} "
+                "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
+                'INSTALLDIR="c:\\Program Files\\Eclipse Adoptium\\" /quiet'
+            )
             subprocess.call(
-                f'msiexec /i {installer} ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome INSTALLDIR="c:\\Program Files\\Eclipse Adoptium\\" /quiet'
+                f"msiexec /i {installer} "
+                "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
+                'INSTALLDIR="c:\\Program Files\\Eclipse Adoptium\\" /quiet'
             )
             self.prompt.prompt_and_raise_if_not_yes(
                 "Make sure java installed correctly.\r\n"
