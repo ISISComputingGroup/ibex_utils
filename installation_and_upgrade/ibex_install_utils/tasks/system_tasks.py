@@ -245,7 +245,9 @@ class SystemTasks(BaseTasks):
         email_template = f"""Please send the following email to your instrument scientists:
                     Hello,
                     We have finished the upgrade of {BaseTasks._get_machine_name()} to IBEX {ibex_version}.
-                    The release notes for this are at the following link: https://github.com/ISISComputingGroup/IBEX/wiki/Release-Notes-v{ibex_version}
+                    The relevant release notes can be found at the following links:
+                       * https://github.com/ISISComputingGroup/IBEX/blob/master/release_notes/Release-Notes-v{ibex_version}.md
+                       * https://github.com/ISISComputingGroup/IBEX/blob/master/release_notes/Release-Notes-v<INSERT PREVIOUS IBEX VERSION HERE>.md
 
                     Please let us know if you have any queries or find any problems with the upgrade.
                     Thank you,
