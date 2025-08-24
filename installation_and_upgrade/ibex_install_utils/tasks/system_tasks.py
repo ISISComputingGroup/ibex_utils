@@ -170,15 +170,6 @@ class SystemTasks(BaseTasks):
             "- etc.\n"
         )
 
-    @task("Restart VIs")
-    def restart_vis(self) -> None:
-        """
-        Restart Vis which were running on upgrade start.
-        """
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Please restart any VIs that were running at the start of the upgrade"
-        )
-
     @task("Update Instrument List")
     def update_instlist(self) -> None:
         """
