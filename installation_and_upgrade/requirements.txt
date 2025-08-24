@@ -10,3 +10,5 @@ six
 aioca
 pyepics
 epicscorelibs
+certifi
+requests
