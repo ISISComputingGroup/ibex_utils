@@ -70,6 +70,12 @@ if __name__ == "__main__":
         help="directory from which the client and server should be installed",
     )
     parser.add_argument(
+        "--release_version",
+        dest="release_version",
+        default=None,
+        help="release version of client and server to install",
+    )
+    parser.add_argument(
         "--release_suffix",
         dest="release_suffix",
         default="",
@@ -141,10 +147,14 @@ if __name__ == "__main__":
     current_client_version = None
     server_suffix = "32" if args.server_arch == "x86" else ""
     if args.release_dir is not None:
-        current_release_dir = os.path.join(
-            args.release_dir, _get_latest_release_path(args.release_dir)
-        )
-        current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
+        if args.release_version is not None:
+            current_release_dir = os.path.join(args.release_dir, args.release_version)
+            current_client_version = args.release_version
+        else:
+            current_release_dir = os.path.join(
+                args.release_dir, _get_latest_release_path(args.release_dir)
+            )
+            current_client_version = _get_latest_release_path(args.release_dir).split("\\")[-1]
         if args.release_suffix != "":
             current_release_dir += f"-{args.release_suffix}"
 

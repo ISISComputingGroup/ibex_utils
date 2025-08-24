@@ -6,9 +6,8 @@ REM check if console has Administrative privileges
 call "%~dp0check_for_admin_console.bat"
 IF %errorlevel% neq 0 EXIT /b %errorlevel%
 
+set EXTRA_ARGS=%*
 set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
-set SERVER_ARCH=x64
-if not "%1" == "" set SERVER_ARCH=%1
 
 if not exist "%SOURCE%" (
     @echo Cannot access network share %SOURCE%
@@ -37,7 +36,7 @@ set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
 
 IF EXIST "C:\Instrument\Apps\EPICS" (
 
-  call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_pre_stop
+  call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_pre_stop %EXTRA_ARGS%
   IF !errorlevel! neq 0 exit /b !errorlevel!
   start /wait cmd /c "%STOP_IBEX%"
 )
@@ -78,12 +77,12 @@ if "%DETECT_OLD_GALIL%" == "YES" (
     )
 )
 
-call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_main
+call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_main %EXTRA_ARGS%
 IF %errorlevel% neq 0 exit /b %errorlevel%
 
 start /i /wait cmd /c "%START_IBEX%"
 
-call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --server_arch %SERVER_ARCH% --confirm_step instrument_deploy_post_start
+call python "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step instrument_deploy_post_start %EXTRA_ARGS%
 call rmdir /s /q %UV_TEMP_VENV%
 
 exit /b 0
