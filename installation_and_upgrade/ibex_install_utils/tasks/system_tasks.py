@@ -2,11 +2,13 @@ import glob
 import os
 import shutil
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 from time import sleep
 
 import psutil
+import requests
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.kafka_utils import add_required_topics
@@ -422,6 +424,29 @@ class SystemTasks(BaseTasks):
             self.prompt.prompt_and_raise_if_not_yes(
                 "Download and Install Git from https://git-scm.com/downloads"
             )
+
+    @task("Update rust via rustup")
+    def update_rust(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            installer = os.path.join(tempdir, "rustup-init.exe")
+            installer_response = requests.get("https://win.rustup.rs/x86_64")
+            installer_response.raise_for_status()
+            with open(installer, "wb") as f:
+                f.write(installer_response.content)
+
+            RunProcess(
+                working_dir=os.curdir,
+                executable_directory=tempdir,
+                executable_file="rustup-init.exe",
+                prog_args=["-y", "--component", "clippy,rustfmt"],
+            ).run()
+
+        RunProcess(
+            working_dir=os.curdir,
+            executable_file=os.path.join(os.environ["USERPROFILE"], ".cargo", "bin", "rustup.exe"),
+            prog_args=["update"],
+            expected_return_codes=0,
+        ).run()
 
     @task("Update visual studio redistributable files")
     def install_or_upgrade_vc_redist(self) -> None:

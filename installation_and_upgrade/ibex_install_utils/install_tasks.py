@@ -296,6 +296,7 @@ class UpgradeInstrument:
         self._system_tasks.install_or_upgrade_git()
         self._system_tasks.update_kafka_topics()
         self._system_tasks.create_virtual_envs()
+        self._system_tasks.update_rust()
 
     def run_vhd_creation(self) -> None:
         """Automated job which creates a set of VHDs containing all IBEX components.
