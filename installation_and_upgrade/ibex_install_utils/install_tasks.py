@@ -191,6 +191,7 @@ class UpgradeInstrument:
         self._system_tasks.add_nagios_checks()
         self._system_tasks.update_instlist()
         self._system_tasks.update_kafka_topics()
+        self._system_tasks.create_virtual_envs()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._python_tasks.update_script_definitions()
         self._server_tasks.setup_log_rotation()
@@ -253,6 +254,7 @@ class UpgradeInstrument:
         self._python_tasks.remove_instrument_script_githooks()
         self._server_tasks.setup_log_rotation()
         self._system_tasks.update_kafka_topics()
+        self._system_tasks.create_virtual_envs()
 
     def run_instrument_deploy_pre_stop(self) -> None:
         """Upgrade an instrument. Steps to do before ibex is stopped.
