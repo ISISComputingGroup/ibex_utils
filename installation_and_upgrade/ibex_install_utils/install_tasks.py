@@ -175,6 +175,7 @@ class UpgradeInstrument:
         self._system_tasks.restrict_ie()
 
         self._server_tasks.install_ibex_server()
+        self._system_tasks.create_virtual_envs()
         self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
@@ -239,6 +240,7 @@ class UpgradeInstrument:
         self._mysql_tasks.backup_database()
         self._mysql_tasks.truncate_database()
         self._server_tasks.install_ibex_server()
+        self._system_tasks.create_virtual_envs()
         self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
