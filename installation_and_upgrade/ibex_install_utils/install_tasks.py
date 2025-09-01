@@ -169,9 +169,6 @@ class UpgradeInstrument:
         self._system_tasks.install_or_upgrade_git()
         self._system_tasks.check_java_installation()
 
-        self._system_tasks.remove_seci_shortcuts()
-        self._system_tasks.remove_seci_one()
-        self._system_tasks.remove_treesize_shortcuts()
         self._system_tasks.restrict_ie()
 
         self._server_tasks.install_ibex_server()
@@ -222,7 +219,6 @@ class UpgradeInstrument:
         self._server_tasks.perform_server_tests()
         self._server_tasks.run_config_checker()
         self._server_tasks.save_motor_blocks_blockserver_to_file()
-        self._server_tasks.set_alert_url_and_password()
         self._system_tasks.put_autostart_script_in_startup_area()
         self._system_tasks.inform_instrument_scientists()
 
