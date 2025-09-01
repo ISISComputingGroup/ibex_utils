@@ -9,7 +9,6 @@ import tempfile
 from typing import Generator, LiteralString, TextIO
 
 import lxml.etree
-from ibex_install_utils.user_prompt import UserPrompt
 
 try:
     from contextlib import contextmanager
@@ -17,6 +16,7 @@ except ImportError:
     from contextlib2 import contextmanager
 
 import git
+
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInRun, ErrorInTask
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
