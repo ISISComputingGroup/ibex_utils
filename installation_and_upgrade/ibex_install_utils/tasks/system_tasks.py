@@ -44,9 +44,6 @@ ALLUSERS_STARTUP = os.path.join(
     "C:\\", "ProgramData", "Microsoft", "Windows", "Start Menu", "Programs", "Startup"
 )
 
-SECI = "SECI User interface.lnk"
-SECI_ONE_PATH = os.path.join("C:\\", "Program Files (x86)", "CCLRC ISIS Facility")
-SECI_AUTOSTART_LOCATIONS = [os.path.join(USER_STARTUP, SECI), os.path.join(ALLUSERS_STARTUP, SECI)]
 EPICS_CRTL_PATH = os.path.join(EPICS_PATH, "crtl")
 
 
@@ -84,49 +81,6 @@ class SystemTasks(BaseTasks):
 
         """
         self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH, self.prompt)
-
-    @task("Remove SECI shortcuts")
-    def remove_seci_shortcuts(self) -> None:
-        """
-        Remove (or at least ask the user to remove) all Seci shortcuts
-        """
-        for path in SECI_AUTOSTART_LOCATIONS:
-            if os.path.exists(path):
-                self.prompt.prompt_and_raise_if_not_yes(
-                    f"SECI autostart found in {path}, delete this."
-                )
-
-        self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to SECI")
-        self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to SECI")
-        self.prompt.prompt_and_raise_if_not_yes("Remove start menu shortcut to SECI")
-
-    @task("Remove Treesize shortcuts")
-    def remove_treesize_shortcuts(self) -> None:
-        """
-        Remove (or at least ask the user to remove) all Treesize shortcuts.
-
-        For justification see https://github.com/ISISComputingGroup/IBEX/issues/4214
-        """
-        self.prompt.prompt_and_raise_if_not_yes("Remove task bar shortcut to Treesize if it exists")
-        self.prompt.prompt_and_raise_if_not_yes("Remove desktop shortcut to Treesize if it exists")
-        self.prompt.prompt_and_raise_if_not_yes(
-            "Remove start menu shortcut to Treesize if it exists"
-        )
-
-    @task("Remove SECI 1 Path")
-    def remove_seci_one(self) -> None:
-        """
-        Removes SECI 1
-        """
-        if os.path.exists(SECI_ONE_PATH):
-            try:
-                self._file_utils.remove_tree(SECI_ONE_PATH, self.prompt, use_robocopy=False)
-            except (IOError, WindowsError) as e:
-                self.prompt.prompt_and_raise_if_not_yes(
-                    f"Failed to remove SECI 1 (located in '{SECI_ONE_PATH}') "
-                    f"because '{e}'. Please remove it manually and type 'Y'"
-                    f" to confirm"
-                )
 
     @version_check(Java())
     @task("Install java")
