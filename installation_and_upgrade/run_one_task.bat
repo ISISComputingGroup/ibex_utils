@@ -1,0 +1,24 @@
+setlocal EnableDelayedExpansion
+set "SOURCE=\\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\Releases"
+
+call "%~dp0set_epics_ca_addr_list.bat"
+call "%~dp0install_or_update_uv.bat"
+call "%~dp0set_up_venv.bat"
+
+IF %errorlevel% neq 0 EXIT /b %errorlevel%
+
+set "STOP_IBEX=C:\Instrument\Apps\EPICS\stop_ibex_server"
+set "START_IBEX=C:\Instrument\Apps\EPICS\start_ibex_server"
+
+start /wait cmd /c "%STOP_IBEX%"
+
+python -u "%~dp0IBEX_upgrade.py" --release_dir "%SOURCE%" --release_suffix "%SUFFIX%" --confirm_step %1
+
+IF %errorlevel% neq 0 (
+    set errcode = %ERRORLEVEL%
+    rmdir /s /q %UV_TEMP_VENV%
+    EXIT /b !errcode!
+)
+
+start /wait cmd /c "%START_IBEX%"
+rmdir /s /q %UV_TEMP_VENV%
