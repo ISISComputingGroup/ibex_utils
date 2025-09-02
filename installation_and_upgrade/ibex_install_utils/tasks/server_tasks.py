@@ -733,3 +733,25 @@ class ServerTasks(BaseTasks):
             expected_return_val=0,
         )
         admin_commands.run_all()
+
+    @task("Update journal parser")
+    def update_journal_parser(self) -> None:
+        """Update journal parser binaries."""
+
+        def copy_overwrite_readonly(src: str, dst: str) -> None:
+            import stat
+
+            if os.path.exists(dst):
+                os.chmod(dst, stat.S_IWRITE)
+            shutil.copy2(src, dst)
+
+        jp_bin_dir = os.path.join(
+            EPICS_PATH, "ISIS", "JournalParser", "master", "bin", "windows-x64"
+        )
+        if os.path.isdir(jp_bin_dir):
+            shutil.copytree(
+                jp_bin_dir,
+                LABVIEW_DAE_DIR,
+                copy_function=copy_overwrite_readonly,
+                dirs_exist_ok=True,
+            )
