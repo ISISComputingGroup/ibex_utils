@@ -133,6 +133,7 @@ class UpgradeInstrument:
         self._client_tasks.install_ibex_client()
         self._system_tasks.upgrade_notepad_pp()
         self._server_tasks.setup_log_rotation()
+        self._server_tasks.update_journal_parser()
 
     def remove_all_and_install_client_and_server(self) -> None:
         """Either install or upgrade the ibex client and server"""
@@ -192,6 +193,7 @@ class UpgradeInstrument:
         self._system_tasks.put_autostart_script_in_startup_area()
         self._python_tasks.update_script_definitions()
         self._server_tasks.setup_log_rotation()
+        self._server_tasks.update_journal_parser()
 
     def run_update_icp(self) -> None:
         self._server_tasks.update_icp(self.icp_in_labview_modules())
@@ -250,6 +252,7 @@ class UpgradeInstrument:
         self._python_tasks.update_script_definitions()
         self._python_tasks.remove_instrument_script_githooks()
         self._server_tasks.setup_log_rotation()
+        self._server_tasks.update_journal_parser()
         self._system_tasks.update_kafka_topics()
 
     def run_instrument_deploy_pre_stop(self) -> None:
@@ -284,6 +287,10 @@ class UpgradeInstrument:
     def run_setup_log_rotation(self) -> None:
         """setup_log_rotation"""
         self._server_tasks.setup_log_rotation()
+
+    def run_update_journal_parser(self) -> None:
+        """update_journal_parser"""
+        self._server_tasks.update_journal_parser()
 
     def run_developer_update(self) -> None:
         """Update all the developer tools to latest version"""
@@ -403,6 +410,10 @@ UPGRADE_TYPES = {
     "setup_log_rotation": (
         UpgradeInstrument.run_setup_log_rotation,
         "setup log rotation",
+    ),
+    "update_journal_parser": (
+        UpgradeInstrument.run_update_journal_parser,
+        "update journal parser",
     ),
     "developer_update": (UpgradeInstrument.run_developer_update, "install latest developer tools"),
     "create_vhds": (
