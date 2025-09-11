@@ -1,7 +1,6 @@
 import glob
 import os
 import shutil
-import subprocess
 import tempfile
 import time
 from pathlib import Path
@@ -9,6 +8,8 @@ from time import sleep
 
 import psutil
 import requests
+from win32com.client import Dispatch
+
 from ibex_install_utils.admin_runner import AdminCommandBuilder
 from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.kafka_utils import add_required_topics
@@ -19,7 +20,6 @@ from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, UV, VAR_DIR
 from ibex_install_utils.version_check import version_check
-from win32com.client import Dispatch
 
 GIGABYTE = 1024**3
 
@@ -95,8 +95,10 @@ class SystemTasks(BaseTasks):
 
             admin_commands = AdminCommandBuilder()
             admin_commands.add_command(
-                f'msiexec /i "{installer}"', "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
-                f'INSTALLDIR="c:\\Instrument\\apps\\JDK\\{version}" /quiet', expected_return_val=None
+                f'msiexec /i "{installer}"',
+                "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
+                f'INSTALLDIR="c:\\Instrument\\apps\\JDK\\{version}" /quiet',
+                expected_return_val=None,
             )
             log_file = admin_commands.run_all()
 
