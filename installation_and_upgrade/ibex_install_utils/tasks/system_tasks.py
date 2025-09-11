@@ -45,6 +45,7 @@ ALLUSERS_STARTUP = os.path.join(
 
 EPICS_CRTL_PATH = os.path.join(EPICS_PATH, "crtl")
 
+JAVA_INSTALL_BASE_PATH = os.path.join(APPS_BASE_DIR, "JDK")
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(
     os.environ["userprofile"], "desktop", "Mantid+IBEX training"
@@ -96,14 +97,10 @@ class SystemTasks(BaseTasks):
             admin_commands.add_command(
                 f'msiexec /i "{installer}"',
                 "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
-                f'INSTALLDIR="c:\\Instrument\\apps\\JDK\\{version}" /quiet',
+                f'INSTALLDIR="{os.path.join(JAVA_INSTALL_BASE_PATH, version)}" /quiet',
                 expected_return_val=None,
             )
-            log_file = admin_commands.run_all()
-
-            with open(log_file, "r") as logfile:
-                for line in logfile.readlines():
-                    print("Java update output: {}".format(line.rstrip()))
+            admin_commands.run_all()
 
             self.prompt.prompt_and_raise_if_not_yes(
                 "Make sure java installed correctly.\r\n"
