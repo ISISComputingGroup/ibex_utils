@@ -88,15 +88,22 @@ class SystemTasks(BaseTasks):
         """
         Checks Java installation
         """
-        installer, _ = Java().find_latest()
+        installer, version = Java().find_latest()
 
         if os.path.exists(installer):
             print(f"running installer at {installer}")
-            subprocess.call(
-                f"msiexec /i {installer} "
-                "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
-                'INSTALLDIR="c:\\Program Files\\Eclipse Adoptium\\" /quiet'
+
+            admin_commands = AdminCommandBuilder()
+            admin_commands.add_command(
+                f'msiexec /i "{installer}"', "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
+                f'INSTALLDIR="c:\\Instrument\\apps\\JDK\\{version}" /quiet', expected_return_val=None
             )
+            log_file = admin_commands.run_all()
+
+            with open(log_file, "r") as logfile:
+                for line in logfile.readlines():
+                    print("Java update output: {}".format(line.rstrip()))
+
             self.prompt.prompt_and_raise_if_not_yes(
                 "Make sure java installed correctly.\r\n"
                 "After following the installer, ensure you close and then re-open"

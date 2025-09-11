@@ -199,7 +199,9 @@ class UpgradeInstrument:
         self._server_tasks.update_icp(self.icp_in_labview_modules())
 
     def save_motor_params(self) -> None:
-        self._server_tasks.save_motor_parameters_to_file()
+        self._system_tasks.check_java_installation()
+
+        # self._server_tasks.save_motor_parameters_to_file()
 
     def run_instrument_deploy(self) -> None:
         """Deploy a full IBEX upgrade on an existing instrument."""
