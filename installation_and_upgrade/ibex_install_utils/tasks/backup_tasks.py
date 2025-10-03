@@ -47,7 +47,13 @@ or e.g. may have too long a path or some other issues
 
 """
 
-ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, EPICS_UTILS_PATH)
+ALL_INSTALL_DIRECTORIES = (
+    EPICS_PATH,
+    PYTHON_PATH,
+    PYTHON_3_PATH,
+    GUI_PATH,
+    EPICS_UTILS_PATH,
+)
 DIRECTORIES_TO_BACKUP = (*ALL_INSTALL_DIRECTORIES, SETTINGS_DIR, AUTOSAVE)
 
 
@@ -108,15 +114,15 @@ class BackupTasks(BaseTasks):
             path_to_backup = self._path_to_backup(path)
             backup_folder_exists = True
             backup_zip_exists = False
-            file_to_check = 'VERSION.txt'
+            file_to_check = "VERSION.txt"
             if not os.path.exists(os.path.join(path_to_backup, file_to_check)):
                 backup_folder_exists = False
             if not backup_folder_exists:
                 backup_zip_exists = True
-                #The backup might be in the zip files instead of folders
+                # The backup might be in the zip files instead of folders
                 backup_zip_file = os.path.join(path_to_backup + ".zip")
                 if os.path.exists(backup_zip_file):
-                    with zipfile.ZipFile(backup_zip_file, 'r') as backup_ref:
+                    with zipfile.ZipFile(backup_zip_file, "r") as backup_ref:
                         if file_to_check not in backup_ref.namelist():
                             backup_zip_exists = False
                 else:
@@ -129,18 +135,20 @@ class BackupTasks(BaseTasks):
                 )
 
         for path in (SETTINGS_DIR, AUTOSAVE, EPICS_UTILS_PATH):
-            #Either the folder or the corresponding .zip file should exist
-            if (not os.path.exists(self._path_to_backup(path))
-                    and not os.path.exists(self._path_to_backup(path) + ".zip")):
+            # Either the folder or the corresponding .zip file should exist
+            if not os.path.exists(self._path_to_backup(path)) and not os.path.exists(
+                self._path_to_backup(path) + ".zip"
+            ):
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"Error found with backup. '{path}' did not back up properly. "
                     "Please backup manually."
                 )
 
         for path in (SETTINGS_DIR, AUTOSAVE, EPICS_UTILS_PATH):
-            #Either the folder or the corresponding .zip file should exist
-            if (not os.path.exists(self._path_to_backup(path))
-                    and not os.path.exists(self._path_to_backup(path) + ".zip")):
+            # Either the folder or the corresponding .zip file should exist
+            if not os.path.exists(self._path_to_backup(path)) and not os.path.exists(
+                self._path_to_backup(path) + ".zip"
+            ):
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"Error found with backup. '{path}' did not back up properly. "
                     "Please backup manually."
@@ -165,7 +173,9 @@ class BackupTasks(BaseTasks):
         # Checks if there is enough space to move dir at src into the backup directory
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
-        backup_size, number_of_files = FileUtils.get_size_and_number_of_files(src, ignore=ignore)
+        backup_size, number_of_files = FileUtils.get_size_and_number_of_files(
+            src, ignore=ignore
+        )
         while backup_size > free:
             needed_space = round((backup_size - free) / (1024**3), 2)
             self.prompt.prompt_and_raise_if_not_yes(
@@ -208,7 +218,11 @@ class BackupTasks(BaseTasks):
 
             print(f"Attempting to backup {src} to zipfile at {dst}")
             with zipfile.ZipFile(
-                dst, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1, strict_timestamps=False
+                dst,
+                "w",
+                compression=zipfile.ZIP_DEFLATED,
+                compresslevel=1,
+                strict_timestamps=False,
             ) as zf:
                 for src_path, dirs, src_filenames in os.walk(src, topdown=True):
                     if ignore is not None:
@@ -280,11 +294,18 @@ class BackupTasks(BaseTasks):
         current_backups = [
             os.path.join(BACKUP_DIR, d)
             for d in os.listdir(BACKUP_DIR)
-            if os.path.isdir(os.path.join(BACKUP_DIR, d)) and d.startswith("ibex_backup")
+            if os.path.isdir(os.path.join(BACKUP_DIR, d))
+            and d.startswith("ibex_backup")
         ]
 
         for d in current_backups:
-            backup = STAGE_DELETED + "\\" + self._get_machine_name() + "\\" + os.path.basename(d)
+            backup = (
+                STAGE_DELETED
+                + "\\"
+                + self._get_machine_name()
+                + "\\"
+                + os.path.basename(d)
+            )
             print(f"Moving backup {d} to {backup}")
             self._file_utils.move_dir(d, backup, self.prompt)
 
