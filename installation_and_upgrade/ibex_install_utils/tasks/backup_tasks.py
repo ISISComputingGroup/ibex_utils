@@ -116,10 +116,8 @@ class BackupTasks(BaseTasks):
                 #The backup might be in the zip files instead of folders
                 backup_zip_file = os.path.join(path_to_backup + ".zip")
                 if os.path.exists(backup_zip_file):
-                    #Extract the file name without extension.
-                    backup_file_name = os.path.basename(path_to_backup)
                     with zipfile.ZipFile(backup_zip_file, 'r') as backup_ref:
-                        if not file_to_check in backup_ref.namelist():
+                        if file_to_check not in backup_ref.namelist():
                             backup_zip_exists = False
                 else:
                     backup_zip_exists = False
