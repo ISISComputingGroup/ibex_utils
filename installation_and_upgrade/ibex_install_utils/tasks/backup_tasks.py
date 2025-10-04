@@ -173,9 +173,7 @@ class BackupTasks(BaseTasks):
         # Checks if there is enough space to move dir at src into the backup directory
         # (all in bytes)
         _, _, free = shutil.disk_usage(BACKUP_DIR)
-        backup_size, number_of_files = FileUtils.get_size_and_number_of_files(
-            src, ignore=ignore
-        )
+        backup_size, number_of_files = FileUtils.get_size_and_number_of_files(src, ignore=ignore)
         while backup_size > free:
             needed_space = round((backup_size - free) / (1024**3), 2)
             self.prompt.prompt_and_raise_if_not_yes(
@@ -294,18 +292,11 @@ class BackupTasks(BaseTasks):
         current_backups = [
             os.path.join(BACKUP_DIR, d)
             for d in os.listdir(BACKUP_DIR)
-            if os.path.isdir(os.path.join(BACKUP_DIR, d))
-            and d.startswith("ibex_backup")
+            if os.path.isdir(os.path.join(BACKUP_DIR, d)) and d.startswith("ibex_backup")
         ]
 
         for d in current_backups:
-            backup = (
-                STAGE_DELETED
-                + "\\"
-                + self._get_machine_name()
-                + "\\"
-                + os.path.basename(d)
-            )
+            backup = STAGE_DELETED + "\\" + self._get_machine_name() + "\\" + os.path.basename(d)
             print(f"Moving backup {d} to {backup}")
             self._file_utils.move_dir(d, backup, self.prompt)
 
