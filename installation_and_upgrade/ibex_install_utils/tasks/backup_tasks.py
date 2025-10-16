@@ -47,7 +47,13 @@ or e.g. may have too long a path or some other issues
 
 """
 
-ALL_INSTALL_DIRECTORIES = (EPICS_PATH, PYTHON_PATH, PYTHON_3_PATH, GUI_PATH, EPICS_UTILS_PATH)
+ALL_INSTALL_DIRECTORIES = (
+    EPICS_PATH,
+    PYTHON_PATH,
+    PYTHON_3_PATH,
+    GUI_PATH,
+    EPICS_UTILS_PATH,
+)
 DIRECTORIES_TO_BACKUP = (*ALL_INSTALL_DIRECTORIES, SETTINGS_DIR, AUTOSAVE)
 
 
@@ -106,14 +112,43 @@ class BackupTasks(BaseTasks):
         """
         for path in (EPICS_PATH, PYTHON_3_PATH, GUI_PATH):
             path_to_backup = self._path_to_backup(path)
-            if not os.path.exists(os.path.join(path_to_backup, "VERSION.txt")):
+            backup_folder_exists = True
+            backup_zip_exists = False
+            file_to_check = "VERSION.txt"
+            if not os.path.exists(os.path.join(path_to_backup, file_to_check)):
+                backup_folder_exists = False
+            if not backup_folder_exists:
+                backup_zip_exists = True
+                # The backup might be in the zip files instead of folders
+                backup_zip_file = os.path.join(path_to_backup + ".zip")
+                if os.path.exists(backup_zip_file):
+                    with zipfile.ZipFile(backup_zip_file, "r") as backup_ref:
+                        if file_to_check not in backup_ref.namelist():
+                            backup_zip_exists = False
+                else:
+                    backup_zip_exists = False
+
+            if not backup_folder_exists and not backup_zip_exists:
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"Error found with backup. Backup failed at '{path_to_backup}'. "
                     "Please backup manually."
                 )
 
         for path in (SETTINGS_DIR, AUTOSAVE, EPICS_UTILS_PATH):
-            if not os.path.exists(self._path_to_backup(path)):
+            # Either the folder or the corresponding .zip file should exist
+            if not os.path.exists(self._path_to_backup(path)) and not os.path.exists(
+                self._path_to_backup(path) + ".zip"
+            ):
+                self.prompt.prompt_and_raise_if_not_yes(
+                    f"Error found with backup. '{path}' did not back up properly. "
+                    "Please backup manually."
+                )
+
+        for path in (SETTINGS_DIR, AUTOSAVE, EPICS_UTILS_PATH):
+            # Either the folder or the corresponding .zip file should exist
+            if not os.path.exists(self._path_to_backup(path)) and not os.path.exists(
+                self._path_to_backup(path) + ".zip"
+            ):
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"Error found with backup. '{path}' did not back up properly. "
                     "Please backup manually."
@@ -181,7 +216,11 @@ class BackupTasks(BaseTasks):
 
             print(f"Attempting to backup {src} to zipfile at {dst}")
             with zipfile.ZipFile(
-                dst, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1, strict_timestamps=False
+                dst,
+                "w",
+                compression=zipfile.ZIP_DEFLATED,
+                compresslevel=1,
+                strict_timestamps=False,
             ) as zf:
                 for src_path, dirs, src_filenames in os.walk(src, topdown=True):
                     if ignore is not None:
