@@ -39,7 +39,7 @@ class BaseTasks:
         self._ca = CaWrapper()
 
     @staticmethod
-    def _get_machine_name():
+    def _get_machine_name() -> str:
         """
         Returns:
             The current machine name

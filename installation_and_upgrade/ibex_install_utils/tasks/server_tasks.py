@@ -6,7 +6,8 @@ import pprint
 import shutil
 import subprocess
 import tempfile
-from typing import Generator, LiteralString, TextIO
+from pathlib import Path
+from typing import Generator, TextIO
 
 import lxml.etree
 
@@ -16,8 +17,9 @@ except ImportError:
     from contextlib2 import contextmanager
 
 import git
+
 from ibex_install_utils.admin_runner import AdminCommandBuilder
-from ibex_install_utils.exceptions import ErrorInRun, ErrorInTask
+from ibex_install_utils.exceptions import ErrorInRun
 from ibex_install_utils.file_utils import LABVIEW_DAE_DIR, FileUtils
 from ibex_install_utils.motor_params import get_params_and_save_to_file
 from ibex_install_utils.run_process import RunProcess
@@ -32,6 +34,7 @@ from ibex_install_utils.tasks.common_paths import (
     SETTINGS_CONFIG_PATH,
     VAR_DIR,
 )
+from ibex_install_utils.tasks.git_tasks import _try_to_merge_master_into_repo
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -73,14 +76,12 @@ class ServerTasks(BaseTasks):
     its associated configuration files."""
 
     @staticmethod
-    def _get_config_path() -> LiteralString | str | bytes:
+    def _get_config_path() -> os.PathLike[str]:
         """Returns:
         The path to the instrument's configurations directory
 
         """
-        return os.path.join(
-            INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER, ServerTasks._get_machine_name()
-        )
+        return Path(INSTRUMENT_BASE_DIR, SETTINGS_CONFIG_FOLDER, BaseTasks._get_machine_name())
 
     @task("Removing old settings file")
     def remove_settings(self) -> None:
@@ -97,7 +98,7 @@ class ServerTasks(BaseTasks):
 
         """
         self._file_utils.mkdir_recursive(SETTINGS_CONFIG_PATH)
-        settings_path = os.path.join(SETTINGS_CONFIG_PATH, ServerTasks._get_machine_name())
+        settings_path = os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name())
 
         shutil.copytree(SOURCE_MACHINE_SETTINGS_CONFIG_PATH, settings_path)
 
@@ -119,7 +120,7 @@ class ServerTasks(BaseTasks):
         )
 
     @task("Installing IBEX Server")
-    def install_ibex_server(self, use_old_galil: bool = None) -> None:
+    def install_ibex_server(self, use_old_galil: bool | None = None) -> None:
         """Install ibex server.
 
         Args:
@@ -248,45 +249,11 @@ class ServerTasks(BaseTasks):
 
     @task("Upgrading instrument configuration")
     def upgrade_instrument_configuration(self) -> None:
-        """Update the configuration on the instrument using its upgrade config script."""
-        manual_prompt = (
-            "Merge the master configurations branch into the instrument configuration. "
-            "From C:\\Instrument\\Settings\\config\\[machine name] run:\n"
-            "    0. Clean up any in progress merge (e.g. git merge --abort)\n"
-            "    1. git checkout master\n"
-            "    2. git pull\n"
-            "    3. git checkout [machine name]\n"
-            "    4. git merge master\n"
-            "    5. Resolve any merge conflicts\n"
-            "    6. git push\n"
-        )
-        automatic_prompt = "Attempt automatic configuration merge?"
-        if self.prompt.confirm_step(automatic_prompt):
-            try:
-                repo = git.Repo(os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name()))
-                if repo.active_branch.name != BaseTasks._get_machine_name():
-                    print(
-                        f"Git branch, '{repo.active_branch}', is not the same as"
-                        f" machine name ,'{BaseTasks._get_machine_name()}' "
-                    )
-                    raise ErrorInTask("Git branch is not the same as machine name")
-                try:
-                    print(f"     fetch: {repo.git.fetch()}")
-                    print(f"     merge: {repo.git.merge('origin/master')}")
-                except git.GitCommandError as e:
-                    # do gc and prune to remove issues with stale references
-                    # this does a pack that takes a while, hence not do every time
-                    print(f"Retrying git operations after a prune due to {e}")
-                    print(f"        gc: {repo.git.gc(prune='now')}")
-                    print(f"     prune: {repo.git.remote('prune', 'origin')}")
-                    print(f"     fetch: {repo.git.fetch()}")
-                    print(f"     merge: {repo.git.merge('origin/master')}")
-                # no longer push let the instrument do that on start up if needed
-            except git.GitCommandError as e:
-                print(f"Error doing automatic merge, please perform the merge manually: {e}")
-                self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
-        else:
-            self.prompt.prompt_and_raise_if_not_yes(manual_prompt)
+        """Update the configuration on the instrument by attempting to merge the master branch
+        and running its upgrade config script."""
+
+        repo_path = os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name())
+        _try_to_merge_master_into_repo(self.prompt, repo_path)
 
         RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
 
@@ -312,12 +279,11 @@ class ServerTasks(BaseTasks):
                 prog_args=["clone", repo_url, INST_SCRIPTS_PATH],
             ).run()
 
-    @task("Set up shared instrument scripts library")
+    @task("Merge master into local shared instrument scripts library")
     def update_shared_scripts_repository(self) -> None:
         """Update the shared instrument scripts repository containing"""
         try:
-            repo = git.Repo(INST_SCRIPTS_PATH)
-            repo.git.pull()
+            _try_to_merge_master_into_repo(self.prompt, INST_SCRIPTS_PATH, True)
         except git.GitCommandError:
             self.prompt.prompt_and_raise_if_not_yes(
                 "There was an error pulling the shared scripts repo.\n"
@@ -376,13 +342,13 @@ class ServerTasks(BaseTasks):
         print(
             f"Checking that configurations are being pushed to"
             f" the appropriate repository "
-            f"({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
+            f"({INSTCONFIGS_GIT_URL.format(BaseTasks._get_machine_name())})"
         )
         repo = git.Repo(self._get_config_path())
         repo.git.fetch()
         status = repo.git.status()
         print(f"Current repository status is: {status}")
-        if f"up to date with 'origin/{self._get_machine_name()}'" in status:
+        if f"up to date with 'origin/{BaseTasks._get_machine_name()}'" in status:
             print("Configurations updating correctly")
         else:
             self.prompt.prompt_and_raise_if_not_yes(
@@ -390,7 +356,7 @@ class ServerTasks(BaseTasks):
                 f"not attached to correct branch. "
                 f"Please confirm that configurations are being pushed to the appropriate "
                 f"remote repository branch"
-                f" ({INSTCONFIGS_GIT_URL.format(ServerTasks._get_machine_name())})"
+                f" ({INSTCONFIGS_GIT_URL.format(BaseTasks._get_machine_name())})"
             )
 
         self.prompt.prompt_and_raise_if_not_yes(
@@ -555,7 +521,9 @@ class ServerTasks(BaseTasks):
 
         with self.timestamped_pv_backups_file(directory="inst_servers", name=name) as f:
             try:
-                f.write(f"{_pretty_print(self._ca.get_object_from_compressed_hexed_json(pv))}\r\n")
+                pvs = self._ca.get_object_from_compressed_hexed_json(pv)
+                if pvs is not None:
+                    f.write(f"{_pretty_print(data=pvs.decode('utf-8'))}\r\n")
             except:  # noqa: E722
                 pass
 

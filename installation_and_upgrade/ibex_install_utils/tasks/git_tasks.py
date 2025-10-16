@@ -1,9 +1,14 @@
 import re
 import subprocess
 
+import git
+from git import PathLike
+
+from ibex_install_utils.exceptions import ErrorInTask
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import EPICS_PATH
+from ibex_install_utils.user_prompt import UserPrompt
 
 
 class GitTasks(BaseTasks):
@@ -86,3 +91,47 @@ class GitTasks(BaseTasks):
         except subprocess.CalledProcessError as e:
             print(f"Error checking out to new release branch and push: {e}")
             print("Branch may previously exist either locally or remotely - intervention required")
+
+
+def _try_to_merge_master_into_repo(
+    prompt: UserPrompt, repo_path: str | PathLike | None, pull_first: bool = False
+) -> None:
+    manual_prompt = (
+        "Merge the master branch into the local branch."
+        f"From {repo_path} run:\n"
+        "    0. Clean up any in progress merge (e.g. git merge --abort)\n"
+        "    1. git checkout master\n"
+        "    2. git pull\n"
+        "    3. git checkout [machine name]\n"
+        "    4. git merge master\n"
+        "    5. Resolve any merge conflicts\n"
+        "    6. git push\n"
+    )
+    automatic_prompt = "Attempt automatic branch merge?"
+    if prompt.confirm_step(automatic_prompt):
+        try:
+            repo = git.Repo(repo_path)
+            if pull_first:
+                repo.git.pull()
+            if repo.active_branch.name != BaseTasks._get_machine_name():
+                print(
+                    f"Git branch, '{repo.active_branch}', is not the same as"
+                    f" machine name ,'{BaseTasks._get_machine_name()}' "
+                )
+                raise ErrorInTask("Git branch is not the same as machine name")
+            try:
+                print(f"     fetch: {repo.git.fetch()}")
+                print(f"     merge: {repo.git.merge('origin/master')}")
+            except git.GitCommandError as e:
+                # do gc and prune to remove issues with stale references
+                # this does a pack that takes a while, hence not do every time
+                print(f"Retrying git operations after a prune due to {e}")
+                print(f"        gc: {repo.git.gc(prune='now')}")
+                print(f"     prune: {repo.git.remote('prune', 'origin')}")
+                print(f"     fetch: {repo.git.fetch()}")
+                print(f"     merge: {repo.git.merge('origin/master')}")
+        except git.GitCommandError as e:
+            print(f"Error doing automatic merge, please perform the merge manually: {e}")
+            prompt.prompt_and_raise_if_not_yes(manual_prompt)
+    else:
+        prompt.prompt_and_raise_if_not_yes(manual_prompt)

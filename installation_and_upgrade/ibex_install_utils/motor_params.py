@@ -5,9 +5,10 @@ To run, load the script into a genie_python console and run as a standard user s
 """
 
 import csv
-from typing import BinaryIO
+from typing import TextIO
 
 from aioca import CANothing, caget
+
 from ibex_install_utils.ca_utils import get_machine_details_from_identifier
 
 VELOCITY_UNITS = "EGU per sec"
@@ -111,14 +112,12 @@ galil_specific_params = {
 }
 
 
-async def get_params_and_save_to_file(
-    file_reference: BinaryIO, num_of_controllers: int = 8
-) -> None:
+async def get_params_and_save_to_file(file_reference: TextIO, num_of_controllers: int = 8) -> None:
     """
     Gets all the motor parameters and saves them to an open file reference as a csv.
 
     Args:
-        file_reference (BinaryIO): The csv file to save the data to.
+        file_reference (TextIO): The csv file to save the data to.
         num_of_controllers (int, optional): The number of motor controllers on the instrument
     """
     list_of_axis_pvs = []
