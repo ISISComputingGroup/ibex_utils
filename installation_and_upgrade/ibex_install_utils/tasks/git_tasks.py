@@ -3,7 +3,6 @@ import subprocess
 
 import git
 from git import PathLike
-
 from ibex_install_utils.exceptions import ErrorInTask
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
