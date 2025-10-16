@@ -93,7 +93,7 @@ class GitTasks(BaseTasks):
             print("Branch may previously exist either locally or remotely - intervention required")
 
 
-def _try_to_merge_master_into_repo(
+def try_to_merge_master_into_repo(
     prompt: UserPrompt, repo_path: str | PathLike | None, pull_first: bool = False
 ) -> None:
     manual_prompt = (

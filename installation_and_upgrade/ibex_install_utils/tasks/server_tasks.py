@@ -34,7 +34,7 @@ from ibex_install_utils.tasks.common_paths import (
     SETTINGS_CONFIG_PATH,
     VAR_DIR,
 )
-from ibex_install_utils.tasks.git_tasks import _try_to_merge_master_into_repo
+from ibex_install_utils.tasks.git_tasks import try_to_merge_master_into_repo
 
 CONFIG_UPGRADE_SCRIPT_DIR = os.path.join(EPICS_PATH, "misc", "upgrade", "master")
 
@@ -253,7 +253,7 @@ class ServerTasks(BaseTasks):
         and running its upgrade config script."""
 
         repo_path = os.path.join(SETTINGS_CONFIG_PATH, BaseTasks._get_machine_name())
-        _try_to_merge_master_into_repo(self.prompt, repo_path)
+        try_to_merge_master_into_repo(self.prompt, repo_path)
 
         RunProcess(CONFIG_UPGRADE_SCRIPT_DIR, "upgrade.bat", capture_pipes=False).run()
 
@@ -283,7 +283,7 @@ class ServerTasks(BaseTasks):
     def update_shared_scripts_repository(self) -> None:
         """Update the shared instrument scripts repository containing"""
         try:
-            _try_to_merge_master_into_repo(self.prompt, INST_SCRIPTS_PATH, True)
+            try_to_merge_master_into_repo(self.prompt, INST_SCRIPTS_PATH, True)
         except git.GitCommandError:
             self.prompt.prompt_and_raise_if_not_yes(
                 "There was an error pulling the shared scripts repo.\n"
