@@ -278,7 +278,7 @@ class ServerTasks(BaseTasks):
                 prog_args=["clone", repo_url, INST_SCRIPTS_PATH],
             ).run()
 
-    @task("Merge master into local shared instrument scripts library")
+    @task("Merge master branch into local branch of shared instrument scripts library")
     def update_shared_scripts_repository(self) -> None:
         """Update the shared instrument scripts repository containing"""
         try:
