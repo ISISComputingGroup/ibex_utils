@@ -280,7 +280,8 @@ class ServerTasks(BaseTasks):
 
     @task("Merge master branch into local branch of shared instrument scripts library")
     def update_shared_scripts_repository(self) -> None:
-        """Update the shared instrument scripts repository containing"""
+        """Update the shared instrument scripts repository
+        containing scripts useful across all instruments"""
         try:
             try_to_merge_master_into_repo(self.prompt, INST_SCRIPTS_PATH, True)
         except git.GitCommandError:
