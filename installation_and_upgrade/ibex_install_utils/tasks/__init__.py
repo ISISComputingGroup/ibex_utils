@@ -5,6 +5,7 @@ from datetime import date
 from ibex_install_utils.ca_utils import CaWrapper
 from ibex_install_utils.file_utils import FileUtils
 from ibex_install_utils.tasks.common_paths import BACKUP_DATA_DIR, BACKUP_DIR
+from ibex_install_utils.user_prompt import UserPrompt
 
 
 class BaseTasks:
@@ -12,17 +13,17 @@ class BaseTasks:
 
     def __init__(
         self,
-        user_prompt,
-        server_source_dir,
-        client_source_dir,
-        genie_python3_dir,
-        ibex_version,
-        file_utils=FileUtils(),
-    ):
+        user_prompt: UserPrompt,
+        server_source_dir: str,
+        client_source_dir: str,
+        genie_python3_dir: str,
+        ibex_version: str,
+        file_utils: FileUtils = FileUtils(),
+    ) -> None:
         """
         Initializer.
         Args:
-            user_prompt (ibex_install_utils.user_prompt.UserPrompt): a object to allow prompting of the user
+            user_prompt (UserPrompt): an object to allow prompting of the user
             server_source_dir: directory to install ibex server from
             client_source_dir: directory to install ibex client from
             genie_python3_dir: directory to install genie python from
@@ -39,7 +40,7 @@ class BaseTasks:
         self._ca = CaWrapper()
 
     @staticmethod
-    def _get_machine_name():
+    def _get_machine_name() -> str:
         """
         Returns:
             The current machine name
@@ -48,7 +49,7 @@ class BaseTasks:
         return socket.gethostname()
 
     @staticmethod
-    def _get_instrument_name():
+    def _get_instrument_name() -> str:
         """
         Returns:
             The name of the current instrument
@@ -56,15 +57,15 @@ class BaseTasks:
         return BaseTasks._get_machine_name().replace("NDX", "")
 
     @staticmethod
-    def _today_date_for_filenames():
+    def _today_date_for_filenames() -> str:
         return date.today().strftime("%Y_%m_%d")
 
     @staticmethod
-    def _generate_backup_dir_name():
+    def _generate_backup_dir_name() -> str:
         return f"ibex_backup_{BaseTasks._today_date_for_filenames()}"
 
     @staticmethod
-    def _get_backup_dir():
+    def _get_backup_dir() -> str:
         """
         The backup directory contains the date of backup, if this script is
         running over multiple days this will return the date this method was first called.
@@ -79,7 +80,8 @@ class BaseTasks:
         new_backup_dir = os.path.join(BACKUP_DIR, BaseTasks._generate_backup_dir_name())
 
         if not os.path.exists(BACKUP_DATA_DIR):
-            # data dir is a linked directory on real instrument machines so can't just simply be created with mkdir
+            # data dir is a linked directory on real instrument machines
+            # so can't just simply be created with mkdir
             raise IOError(
                 f"Base directory does not exist {BACKUP_DATA_DIR} should be a provided linked dir"
             )
