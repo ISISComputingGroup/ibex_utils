@@ -165,10 +165,12 @@ class SystemTasks(BaseTasks):
                 expected_return_codes=0,
             ).run()
 
+            activate_script = os.path.join(venv, "Scripts", "activate")
+
             RunProcess(
                 working_dir=os.path.join(directory),
-                executable_file=UV,
-                prog_args=["pip", "sync", "requirements-frozen.txt"],
+                executable_file=os.environ["COMSPEC"],
+                prog_args=["/c", f"{activate_script} && {UV} pip sync requirements-frozen.txt"],
                 env={},
                 expected_return_codes=0,
             ).run()
