@@ -361,7 +361,7 @@ class ServerTasks(BaseTasks):
 
         self.prompt.prompt_and_raise_if_not_yes(
             f"Check that the web dashboard for this instrument is updating "
-            f"correctly: http://dataweb.isis.rl.ac.uk/IbexDataweb/default.html?Instrument={self._get_instrument_name()}"
+            f"correctly: https://isiscomputinggroup.github.io/WebDashboard/instrument?name={self._get_instrument_name()}"
         )
 
     @task("Install wiring tables")
