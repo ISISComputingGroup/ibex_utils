@@ -63,22 +63,37 @@ set "GALIL_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL"
 set "GALIL_OLD_DIR=C:\Instrument\Apps\EPICS\ioc\master\GALIL-OLD"
 if exist "%TEMP%\%GALIL_OLD_FILE%" del "%TEMP%\%GALIL_OLD_FILE%"
 if exist "%TEMP%\%GALIL_NEW_FILE%" del "%TEMP%\%GALIL_NEW_FILE%"
+
 if exist "%GALIL_DIR%\%GALIL_OLD_FILE%" (
-    @echo Detected old Galil driver - %GALIL_OLD_FILE% in %GALIL_DIR%
-    robocopy "%GALIL_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
     set "DETECT_OLD_GALIL=YES"
 )
 if exist "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" (
     REM GALIL-OLD has not been renamed to GALIL hence we must be using new driver
-    @echo Detected new Galil driver - %GALIL_OLD_FILE% in %GALIL_OLD_DIR%
-    copy /y "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" "%TEMP%\%GALIL_NEW_FILE%"
     set "DETECT_NEW_GALIL=YES"
+)
+REM jenkins
+if not "%JOB_NAME%" == "" (
+    if "%JOB_NAME%" == "System_Tests_galilold" (
+        set "DETECT_OLD_GALIL=YES"
+        set "DETECT_NEW_GALIL="
+    ) else (
+        set "DETECT_OLD_GALIL="
+        set "DETECT_NEW_GALIL=YES"
+    )
 )
 if "%DETECT_OLD_GALIL%" == "YES" (
     if "%DETECT_NEW_GALIL%" == "YES" (
         @echo ERROR - both NEW and OLD GALIL driver appear enabled, this should not be possible
         exit /b 1
     )
+)
+if "%DETECT_OLD_GALIL%" == "YES" (
+    @echo Detected old Galil driver - %GALIL_OLD_FILE% in %GALIL_DIR%
+    robocopy "%GALIL_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+)
+if "%DETECT_NEW_GALIL%" == "YES" (
+    @echo Detected new Galil driver - %GALIL_OLD_FILE% in %GALIL_OLD_DIR%
+    copy /y "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" "%TEMP%\%GALIL_NEW_FILE%"
 )
 
 if "%1" == "RELEASE" (
