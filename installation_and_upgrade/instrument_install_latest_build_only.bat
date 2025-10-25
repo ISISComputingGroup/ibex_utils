@@ -89,11 +89,11 @@ if "%DETECT_OLD_GALIL%" == "YES" (
 )
 if "%DETECT_OLD_GALIL%" == "YES" (
     @echo Detected old Galil driver - %GALIL_OLD_FILE% in %GALIL_DIR%
-    robocopy "%GALIL_DIR%" "%TEMP%" "%GALIL_OLD_FILE%" /R:2 /IS /NFL /NDL /NP /NC /NS /LOG:NUL
+    type nul > "%TEMP%\%GALIL_OLD_FILE%"
 )
 if "%DETECT_NEW_GALIL%" == "YES" (
     @echo Detected new Galil driver - %GALIL_OLD_FILE% in %GALIL_OLD_DIR%
-    copy /y "%GALIL_OLD_DIR%\%GALIL_OLD_FILE%" "%TEMP%\%GALIL_NEW_FILE%"
+    type nul > "%TEMP%\%GALIL_NEW_FILE%"
 )
 
 if "%1" == "RELEASE" (
