@@ -97,7 +97,8 @@ class SystemTasks(BaseTasks):
             admin_commands.add_command(
                 f'msiexec /i "{installer}"',
                 "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
-                f'INSTALLDIR="{os.path.join(JAVA_INSTALL_BASE_PATH, version)}" /quiet',
+                f'INSTALLDIR="{os.path.join(JAVA_INSTALL_BASE_PATH, version)}" REINSTALL=ALL '
+                "REINSTALLMODE=amus /quiet",
                 expected_return_val=None,
             )
             admin_commands.run_all()
