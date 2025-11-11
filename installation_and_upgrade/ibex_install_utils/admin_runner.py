@@ -13,7 +13,7 @@ from ibex_install_utils.logger import temporarily_disable_logging
 # Use Plink as it allows passwords on the command-line, as opposed to
 # windows-bundled SSH which does not.
 PLINK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plink.exe")
-SSH_HOST = "localhost"
+SSH_HOST = "127.0.0.1"
 
 
 def ssh_available() -> bool:
