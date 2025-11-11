@@ -1,7 +1,6 @@
 import glob
 import os
 import shutil
-import subprocess
 import tempfile
 import time
 from pathlib import Path
@@ -46,6 +45,7 @@ ALLUSERS_STARTUP = os.path.join(
 
 EPICS_CRTL_PATH = os.path.join(EPICS_PATH, "crtl")
 
+JAVA_INSTALL_BASE_PATH = os.path.join(APPS_BASE_DIR, "JDK")
 
 DESKTOP_TRAINING_FOLDER_PATH = os.path.join(
     os.environ["userprofile"], "desktop", "Mantid+IBEX training"
@@ -88,15 +88,21 @@ class SystemTasks(BaseTasks):
         """
         Checks Java installation
         """
-        installer, _ = Java().find_latest()
+        installer, version = Java().find_latest()
 
         if os.path.exists(installer):
             print(f"running installer at {installer}")
-            subprocess.call(
-                f"msiexec /i {installer} "
+
+            admin_commands = AdminCommandBuilder()
+            admin_commands.add_command(
+                f'msiexec /i "{installer}"',
                 "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
-                'INSTALLDIR="c:\\Program Files\\Eclipse Adoptium\\" /quiet'
+                f'INSTALLDIR="{os.path.join(JAVA_INSTALL_BASE_PATH, version)}" REINSTALL=ALL '
+                "REINSTALLMODE=amus /quiet",
+                expected_return_val=None,
             )
+            admin_commands.run_all()
+
             self.prompt.prompt_and_raise_if_not_yes(
                 "Make sure java installed correctly.\r\n"
                 "After following the installer, ensure you close and then re-open"
