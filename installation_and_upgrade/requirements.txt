@@ -12,3 +12,4 @@ pyepics
 epicscorelibs
 certifi  # Needed in order for requests to find https certificates
 requests
+mysql-connector-python==8.4.0
