@@ -33,7 +33,7 @@ from contextlib import closing
 
 MYSQL8_INSTALL_DIR = os.path.join(APPS_BASE_DIR, "MySQL")
 MYSQL57_INSTALL_DIR = os.path.join("C:\\", "Program Files", "MySQL", "MySQL Server 5.7")
-MYSQL_LATEST_VERSION = "8.4.5"
+MYSQL_LATEST_VERSION = "8.4.7"
 MYSQL_ZIP = os.path.join(
     INST_SHARE_AREA,
     "kits$",
