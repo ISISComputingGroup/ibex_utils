@@ -12,3 +12,4 @@ pyepics
 epicscorelibs
 certifi  # Needed in order for requests to find https certificates
 requests
+python-msilib  # Short term hack, msilib is deprecated and removed from python (see https://peps.python.org/pep-0594/#msilib)
