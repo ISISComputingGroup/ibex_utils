@@ -4,7 +4,6 @@ from unittest.mock import Mock
 import pytest
 from ibex_install_utils.software_dependency import is_higher
 from ibex_install_utils.software_dependency.git import Git
-from ibex_install_utils.software_dependency.java import Java
 from ibex_install_utils.version_check import *
 
 
@@ -15,14 +14,6 @@ def get_version_from_name(name):
     basename = os.path.basename(name)
     version = re.search(r"([0-9]+\.[0-9]+(\.[0-9]+)+)", basename).group(1)
     return version
-
-
-MOCK_JAVA_INSTALLERS = [
-    "OpenJDK_17.0.4.3_1.msi",  # latest
-    "OpenJDK_17.0.1_1.msi",
-    "OpenJDK_17.0.4_1.msi",
-    "OpenJDK_16.0.4.6_1.msi",
-]
 
 MOCK_GIT_INSTALLERS = [
     "Git-2.3.0-1.exe",
@@ -54,37 +45,6 @@ class TestVersionCheck:
         with pytest.raises(AttributeError):
             get_major_minor_patch("java 17.2.4")
 
-    def test_GIVEN_java_latest_WHEN_version_checked_THEN_decorated_function_not_called(self):
-        javaMock = Java()
-
-        javaMock.get_installed_version = Mock(return_value="17.0.4")
-        javaMock.get_version_of = Mock(side_effect=get_version_from_name)
-        javaMock.find_available = Mock(return_value=MOCK_JAVA_INSTALLERS)
-
-        inner_function = Mock()
-
-        @version_check(javaMock)
-        def function(_):
-            inner_function()
-
-        function(self)
-        inner_function.assert_not_called()
-
-    def test_GIVEN_java_old_WHEN_version_checked_THEN_decorated_function_called(self):
-        javaMock = Java()
-
-        javaMock.get_installed_version = Mock(return_value="17.0.0")
-        javaMock.get_version_of = Mock(side_effect=get_version_from_name)
-        javaMock.find_available = Mock(return_value=MOCK_JAVA_INSTALLERS)
-
-        functionMock = Mock()
-
-        @version_check(javaMock)
-        def function(_):
-            functionMock()
-
-        function(self)
-        functionMock.assert_called_once()
 
     def test_GIVEN_git_latest_WHEN_version_checked_THEN_decorated_function_not_called(self):
         gitMock = Git()

@@ -168,7 +168,6 @@ class UpgradeInstrument:
 
         self._system_tasks.check_resources()
         self._system_tasks.install_or_upgrade_git()
-        self._system_tasks.check_java_installation()
 
         self._system_tasks.restrict_ie()
 
@@ -231,7 +230,6 @@ class UpgradeInstrument:
         Current the server can not be started or stopped in this python script.
         """
         self._system_tasks.install_or_upgrade_git()
-        self._system_tasks.check_java_installation()
         self._git_tasks.show_git_status()
         self._backup_tasks.backup_old_directories()
         self._backup_tasks.backup_checker()
@@ -295,7 +293,6 @@ class UpgradeInstrument:
     def run_developer_update(self) -> None:
         """Update all the developer tools to latest version"""
         self._mysql_tasks.install_mysql(force=False)
-        self._system_tasks.check_java_installation()
         self._system_tasks.install_or_upgrade_git()
         self._system_tasks.update_kafka_topics()
         self._system_tasks.create_virtual_envs()
