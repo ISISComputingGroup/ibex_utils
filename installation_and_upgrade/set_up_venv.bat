@@ -2,7 +2,7 @@ REM sets up temporary virtual environment for deployment and installs requiremen
 
 pushd "c:\Instrument\var\tmp"
 set UV_TEMP_VENV=C:\Instrument\Var\tmp\.deployscriptvenv
-set UV_PYTHON=3.12
+set UV_PYTHON=3.13
 REM use the on-disk location as we'll be using a venv anyway so it won't dirty the install
 uv venv "%UV_TEMP_VENV%"
 call "%UV_TEMP_VENV%\scripts\activate"
