@@ -4,7 +4,6 @@ Filesystem utility classes
 
 import binascii
 import logging
-import msilib
 import os
 import shutil
 import tempfile
@@ -325,28 +324,6 @@ def get_version(path: str):
         logging.exception(f"Can't get file version info of '{path}'")
     logging.info(f"Read version '{version}' from file info of '{path}'")
     return version
-
-
-def get_msi_property(path: str, property: str) -> str:
-    """Reads a property from msi metadata database of a file.
-
-    Args:
-        path: The path to the file.
-        property: The property to read.
-    Returns:
-        The string value of the property on successful read, None otherwise.
-    """
-    value = None
-    try:
-        db = msilib.OpenDatabase(path, msilib.MSIDBOPEN_READONLY)
-        view = db.OpenView("SELECT Value FROM Property WHERE Property='" + property + "'")
-        view.Execute(None)
-        result = view.Fetch()
-        value = result.GetString(1)
-    except:
-        logging.exception(f"Can't read property '{property}' from file '{path}'.")
-    logging.info(f"Read value '{value}' for property '{property}' from file '{path}'.")
-    return value
 
 
 @contextmanager
