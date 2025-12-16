@@ -4,7 +4,6 @@ Filesystem utility classes
 
 import binascii
 import logging
-import msilib
 import os
 import shutil
 import tempfile
@@ -81,7 +80,7 @@ class FileUtils:
             return False
 
     @staticmethod
-    def remove_tree(path, prompt, use_robocopy=True, retries=10, leave_top_if_link=False):
+    def remove_tree(path, prompt, use_robocopy=True, retries=10, leave_top_if_link=False) -> None:
         """
         Delete a file path if it exists
         Args:
@@ -154,7 +153,7 @@ class FileUtils:
                 )
 
     @staticmethod
-    def robocopy_move(src, dst, prompt, retries=10):
+    def robocopy_move(src, dst, prompt, retries=10) -> None:
         for _ in range(retries):
             try:
                 args = [
@@ -192,7 +191,7 @@ class FileUtils:
     def winapi_path(dos_path):
         return _winapi_path(dos_path)
 
-    def mkdir_recursive(self, path):
+    def mkdir_recursive(self, path) -> None:
         """
         Make a directory and all its ancestors
         Args:
@@ -208,7 +207,7 @@ class FileUtils:
             os.mkdir(path)
 
     @staticmethod
-    def move_dir(src, dst, prompt):
+    def move_dir(src, dst, prompt) -> None:
         """
         Moves a dir. Better to copy remove so we can handle permissions issues
 
@@ -221,7 +220,7 @@ class FileUtils:
         FileUtils.remove_tree(src, prompt)
 
     @staticmethod
-    def move_file(source, destination, prompt):
+    def move_file(source, destination, prompt) -> None:
         """
         Move a file from the source to destination
         Args:
@@ -273,7 +272,7 @@ class FileUtils:
         size_of_dir = 0
         number_of_files = 0
 
-        def total_up_size(src, dst):
+        def total_up_size(src, dst) -> None:
             nonlocal size_of_dir
             nonlocal number_of_files
             number_of_files += 1
@@ -325,28 +324,6 @@ def get_version(path: str):
         logging.exception(f"Can't get file version info of '{path}'")
     logging.info(f"Read version '{version}' from file info of '{path}'")
     return version
-
-
-def get_msi_property(path: str, property: str) -> str:
-    """Reads a property from msi metadata database of a file.
-
-    Args:
-        path: The path to the file.
-        property: The property to read.
-    Returns:
-        The string value of the property on successful read, None otherwise.
-    """
-    value = None
-    try:
-        db = msilib.OpenDatabase(path, msilib.MSIDBOPEN_READONLY)
-        view = db.OpenView("SELECT Value FROM Property WHERE Property='" + property + "'")
-        view.Execute(None)
-        result = view.Fetch()
-        value = result.GetString(1)
-    except:
-        logging.exception(f"Can't read property '{property}' from file '{path}'.")
-    logging.info(f"Read value '{value}' for property '{property}' from file '{path}'.")
-    return value
 
 
 @contextmanager
