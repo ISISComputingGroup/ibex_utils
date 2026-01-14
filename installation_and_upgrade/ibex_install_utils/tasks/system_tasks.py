@@ -1,7 +1,6 @@
 import glob
 import os
 import shutil
-import subprocess
 import tempfile
 import time
 from pathlib import Path
@@ -14,7 +13,6 @@ from ibex_install_utils.exceptions import ErrorInTask, UserStop
 from ibex_install_utils.kafka_utils import add_required_topics
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.software_dependency.git import Git
-from ibex_install_utils.software_dependency.java import Java
 from ibex_install_utils.task import task
 from ibex_install_utils.tasks import BaseTasks
 from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, EPICS_PATH, UV, VAR_DIR
@@ -81,36 +79,6 @@ class SystemTasks(BaseTasks):
 
         """
         self._file_utils.remove_tree(DESKTOP_TRAINING_FOLDER_PATH, self.prompt)
-
-    @version_check(Java())
-    @task("Install java")
-    def check_java_installation(self) -> None:
-        """
-        Checks Java installation
-        """
-        installer, _ = Java().find_latest()
-
-        if os.path.exists(installer):
-            print(f"running installer at {installer}")
-            subprocess.call(
-                f"msiexec /i {installer} "
-                "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome "
-                'INSTALLDIR="c:\\Program Files\\Eclipse Adoptium\\" /quiet'
-            )
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Make sure java installed correctly.\r\n"
-                "After following the installer, ensure you close and then re-open"
-                " your remote desktop session (This "
-                "is a workaround for windows not immediately picking up new environment variables)"
-            )
-        else:
-            self.prompt.prompt_and_raise_if_not_yes(
-                "Upgrade openJDK installation by following:\r\n"
-                "https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/Upgrade-Java\r\n\r\n"
-                "After following the installer, ensure you close and then re-open"
-                " your remote desktop session (This "
-                "is a workaround for windows not immediately picking up new environment variables)"
-            )
 
     @task("Configure COM ports")
     def configure_com_ports(self) -> None:
