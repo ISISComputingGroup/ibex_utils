@@ -43,7 +43,7 @@ class ClientTasks(BaseTasks):
             "Check that the version displayed in the client is as expected after the deployment"
         )
         self.prompt.prompt_and_raise_if_not_yes(
-            "Confirm that genie_python works from within the client and via genie_python.bat (this includes"
+            "Confirm that genie_python works from within the client and via genie_python.bat (this includes "
             "verifying that the 'g.' and 'inst.' prefixes work as expected)"
             "If the font cannot be seen in the genie_python.bat change default terminal colours to white on black."
         )
