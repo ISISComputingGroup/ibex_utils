@@ -1,12 +1,16 @@
 """
 A utility script to retrieve tests data from Jenkins jobs.
 Checks for common failures as Jenkins only tracks continuous failures.
+Needs to access jenkins API - credentials passed from jenkins
+job via secret text environment variables
 """
 
+import os
 from collections import Counter, defaultdict
 from typing import Any
 
 import requests
+from requests.auth import HTTPBasicAuth
 
 WARNING_THRESHOLD_PERCENTAGE = 10
 ERROR_THRESHOLD_PERCENTAGE = 50
@@ -19,7 +23,9 @@ def request_json(url: str) -> dict | None:
     Args:
         url: The URL to request.
     """
-    request: requests.Response = requests.get(url)
+    request: requests.Response = requests.get(
+        url, auth=HTTPBasicAuth(os.getenv("JENKINS_API_USER", ""), os.getenv("JENKINS_API_PW", ""))
+    )
 
     if request.status_code == requests.codes["ok"]:
         return request.json()
