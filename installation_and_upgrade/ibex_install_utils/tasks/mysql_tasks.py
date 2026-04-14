@@ -84,31 +84,6 @@ class MysqlTasks(BaseTasks):
             os.mkdir(mysql_backup_dir)
         return mysql_backup_dir
 
-    @task("Truncate database")
-    def truncate_database(self) -> None:
-        """
-        Truncate the message log, sample and alarms tables
-        """
-        try:
-            mysql_bin_dir = self._get_mysql_dir()
-
-            sql_command = (
-                "truncate table msg_log.message;"
-                "truncate table archive.sample;truncate table alarm.pv"
-            )
-
-            RunProcess(
-                MYSQL_FILES_DIR,
-                "mysql.exe",
-                executable_directory=mysql_bin_dir,
-                prog_args=["-u", "root", "-p", "--execute", sql_command],
-                capture_pipes=False,
-            ).run()
-
-        except ErrorInRun as ex:
-            self.prompt.prompt_and_raise_if_not_yes(
-                f"Unable to run mysql command, please truncate the database manually. Error is {ex}"
-            )
 
     def _configure_mysql(self) -> None:
         """
@@ -411,54 +386,6 @@ class MysqlTasks(BaseTasks):
 
         sleep(5)  # Time for service to start
 
-    @task("Backup database")
-    def backup_database(self) -> None:
-        """
-        Backup the database
-        """
-        mysql_bin_dir = self._get_mysql_dir()
-        result_file = os.path.join(
-            self._get_mysql_backup_dir(),
-            SQLDUMP_FILE_TEMPLATE.format(BaseTasks._today_date_for_filenames()),
-        )
-
-        # Get the number of tables to be backed up
-        sql_command = "show databases; use information_schema; show tables; SELECT FOUND_ROWS();"
-        count_tables = RunProcess(
-            MYSQL_FILES_DIR,
-            "mysql.exe",
-            executable_directory=mysql_bin_dir,
-            prog_args=["-u", "root", "-p", "--execute", sql_command],
-            capture_pipes=True,
-            capture_last_output=True,
-        )
-        count_tables.run()
-        tables = (
-            int(count_tables.captured_output) - 1
-        )  # it seems to end up with an extra table when counting this.
-
-        dump_command = [
-            "-u",
-            "root",
-            "-p",
-            "--all-databases",
-            "--single-transaction",
-            "--verbose",
-            f"--result-file={result_file}",
-        ]
-        RunProcess(
-            MYSQL_FILES_DIR,
-            "mysqldump.exe",
-            executable_directory=mysql_bin_dir,
-            prog_args=dump_command,
-            capture_pipes=True,
-            progress_metric=[tables, "Retrieving table structure", "Backing up table "],
-        ).run()
-
-        if os.path.getsize(result_file) < SMALLEST_PERMISSIBLE_MYSQL_DUMP_FILE_IN_BYTES:
-            self.prompt.prompt_and_raise_if_not_yes(
-                f"Dump file '{result_file}' seems to be small is it correct? "
-            )
 
     def _backup_data(self) -> None:
         """
