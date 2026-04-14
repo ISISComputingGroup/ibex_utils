@@ -233,8 +233,6 @@ class UpgradeInstrument:
         self._git_tasks.show_git_status()
         self._backup_tasks.backup_old_directories()
         self._backup_tasks.backup_checker()
-        self._mysql_tasks.backup_database()
-        self._mysql_tasks.truncate_database()
         self._server_tasks.install_ibex_server()
         self._system_tasks.create_virtual_envs()
         self._server_tasks.update_icp(self.icp_in_labview_modules())
@@ -260,11 +258,6 @@ class UpgradeInstrument:
         """
         self._system_tasks.user_confirm_upgrade_type_on_machine("Client/Server Machine")
         self._server_tasks.save_motor_blocks_blockserver_to_file()
-
-    def run_truncate_database(self) -> None:
-        """Backup and truncate databases only"""
-        self._mysql_tasks.backup_database()
-        self._mysql_tasks.truncate_database()
 
     def run_force_upgrade_mysql(self) -> None:
         """:key
@@ -383,10 +376,6 @@ UPGRADE_TYPES = {
     "install_latest": (
         UpgradeInstrument.remove_all_and_install_client_and_server,
         "install just the latest clean build of the server, client and genie_python",
-    ),
-    "truncate_database": (
-        UpgradeInstrument.run_truncate_database,
-        "backup and truncate the sql database on the instrument",
     ),
     "update_icp": (
         UpgradeInstrument.run_update_icp,
