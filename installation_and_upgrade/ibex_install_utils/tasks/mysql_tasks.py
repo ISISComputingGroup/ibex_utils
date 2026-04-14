@@ -7,7 +7,6 @@ from time import sleep
 from typing import Generator
 
 from ibex_install_utils.admin_runner import AdminCommandBuilder
-from ibex_install_utils.exceptions import ErrorInRun
 from ibex_install_utils.logger import temporarily_disable_logging
 from ibex_install_utils.run_process import RunProcess
 from ibex_install_utils.software_dependency.mysql import MySQL
@@ -83,7 +82,6 @@ class MysqlTasks(BaseTasks):
         if not os.path.exists(mysql_backup_dir):
             os.mkdir(mysql_backup_dir)
         return mysql_backup_dir
-
 
     def _configure_mysql(self) -> None:
         """
@@ -385,7 +383,6 @@ class MysqlTasks(BaseTasks):
         self._setup_mysql8_service()
 
         sleep(5)  # Time for service to start
-
 
     def _backup_data(self) -> None:
         """
