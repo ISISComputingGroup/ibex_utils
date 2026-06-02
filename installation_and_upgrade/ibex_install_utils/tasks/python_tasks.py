@@ -11,14 +11,6 @@ class PythonTasks(BaseTasks):
     Tasks relating to installing or maintaining an installation of genie_python.
     """
 
-    @task("Installing Genie Python 3")
-    def install_genie_python3(self):
-        """
-        Install ibex server.
-        """
-        self._file_utils.mkdir_recursive(APPS_BASE_DIR)
-        RunProcess(self._genie_python_3_source_dir, "genie_python_install.bat").run()
-
     @task("Update script generator script definitions")
     def update_script_definitions(self):
         """
