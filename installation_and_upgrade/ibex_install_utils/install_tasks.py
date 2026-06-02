@@ -80,7 +80,6 @@ class UpgradeInstrument:
             file_utils,
         )
 
-
         self._backup_tasks = BackupTasks(
             user_prompt,
             server_source_dir,
@@ -338,6 +337,12 @@ UPGRADE_TYPES = {
         UpgradeInstrument.run_update_journal_parser,
         "update journal parser",
     ),
-    "developer_update": (UpgradeInstrument.run_developer_update, "install latest developer tools"),
-    "save_motor_params": (UpgradeInstrument.save_motor_params, "Save motor parameters to csv file"),
+    "developer_update": (
+        UpgradeInstrument.run_developer_update,
+        "install latest developer tools",
+    ),
+    "save_motor_params": (
+        UpgradeInstrument.save_motor_params,
+        "Save motor parameters to csv file",
+    ),
 }

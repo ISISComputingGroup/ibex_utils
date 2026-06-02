@@ -48,7 +48,12 @@ SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 
 VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140_1.dll")
 VCRUNTIME140_INSTALLER = os.path.join(
-    INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer", "vc_redist.x64.exe"
+    INST_SHARE_AREA,
+    "kits$",
+    "CompGroup",
+    "ICP",
+    "vcruntime140_installer",
+    "vc_redist.x64.exe",
 )
 
 SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
@@ -101,7 +106,9 @@ class MysqlTasks(BaseTasks):
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
         admin_commands.add_command("sc", "stop MYSQL84", expected_return_val=None)
         # Sleep to wait for service to stop so we can restart it.
-        admin_commands.add_command("ping", "-n 10 127.0.0.1 >nul", expected_return_val=None)
+        admin_commands.add_command(
+            "ping", "-n 10 127.0.0.1 >nul", expected_return_val=None
+        )
         admin_commands.add_command("sc", "start MYSQL84", expected_return_val=None)
         admin_commands.run_all()
 
@@ -143,10 +150,11 @@ class MysqlTasks(BaseTasks):
             mysql_unzip_temp, f"mysql-{MYSQL_LATEST_VERSION}-winx64"
         )
         for item in os.listdir(mysql_unzip_temp_release):
-            shutil.move(os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR)
+            shutil.move(
+                os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR
+            )
 
         shutil.rmtree(mysql_unzip_temp)
-
 
     @contextlib.contextmanager
     def temporarily_run_mysql(self, sql_password: str) -> Generator[None, None, None]:
@@ -221,7 +229,10 @@ class MysqlTasks(BaseTasks):
         # Wait for initialize since admin runner can't wait for completion.
         # Maybe we can detect completion another way?
         admin_commands.add_command(
-            mysqld, '--install MYSQL84 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data"))
+            mysqld,
+            '--install MYSQL84 --datadir="{}"'.format(
+                os.path.join(MYSQL_FILES_DIR, "data")
+            ),
         )
 
         admin_commands.add_command("sc", "start MYSQL84", expected_return_val=None)
@@ -229,7 +240,8 @@ class MysqlTasks(BaseTasks):
         # where a required disk volume doesn't get mounted in time if just "auto" is used
         admin_commands.add_command("sc", "config MYSQL84 start= delayed-auto")
         admin_commands.add_command(
-            "sc", "failure MYSQL84 reset= 900 actions= restart/10000/restart/30000/restart/60000"
+            "sc",
+            "failure MYSQL84 reset= 900 actions= restart/10000/restart/30000/restart/60000",
         )
         admin_commands.add_command("sc", "failureflag MYSQL84 1")
         admin_commands.add_command(
