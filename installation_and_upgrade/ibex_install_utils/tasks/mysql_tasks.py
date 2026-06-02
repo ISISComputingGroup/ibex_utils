@@ -106,9 +106,7 @@ class MysqlTasks(BaseTasks):
         admin_commands.add_command("sc", "stop MYSQL80", expected_return_val=None)
         admin_commands.add_command("sc", "stop MYSQL84", expected_return_val=None)
         # Sleep to wait for service to stop so we can restart it.
-        admin_commands.add_command(
-            "ping", "-n 10 127.0.0.1 >nul", expected_return_val=None
-        )
+        admin_commands.add_command("ping", "-n 10 127.0.0.1 >nul", expected_return_val=None)
         admin_commands.add_command("sc", "start MYSQL84", expected_return_val=None)
         admin_commands.run_all()
 
@@ -150,9 +148,7 @@ class MysqlTasks(BaseTasks):
             mysql_unzip_temp, f"mysql-{MYSQL_LATEST_VERSION}-winx64"
         )
         for item in os.listdir(mysql_unzip_temp_release):
-            shutil.move(
-                os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR
-            )
+            shutil.move(os.path.join(mysql_unzip_temp_release, item), MYSQL8_INSTALL_DIR)
 
         shutil.rmtree(mysql_unzip_temp)
 
@@ -230,9 +226,7 @@ class MysqlTasks(BaseTasks):
         # Maybe we can detect completion another way?
         admin_commands.add_command(
             mysqld,
-            '--install MYSQL84 --datadir="{}"'.format(
-                os.path.join(MYSQL_FILES_DIR, "data")
-            ),
+            '--install MYSQL84 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data")),
         )
 
         admin_commands.add_command("sc", "start MYSQL84", expected_return_val=None)
