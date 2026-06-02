@@ -466,11 +466,6 @@ class SystemTasks(BaseTasks):
         )
         print(f"    Server source: {self._server_source_dir}")
         print(f"          version: {server_version}")
-        client_version = self._read_file(
-            os.path.join(self._client_source_dir, "Client", "VERSION.txt"), "UNKNOWN"
-        )
-        print(f"    Client source: {self._client_source_dir}")
-        print(f"          version: {client_version}")
         python_version = self._read_file(
             os.path.join(self._genie_python_3_source_dir, "VERSION.txt"), "UNKNOWN"
         )

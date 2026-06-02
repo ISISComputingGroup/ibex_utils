@@ -8,23 +8,6 @@ from ibex_install_utils.tasks.common_paths import APPS_BASE_DIR, GUI_PATH
 
 
 class ClientTasks(BaseTasks):
-    @task("Installing IBEX Client with builtin python")
-    def install_ibex_client(self):
-        """
-        Install the ibex client with builtin python.
-
-        """
-        self._install_set_version_of_ibex_client(self._client_source_dir)
-
-    def _install_set_version_of_ibex_client(self, source_dir):
-        """
-        Install a given version of the Ibex client.
-        Args:
-            source_dir: source directory for the client
-        """
-        self._file_utils.mkdir_recursive(APPS_BASE_DIR)
-
-        RunProcess(source_dir, "install_gui_with_builtin_python.bat", prog_args=["NOINT"]).run()
 
     @task("Starting IBEX gui")
     def start_ibex_gui(self):

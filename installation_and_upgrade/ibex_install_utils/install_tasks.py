@@ -130,13 +130,12 @@ class UpgradeInstrument:
         self._mysql_tasks.install_mysql()
         self._server_tasks.upgrade_instrument_configuration()
         self._server_tasks.install_wiring_tables()
-        self._client_tasks.install_ibex_client()
         self._system_tasks.upgrade_notepad_pp()
         self._server_tasks.setup_log_rotation()
         self._server_tasks.update_journal_parser()
 
-    def remove_all_and_install_client_and_server(self) -> None:
-        """Either install or upgrade the ibex client and server"""
+    def remove_all_and_install_uktena_and_server(self) -> None:
+        """Either install or upgrade the ibex server"""
         self._system_tasks.confirm(
             "This script removes IBEX client and server and installs "
             "the latest build of both, and upgrade the "
@@ -149,7 +148,6 @@ class UpgradeInstrument:
         self._server_tasks.install_ibex_server(use_old_galil)
         self._server_tasks.update_icp(self.icp_in_labview_modules(), register_icp=False)
         self._python_tasks.install_genie_python3()
-        self._client_tasks.install_ibex_client()
         self._server_tasks.upgrade_instrument_configuration()
         self._server_tasks.install_shared_scripts_repository()
 
@@ -176,7 +174,6 @@ class UpgradeInstrument:
         self._server_tasks.update_icp(self.icp_in_labview_modules())
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
-        self._client_tasks.install_ibex_client()
         self._git_tasks.checkout_to_release_branch()
         self._server_tasks.setup_config_repository()
         self._server_tasks.upgrade_instrument_configuration()
@@ -239,7 +236,6 @@ class UpgradeInstrument:
         self._python_tasks.install_genie_python3()
         self._mysql_tasks.install_mysql()
         self._system_tasks.install_or_upgrade_vc_redist()
-        self._client_tasks.install_ibex_client()
         self._git_tasks.checkout_to_release_branch()
         self._server_tasks.upgrade_instrument_configuration()
         self._server_tasks.update_shared_scripts_repository()
@@ -305,7 +301,6 @@ class UpgradeInstrument:
             self._server_tasks.install_ibex_server()
             self._python_tasks.install_genie_python3()
             self._mysql_tasks.install_mysql_for_vhd()
-            self._client_tasks.install_ibex_client()
             self._server_tasks.setup_config_repository()
 
             # Some config upgrade steps require MySQL to be running
@@ -370,12 +365,12 @@ UPGRADE_TYPES = {
         "instrument_deploy part after the start of instrument",
     ),
     "install_latest_incr": (
-        UpgradeInstrument.remove_all_and_install_client_and_server,
-        "install just the latest incremental build of the server, client and genie_python",
+        UpgradeInstrument.remove_all_and_install_uktena_and_server,
+        "install just the latest incremental build of the server and uktena",
     ),
     "install_latest": (
-        UpgradeInstrument.remove_all_and_install_client_and_server,
-        "install just the latest clean build of the server, client and genie_python",
+        UpgradeInstrument.remove_all_and_install_uktena_and_server,
+        "install just the latest clean build of the server and uktena",
     ),
     "update_icp": (
         UpgradeInstrument.run_update_icp,
