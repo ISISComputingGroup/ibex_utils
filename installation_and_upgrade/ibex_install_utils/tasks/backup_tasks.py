@@ -144,16 +144,6 @@ class BackupTasks(BaseTasks):
                     "Please backup manually."
                 )
 
-        for path in (SETTINGS_DIR, AUTOSAVE, EPICS_UTILS_PATH):
-            # Either the folder or the corresponding .zip file should exist
-            if not os.path.exists(self._path_to_backup(path)) and not os.path.exists(
-                self._path_to_backup(path) + ".zip"
-            ):
-                self.prompt.prompt_and_raise_if_not_yes(
-                    f"Error found with backup. '{path}' did not back up properly. "
-                    "Please backup manually."
-                )
-
     @task("Removing old version of IBEX")
     def remove_old_ibex(self) -> None:
         """
