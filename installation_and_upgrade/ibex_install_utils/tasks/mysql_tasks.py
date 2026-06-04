@@ -191,32 +191,28 @@ class MysqlTasks(BaseTasks):
             if len(sql_password) > 0:
                 break
             print("Please enter a non blank password")
-        # In normal installs, MySQL is already running as a service so do nothing
-        cm = contextlib.nullcontext()
+        RunProcess(
+            executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            executable_file="mysql.exe",
+            prog_args=[
+                "-u",
+                "root",
+                "-e",
+                "ALTER USER 'root'@'localhost' "
+                f"IDENTIFIED WITH caching_sha2_password BY '{sql_password}';FLUSH "
+                "privileges; ",
+            ],
+            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+        ).run()
 
-        with cm:
-            RunProcess(
-                executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-                working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-                executable_file="mysql.exe",
-                prog_args=[
-                    "-u",
-                    "root",
-                    "-e",
-                    "ALTER USER 'root'@'localhost' "
-                    f"IDENTIFIED WITH caching_sha2_password BY '{sql_password}';FLUSH "
-                    "privileges; ",
-                ],
-                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
-            ).run()
-
-            RunProcess(
-                working_dir=SYSTEM_SETUP_PATH,
-                executable_directory=SYSTEM_SETUP_PATH,
-                executable_file="config_mysql.bat",
-                prog_args=[sql_password],
-                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
-            ).run()
+        RunProcess(
+            working_dir=SYSTEM_SETUP_PATH,
+            executable_directory=SYSTEM_SETUP_PATH,
+            executable_file="config_mysql.bat",
+            prog_args=[sql_password],
+            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+        ).run()
 
     def _setup_mysql8_service(self) -> None:
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
