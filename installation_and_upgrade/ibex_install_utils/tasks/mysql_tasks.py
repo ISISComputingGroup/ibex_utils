@@ -48,7 +48,12 @@ SQLDUMP_FILE_TEMPLATE = "ibex_db_sqldump_{}.sql"
 
 VCRUNTIME140 = os.path.join("C:\\", "Windows", "System32", "vcruntime140_1.dll")
 VCRUNTIME140_INSTALLER = os.path.join(
-    INST_SHARE_AREA, "kits$", "CompGroup", "ICP", "vcruntime140_installer", "vc_redist.x64.exe"
+    INST_SHARE_AREA,
+    "kits$",
+    "CompGroup",
+    "ICP",
+    "vcruntime140_installer",
+    "vc_redist.x64.exe",
 )
 
 SYSTEM_SETUP_PATH = os.path.join(EPICS_PATH, "SystemSetup")
@@ -147,21 +152,6 @@ class MysqlTasks(BaseTasks):
 
         shutil.rmtree(mysql_unzip_temp)
 
-    def _initialize_mysql_data_area_for_vhd(self) -> None:
-        os.makedirs(os.path.join(MYSQL_FILES_DIR, "data"))
-
-        RunProcess(
-            working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-            executable_file="mysqld.exe",
-            executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-            prog_args=[
-                f"--datadir={os.path.join(MYSQL_FILES_DIR, 'data')}",
-                "--initialize-insecure",
-                "--console",
-                "--log-error-verbosity=3",
-            ],
-        ).run()
-
     @contextlib.contextmanager
     def temporarily_run_mysql(self, sql_password: str) -> Generator[None, None, None]:
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
@@ -187,7 +177,7 @@ class MysqlTasks(BaseTasks):
                 log_command_args=False,  # To make sure password doesn't appear in jenkins log.
             ).run()
 
-    def _setup_database_users_and_tables(self, vhd_install: bool = True) -> None:
+    def _setup_database_users_and_tables(self) -> None:
         sql_password = ""
         retry_count = 5
         while --retry_count > 0:
@@ -201,36 +191,28 @@ class MysqlTasks(BaseTasks):
             if len(sql_password) > 0:
                 break
             print("Please enter a non blank password")
-        if vhd_install:
-            # In the VHD install, need to explicitly temporarily run MySQL.
-            cm = self.temporarily_run_mysql(sql_password)
-        else:
-            # In normal installs, MySQL is already running as a service so do nothing
-            cm = contextlib.nullcontext()
+        RunProcess(
+            executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
+            executable_file="mysql.exe",
+            prog_args=[
+                "-u",
+                "root",
+                "-e",
+                "ALTER USER 'root'@'localhost' "
+                f"IDENTIFIED WITH caching_sha2_password BY '{sql_password}';FLUSH "
+                "privileges; ",
+            ],
+            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+        ).run()
 
-        with cm:
-            RunProcess(
-                executable_directory=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-                working_dir=os.path.join(MYSQL8_INSTALL_DIR, "bin"),
-                executable_file="mysql.exe",
-                prog_args=[
-                    "-u",
-                    "root",
-                    "-e",
-                    "ALTER USER 'root'@'localhost' "
-                    f"IDENTIFIED WITH caching_sha2_password BY '{sql_password}';FLUSH "
-                    "privileges; ",
-                ],
-                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
-            ).run()
-
-            RunProcess(
-                working_dir=SYSTEM_SETUP_PATH,
-                executable_directory=SYSTEM_SETUP_PATH,
-                executable_file="config_mysql.bat",
-                prog_args=[sql_password],
-                log_command_args=False,  # To make sure password doesn't appear in jenkins log.
-            ).run()
+        RunProcess(
+            working_dir=SYSTEM_SETUP_PATH,
+            executable_directory=SYSTEM_SETUP_PATH,
+            executable_file="config_mysql.bat",
+            prog_args=[sql_password],
+            log_command_args=False,  # To make sure password doesn't appear in jenkins log.
+        ).run()
 
     def _setup_mysql8_service(self) -> None:
         mysqld = os.path.join(MYSQL8_INSTALL_DIR, "bin", "mysqld.exe")
@@ -239,7 +221,8 @@ class MysqlTasks(BaseTasks):
         # Wait for initialize since admin runner can't wait for completion.
         # Maybe we can detect completion another way?
         admin_commands.add_command(
-            mysqld, '--install MYSQL84 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data"))
+            mysqld,
+            '--install MYSQL84 --datadir="{}"'.format(os.path.join(MYSQL_FILES_DIR, "data")),
         )
 
         admin_commands.add_command("sc", "start MYSQL84", expected_return_val=None)
@@ -247,7 +230,8 @@ class MysqlTasks(BaseTasks):
         # where a required disk volume doesn't get mounted in time if just "auto" is used
         admin_commands.add_command("sc", "config MYSQL84 start= delayed-auto")
         admin_commands.add_command(
-            "sc", "failure MYSQL84 reset= 900 actions= restart/10000/restart/30000/restart/60000"
+            "sc",
+            "failure MYSQL84 reset= 900 actions= restart/10000/restart/30000/restart/60000",
         )
         admin_commands.add_command("sc", "failureflag MYSQL84 1")
         admin_commands.add_command(
@@ -292,37 +276,7 @@ class MysqlTasks(BaseTasks):
         sleep(5)  # Time for service to start
 
         if clean_install:
-            self._setup_database_users_and_tables(vhd_install=False)
-
-    @task("Install latest MySQL for VHD deployment")
-    def install_mysql_for_vhd(self) -> None:
-        """
-        Installs MySQL for the VHD creation build.
-
-        Ensure we start from a clean slate. We are creating VHDs so
-        we can assume that no files should exist in
-        C:\\instrument\\apps\\mysql or c:\\instrument\\var\\mysql and
-        delete them if they do exist. This facilitates
-        developer testing/resuming the script if it failed halfway through
-        """
-        for path in [MYSQL_FILES_DIR, MYSQL8_INSTALL_DIR]:
-            if os.path.exists(path):
-                shutil.rmtree(path)
-
-        self._create_mysql_binaries()
-        self._initialize_mysql_data_area_for_vhd()
-
-        my_ini_file = os.path.join(EPICS_PATH, "systemsetup", "my.ini")
-        try:
-            shutil.copy(my_ini_file, MYSQL8_INSTALL_DIR)
-        except (OSError, IOError) as e:
-            self.prompt.prompt_and_raise_if_not_yes(
-                f"Couldn't copy my.ini from {my_ini_file} to {MYSQL8_INSTALL_DIR}"
-                f" because {e}. "
-                f"Please do this manually confirm when complete."
-            )
-
-        self._setup_database_users_and_tables(vhd_install=True)
+            self._setup_database_users_and_tables()
 
     def _install_vcruntime140(self) -> None:
         if not os.path.exists(VCRUNTIME140):
@@ -374,15 +328,6 @@ class MysqlTasks(BaseTasks):
         self._configure_mysql()
         if backup_data:
             self._reload_backup_data()
-
-    @task("Configure MySQL for VHD post install")
-    def configure_mysql_for_vhd_post_install(self) -> None:
-        """
-        configure mysql after vhd is deployed to an instrukent/mdt build
-        """
-        self._setup_mysql8_service()
-
-        sleep(5)  # Time for service to start
 
     def _backup_data(self) -> None:
         """

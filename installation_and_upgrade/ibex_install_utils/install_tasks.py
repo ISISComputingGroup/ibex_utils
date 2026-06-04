@@ -10,7 +10,6 @@ from ibex_install_utils.tasks.mysql_tasks import MysqlTasks
 from ibex_install_utils.tasks.python_tasks import PythonTasks
 from ibex_install_utils.tasks.server_tasks import ServerTasks
 from ibex_install_utils.tasks.system_tasks import SystemTasks
-from ibex_install_utils.tasks.vhd_tasks import VHDTasks
 from ibex_install_utils.user_prompt import UserPrompt
 
 
@@ -73,15 +72,6 @@ class UpgradeInstrument:
         )
 
         self._system_tasks = SystemTasks(
-            user_prompt,
-            server_source_dir,
-            client_source_dir,
-            genie_python3_dir,
-            ibex_version,
-            file_utils,
-        )
-
-        self._vhd_tasks = VHDTasks(
             user_prompt,
             server_source_dir,
             client_source_dir,
@@ -291,60 +281,6 @@ class UpgradeInstrument:
         self._system_tasks.create_virtual_envs()
         self._system_tasks.update_rust()
 
-    def run_vhd_creation(self) -> None:
-        """Automated job which creates a set of VHDs containing all IBEX components.
-
-        Note: this will run under jenkins, don't add interactive tasks to this list.
-        """
-        # To try to start from a clean state if we already have partially mounted VHDs
-        self._vhd_tasks.request_dismount_vhds()
-
-        self._vhd_tasks.copy_vhds_to_local_area()
-        self._vhd_tasks.request_mount_vhds()
-        try:
-            self._server_tasks.install_ibex_server()
-            self._python_tasks.install_genie_python3()
-            self._mysql_tasks.install_mysql_for_vhd()
-            self._client_tasks.install_ibex_client()
-            self._server_tasks.setup_config_repository()
-
-            # Some config upgrade steps require MySQL to be running
-            # For the VHD build, we can always assume we have a MYSQL_PASSWORD env variable
-            mysql_password = os.getenv("MYSQL_PASSWORD")
-            if mysql_password is None:
-                raise Exception("MYSQL_PASSWORD environment variable not set")
-            with self._mysql_tasks.temporarily_run_mysql(mysql_password):
-                self._server_tasks.upgrade_instrument_configuration()
-
-            self._server_tasks.setup_calibrations_repository()
-            self._server_tasks.update_calibrations_repository()
-            self._vhd_tasks.initialize_var_dir()
-        finally:
-            self._vhd_tasks.request_dismount_vhds()
-
-        self._vhd_tasks.deploy_vhds()
-
-    def mount_vhds(self) -> None:
-        """Task which actually mounts the VHDs (will be run as admin)"""
-        self._vhd_tasks.mount_vhds()
-
-    def dismount_vhds(self) -> None:
-        """Task which actually dismounts the VHDs (will be run as admin)"""
-        self._vhd_tasks.dismount_vhds()
-
-    def request_dismount_vhds(self) -> None:
-        """Standalone task to request VHDs to be dismounted"""
-        self._vhd_tasks.request_dismount_vhds()
-
-    def run_vhd_post_install(self) -> None:
-        """This job is run by the MDT build system when it has built
-        a windows image and mounted the VHDS
-        It will tidy up and remaining jobs that were not possible when
-        the vdh was created e.g. register mysql service
-        """
-        # self._server_tasks.update_icp(self.icp_in_labview_modules())
-        self._mysql_tasks.configure_mysql_for_vhd_post_install()
-
 
 # All possible upgrade tasks
 UPGRADE_TYPES = {
@@ -401,20 +337,12 @@ UPGRADE_TYPES = {
         UpgradeInstrument.run_update_journal_parser,
         "update journal parser",
     ),
-    "developer_update": (UpgradeInstrument.run_developer_update, "install latest developer tools"),
-    "create_vhds": (
-        UpgradeInstrument.run_vhd_creation,
-        "create a set of VHDS containing the latest IBEX release",
+    "developer_update": (
+        UpgradeInstrument.run_developer_update,
+        "install latest developer tools",
     ),
-    "mount_vhds": (UpgradeInstrument.mount_vhds, "task to mount VHDs if needed"),
-    "dismount_vhds": (UpgradeInstrument.dismount_vhds, "task to dismount VHDs if needed"),
-    "request_dismount_vhds": (
-        UpgradeInstrument.request_dismount_vhds,
-        "task to request a dismount of VHDs if needed",
+    "save_motor_params": (
+        UpgradeInstrument.save_motor_params,
+        "Save motor parameters to csv file",
     ),
-    "run_vhd_post_install": (
-        UpgradeInstrument.run_vhd_post_install,
-        "Run final task on system after VHD has been mounted locally",
-    ),
-    "save_motor_params": (UpgradeInstrument.save_motor_params, "Save motor parameters to csv file"),
 }
