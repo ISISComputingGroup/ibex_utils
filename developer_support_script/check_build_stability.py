@@ -246,14 +246,15 @@ def process_jobs(jobs: list[str], summary_name: str) -> None:
             job_summary.add_job(job_data)
         job_data.print_results()
 
-    print(f"****** Summary across {summary_name} jobs ******")
-    levels = job_summary.print_results()
-    for lev in ["INFO", "ERROR", "WARNING"]:
-        if lev not in levels:
-            print(
-                f"{lev}: threshold not reached when viewed/summed over {len(jobs)} jobs, "
-                "however individual jobs may have met the threshold"
-            )
+    if len(jobs) > 0:
+        print(f"****** Summary across {len(jobs)} {summary_name} jobs ******")
+        levels = job_summary.print_results()
+        for lev in ["INFO", "ERROR", "WARNING"]:
+            if lev not in levels:
+                print(
+                    f"{lev}: OK as threshold not reached when viewed/summed over {len(jobs)} jobs, "
+                    "however individual jobs may have met the threshold"
+                )
 
 
 if __name__ == "__main__":
@@ -268,7 +269,6 @@ if __name__ == "__main__":
     ]
     SQUISH_JOBS = [
         "System_Tests_Squish",
-        "System_Tests_Squish_Win11",
     ]
     process_jobs(EPICS_JOBS, "EPICS")
     process_jobs(SQUISH_JOBS, "SQUISH")
