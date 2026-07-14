@@ -5,6 +5,7 @@ Needs to access jenkins API - credentials passed from jenkins
 job via secret text environment variables
 """
 
+import logging
 import os
 from collections import Counter, defaultdict
 from typing import Any
@@ -14,6 +15,8 @@ from requests.auth import HTTPBasicAuth
 
 WARNING_THRESHOLD_PERCENTAGE = 10
 ERROR_THRESHOLD_PERCENTAGE = 50
+
+logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 
 
 def request_json(url: str) -> dict | None:
@@ -30,11 +33,11 @@ def request_json(url: str) -> dict | None:
     if request.status_code == requests.codes["ok"]:
         return request.json()
     else:
-        print(f"ERROR: Failed to get '{url}': [{request.status_code}] {request.reason}")
+        logging.error(f"Failed to get '{url}': [{request.status_code}] {request.reason}")
         return None
 
 
-def calculate_level(percentage: float, error_percentage: float, warning_percentage: float) -> str:
+def calculate_level(percentage: float, error_percentage: float, warning_percentage: float) -> int:
     """
     Utility function to calculate log level based on a percentage.
 
@@ -44,11 +47,11 @@ def calculate_level(percentage: float, error_percentage: float, warning_percenta
         warning_percentage: The warning threshold.
     """
     if percentage >= error_percentage:
-        return "ERROR"
+        return logging.ERROR
     elif percentage >= warning_percentage:
-        return "WARNING"
+        return logging.WARNING
     else:
-        return "INFO"
+        return logging.INFO
 
 
 class JobData:
@@ -176,7 +179,7 @@ class JobData:
 
         return counter
 
-    def print_results(self) -> set[str]:
+    def print_results(self) -> set[int]:
         """
         Prints the percentage of aborted builds for the job, the percentage of
         failures with no test report, and the percentage failure of each failing test.
@@ -184,8 +187,8 @@ class JobData:
         """
         levels = set()
         if not self.buildable:
-            print("WARNING: build is currently disabled")
-            levels.add("WARNING")
+            logging.warning("build is currently disabled")
+            levels.add(logging.WARNING)
             return levels
 
         # Aborted builds.
@@ -197,7 +200,7 @@ class JobData:
         level = calculate_level(
             percentage_aborted_builds, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE
         )
-        print(f"{level}: Aborted builds [{percentage_aborted_builds:.0f}%]")
+        logging.log(level, f"Aborted builds [{percentage_aborted_builds:.0f}%]")
         levels.add(level)
         # Failures with no test report
         # valid_builds will only be 0 if self.no_test_report_failures is also 0
@@ -211,9 +214,8 @@ class JobData:
             ERROR_THRESHOLD_PERCENTAGE,
             WARNING_THRESHOLD_PERCENTAGE,
         )
-        print(
-            f"{level}: Failed builds with no Test Report "
-            f"[{percentage_no_test_report_failures:.0f}%]"
+        logging.log(
+            level, f"Failed builds with no Test Report [{percentage_no_test_report_failures:.0f}%]"
         )
         levels.add(level)
 
@@ -226,7 +228,7 @@ class JobData:
             level = calculate_level(
                 percentage_test_failure, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE
             )
-            print(f"{level}: [{percentage_test_failure:.0f}%] {name}")
+            logging.log(level, f"[{percentage_test_failure:.0f}%] {name}")
             levels.add(level)
         return levels
 
@@ -243,14 +245,15 @@ def process_jobs(jobs: list[str], summary_name: str) -> None:
             job_summary.add_job(job_data)
         job_data.print_results()
 
-    if job_summary is not None and len(jobs) > 0:
+    if job_summary is not None and len(jobs) > 1:
         print(f"****** Summary across {len(jobs)} {summary_name} jobs ******")
         levels = job_summary.print_results()
-        for lev in ["INFO", "ERROR", "WARNING"]:
+        for lev in [logging.INFO, logging.ERROR, logging.WARNING]:
             if lev not in levels:
-                print(
-                    f"{lev}: OK as threshold not reached when viewed/summed over {len(jobs)} jobs, "
-                    "however individual jobs may have met the threshold"
+                logging.log(
+                    lev,
+                    f"OK as threshold not reached when viewed/summed over {len(jobs)} jobs, "
+                    "however individual jobs may have met the threshold",
                 )
 
 
