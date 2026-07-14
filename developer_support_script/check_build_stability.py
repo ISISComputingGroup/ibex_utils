@@ -243,7 +243,7 @@ def process_jobs(jobs: list[str], summary_name: str) -> None:
             job_summary.add_job(job_data)
         job_data.print_results()
 
-    if len(jobs) > 0:
+    if job_summary is not None and len(jobs) > 0:
         print(f"****** Summary across {len(jobs)} {summary_name} jobs ******")
         levels = job_summary.print_results()
         for lev in ["INFO", "ERROR", "WARNING"]:
