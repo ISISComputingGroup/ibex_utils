@@ -176,9 +176,6 @@ class JobData:
 
         return counter
 
-    def print_message(self, level: str, msg: str) -> None:
-        print(f"{level}: {msg}")
-
     def print_results(self) -> set[str]:
         """
         Prints the percentage of aborted builds for the job, the percentage of
@@ -200,7 +197,7 @@ class JobData:
         level = calculate_level(
             percentage_aborted_builds, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE
         )
-        self.print_message(level, f"Aborted builds [{percentage_aborted_builds:.0f}%]")
+        print(f"{level}: Aborted builds [{percentage_aborted_builds:.0f}%]")
         levels.add(level)
         # Failures with no test report
         # valid_builds will only be 0 if self.no_test_report_failures is also 0
@@ -214,9 +211,9 @@ class JobData:
             ERROR_THRESHOLD_PERCENTAGE,
             WARNING_THRESHOLD_PERCENTAGE,
         )
-        self.print_message(
-            level,
-            f"Failed builds with no Test Report [{percentage_no_test_report_failures:.0f}%]",
+        print(
+            f"{level}: Failed builds with no Test Report "
+            f"[{percentage_no_test_report_failures:.0f}%]"
         )
         levels.add(level)
 
@@ -229,7 +226,7 @@ class JobData:
             level = calculate_level(
                 percentage_test_failure, ERROR_THRESHOLD_PERCENTAGE, WARNING_THRESHOLD_PERCENTAGE
             )
-            self.print_message(level, f"[{percentage_test_failure:.0f}%] {name}")
+            print(f"{level}: [{percentage_test_failure:.0f}%] {name}")
             levels.add(level)
         return levels
 
