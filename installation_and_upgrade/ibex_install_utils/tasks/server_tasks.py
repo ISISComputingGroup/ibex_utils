@@ -6,8 +6,9 @@ import pprint
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator, TextIO
+from typing import TextIO
 
 import lxml.etree
 
@@ -208,10 +209,9 @@ class ServerTasks(BaseTasks):
             try:
                 if not os.path.exists(specific_inst_file):
                     if not os.path.exists(generic_inst_file):
-                        raise IOError(
-                            "Generic inst file at {} did not exist - cannot proceed".format(
-                                generic_inst_file
-                            )
+                        raise OSError(
+                            f"Generic inst file at {generic_inst_file} "
+                            "did not exist - cannot proceed"
                         )
                     os.rename(generic_inst_file, specific_inst_file)
                 RunProcess(
@@ -238,7 +238,7 @@ class ServerTasks(BaseTasks):
                     executable_directory="",
                     prog_args=["push", "--set-upstream", "origin", inst_name],
                 ).run()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 self.prompt.prompt_and_raise_if_not_yes(
                     f"Something went wrong setting up the configurations repository. "
                     f"Please resolve manually, "
@@ -287,7 +287,7 @@ class ServerTasks(BaseTasks):
         except git.GitCommandError:
             self.prompt.prompt_and_raise_if_not_yes(
                 "There was an error pulling the shared scripts repo.\n"
-                "Manually pull it. Path='{}'".format(INST_SCRIPTS_PATH)
+                f"Manually pull it. Path='{INST_SCRIPTS_PATH}'"
             )
 
     @task("Set up calibrations repository")
@@ -328,7 +328,7 @@ class ServerTasks(BaseTasks):
         except git.GitCommandError:
             self.prompt.prompt_and_raise_if_not_yes(
                 "There was an error pulling the calibrations repo.\n"
-                "Manually pull it. Path='{}'".format(CALIBRATION_PATH)
+                f"Manually pull it. Path='{CALIBRATION_PATH}'"
             )
 
     @task("Server release tests")
@@ -409,7 +409,9 @@ class ServerTasks(BaseTasks):
             PV_BACKUPS_DIR,
             directory,
             "{}_{}.{}".format(
-                name, datetime.datetime.today().strftime("%Y-%m-%d-%H-%M-%S"), extension
+                name,
+                datetime.datetime.now(tz=datetime.UTC).strftime("%Y-%m-%d-%H-%M-%S"),
+                extension,
             ),
         )
 
@@ -450,12 +452,11 @@ class ServerTasks(BaseTasks):
         else:
             if blocks:
                 block_processes = []
-                counter = 0
                 manager = multiprocessing.Manager()
                 data = manager.list()
                 for _ in blocks:
                     data.append(" ")
-                for block in blocks:
+                for counter, block in enumerate(blocks):
                     block_processes.append(
                         multiprocessing.Process(
                             target=self.block_caget,
@@ -466,17 +467,14 @@ class ServerTasks(BaseTasks):
                             ),
                         )
                     )
-                    counter += 1
 
                 for process in block_processes:
                     process.start()
                     process.join()
 
-                counter = 0
-                for block in blocks:
+                for counter, block in enumerate(blocks):
                     with self.timestamped_pv_backups_file(name=block, directory="blocks") as f:
                         f.write(data[counter])
-                        counter += 1
 
             else:
                 print("Blockserver available but no blocks found - not archiving anything")
@@ -524,7 +522,7 @@ class ServerTasks(BaseTasks):
                 pvs = self._ca.get_object_from_compressed_hexed_json(pv)
                 if pvs is not None:
                     f.write(f"{_pretty_print(data=pvs.decode('utf-8'))}\r\n")
-            except:  # noqa: E722
+            except:  # noqa: E722, S110
                 pass
 
     @task("Update the ICP")
@@ -543,7 +541,7 @@ class ServerTasks(BaseTasks):
             root = lxml.etree.parse(config_filepath)
             try:
                 dae_type = int(root.xpath("./I32/Name[text() = 'DAEType']/../Val/text()")[0])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f"Failed to find dae_type ({e}), not installing ICP")
                 return
             # If the ICP is talking to a DAE2 it's DAEType will be 1 or 2,
@@ -644,30 +642,26 @@ class ServerTasks(BaseTasks):
             os.remove(os.path.join(tmpdir, "GALIL_OLD.txt"))
             # we don't need to swap back to new GALIL for the update as install will remove all
             # files anyway, we just need to record our current choice
-            print(
-                "Old galil driver version detected and will automatically be restored after update."
-            )
-            return True
+            print("INFO: Old galil driver was used in previous install.")
         elif os.path.exists(os.path.join(tmpdir, "GALIL_NEW.txt")):
             os.remove(os.path.join(tmpdir, "GALIL_NEW.txt"))
             print(
                 "New galil driver version detected and will automatically be restored after update."
             )
             return False
+        print("Should the new (Y) or old (N) Galil driver be the current default to run?")
+        print(
+            "See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver"
+        )
+        answer = self.prompt.prompt("Use new Galil driver as default? [Y/N]", ["Y", "N"], "Y")
+        if answer == "Y":
+            return False
         else:
-            print("Should the old (Y) or new (N) Galil driver be the current default to run?")
             print(
-                "See https://github.com/ISISComputingGroup/ibex_developers_manual/wiki/New-Galil-Driver"
+                "New Galil driver is default - only change to old driver if you explicitly"
+                " know this is needed!"
             )
-            answer = self.prompt.prompt("Keep old Galil driver as default? [Y/N]", ["Y", "N"], "Y")
-            if answer == "Y":
-                return True
-            else:
-                print(
-                    "Old Galil driver is default - only change to new driver if you explicitly"
-                    " know this is needed!"
-                )
-                return not self.prompt.confirm_step("Use new Galil driver")
+            return not self.prompt.confirm_step("Use new Galil driver")
 
     def _swap_galil_driver(self, use_old: bool) -> None:
         """Swap galil back to old if needed
