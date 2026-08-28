@@ -15,7 +15,7 @@ IF %errorlevel% neq 0 (
 REM Matches current MySQL version
 uv pip install mysql-connector-python==8.4.0
 
-python -u part_truncate_archive.py %*
+python -u %~dp0part_truncate_archive.py %*
 IF %errorlevel% neq 0 goto ERROR
 call rmdir /s /q %UV_TEMP_VENV%
 
