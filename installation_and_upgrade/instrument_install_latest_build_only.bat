@@ -23,7 +23,7 @@ IF EXIST "C:\Instrument\Apps\EPICS" (
     call "%STOP_IBEX%"
 ) else (
     REM in case one has been left around running in the background
-    taskkill /f /im caRepeater.exe
+    taskkill /f /im caRepeater.exe >NUL 2>&1
 )
 
 if not "%2" == "" (
